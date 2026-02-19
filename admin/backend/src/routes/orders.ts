@@ -1,0 +1,87 @@
+import express from 'express'
+import { randomUUID } from 'node:crypto'
+import { requireAuth } from '../auth.js'
+import { fetchOrdersFromSheet, saveOrdersToSheet, type Order, type OrderStatus } from '../orders-utils.js'
+import { logger } from '../logger.js'
+
+const router = express.Router()
+router.use(requireAuth)
+
+const allowedStatuses: OrderStatus[] = ['new', 'confirmed', 'packed', 'delivered', 'cancelled']
+
+router.get('/', async (_req, res) => {
+  try {
+    const sheetId = process.env.GOOGLE_SHEET_ID
+    if (!sheetId) return res.status(500).json({ error: 'GOOGLE_SHEET_ID not configured' })
+    const orders = await fetchOrdersFromSheet(sheetId)
+    res.json({ orders })
+  } catch (error: any) {
+    logger.error({ error: error?.message }, 'failed to load orders')
+    res.status(500).json({ error: 'failed_to_load_orders' })
+  }
+})
+
+router.post('/', async (req, res) => {
+  try {
+    const sheetId = process.env.GOOGLE_SHEET_ID
+    if (!sheetId) return res.status(500).json({ error: 'GOOGLE_SHEET_ID not configured' })
+    const body = req.body || {}
+    if (!body.customerName || !Array.isArray(body.items) || body.items.length === 0) {
+      return res.status(400).json({ error: 'missing_required_fields' })
+    }
+    const orders = await fetchOrdersFromSheet(sheetId)
+    const created: Order = {
+      id: randomUUID(),
+      userId: body.userId ? String(body.userId) : undefined,
+      customerName: String(body.customerName).trim().slice(0, 120),
+      phone: body.phone ? String(body.phone).trim().slice(0, 32) : undefined,
+      address: body.address ? String(body.address).trim().slice(0, 240) : undefined,
+      items: body.items.map((item: any) => ({
+        slug: String(item.slug || '').trim(),
+        qty: Math.max(1, Number(item.qty || 1)),
+        title: item.title ? String(item.title).trim().slice(0, 140) : undefined,
+        priceRub: item.priceRub !== undefined ? Number(item.priceRub) : undefined
+      })),
+      totalRub: Number(body.totalRub || 0),
+      promoCode: body.promoCode ? String(body.promoCode).trim().toUpperCase() : undefined,
+      deliveryFee: Number(body.deliveryFee || 0),
+      status: 'new',
+      createdAt: new Date().toISOString(),
+      note: body.note ? String(body.note).trim().slice(0, 500) : undefined
+    }
+    orders.unshift(created)
+    await saveOrdersToSheet(sheetId, orders)
+    res.json({ success: true, order: created })
+  } catch (error: any) {
+    logger.error({ error: error?.message }, 'failed to create order')
+    res.status(500).json({ error: 'failed_to_create_order' })
+  }
+})
+
+router.put('/:id/status', async (req, res) => {
+  try {
+    const sheetId = process.env.GOOGLE_SHEET_ID
+    if (!sheetId) return res.status(500).json({ error: 'GOOGLE_SHEET_ID not configured' })
+    const status = String(req.body?.status || '').trim().toLowerCase() as OrderStatus
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ error: 'invalid_status' })
+    }
+    const orders = await fetchOrdersFromSheet(sheetId)
+    const index = orders.findIndex((order) => order.id === req.params.id)
+    if (index === -1) return res.status(404).json({ error: 'order_not_found' })
+    const current = orders[index]
+    const updated: Order = {
+      ...current,
+      status,
+      confirmedAt: status === 'confirmed' ? new Date().toISOString() : current.confirmedAt
+    }
+    orders[index] = updated
+    await saveOrdersToSheet(sheetId, orders)
+    res.json({ success: true, order: updated })
+  } catch (error: any) {
+    logger.error({ error: error?.message }, 'failed to update order status')
+    res.status(500).json({ error: 'failed_to_update_order_status' })
+  }
+})
+
+export default router

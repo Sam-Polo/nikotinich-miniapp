@@ -1,0 +1,26 @@
+# os/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# node
+**/node_modules/
+**/dist/
+**/.vite/
+**/*.tsbuildinfo
+
+# env/secrets
+**/.env
+**/.env.local
+**/sa.json
+**/credentials*.json
+
+# runtime/logs/uploads
+**/logs/
+**/*.log
+admin/backend/uploads/
+
+# misc
+*.tmp
+*.bak
