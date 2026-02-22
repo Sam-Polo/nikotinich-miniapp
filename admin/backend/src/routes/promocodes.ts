@@ -19,7 +19,7 @@ router.use(requireAuth)
 // функция для вызова импорта в основном бэкенде
 async function triggerBackendImport() {
   try {
-    const backendUrl = process.env.BACKEND_URL || 'https://shop-koshekjewerly.onrender.com'
+    const backendUrl = process.env.BACKEND_URL || ''
     const adminKey = process.env.ADMIN_IMPORT_KEY
     
     if (adminKey) {

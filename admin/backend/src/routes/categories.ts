@@ -13,7 +13,7 @@ const router = express.Router()
 
 async function triggerBackendImport() {
   try {
-    const backendUrl = process.env.BACKEND_URL || 'https://shop-koshekjewerly.onrender.com'
+    const backendUrl = process.env.BACKEND_URL || ''
     const adminKey = process.env.ADMIN_IMPORT_KEY
     if (adminKey) {
       await axios.post(`${backendUrl}/admin/import/sheets`, {}, {
@@ -67,9 +67,7 @@ router.put('/', async (req, res) => {
       valid.push({
         key: c.key.trim().toLowerCase(),
         title: (c.title || c.key).trim(),
-        description: typeof c.description === 'string' ? c.description.trim() || undefined : undefined,
         image: (c.image || '').trim(),
-        image_position: typeof c.image_position === 'string' ? c.image_position.trim() || 'center' : 'center',
         order: i
       })
     }

@@ -1,21 +1,21 @@
 import { google } from 'googleapis'
-import { getAuthFromEnv, ensureProductSheet } from './sheets-utils.js'
+import { getAuthFromEnv } from './sheets-utils.js'
 import pino from 'pino'
 
 const logger = pino()
 
-export type Category = {
+export type Line = {
+  brand_key: string
   key: string
   title: string
   image: string
   order: number
 }
 
-const SHEET_NAME = 'categories'
-const DEFAULT_HEADERS = ['title', 'key', 'image', 'order']
+const SHEET_NAME = 'lines'
+const DEFAULT_HEADERS = ['brand_key', 'title', 'key', 'image', 'order']
 
-// проверка/создание листа categories
-async function ensureCategoriesSheet(sheets: any, sheetId: string): Promise<void> {
+async function ensureLinesSheet(sheets: any, sheetId: string): Promise<void> {
   const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: sheetId })
   const exists = spreadsheet.data.sheets?.some(
     (s: any) => s.properties?.title === SHEET_NAME
@@ -33,23 +33,22 @@ async function ensureCategoriesSheet(sheets: any, sheetId: string): Promise<void
     })
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A1:D1`,
+      range: `${SHEET_NAME}!A1:E1`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [DEFAULT_HEADERS]
       }
     })
-    logger.info('лист categories создан')
+    logger.info('лист lines создан')
   }
 }
 
-// чтение категорий из Google Sheets
-export async function fetchCategoriesFromSheet(sheetId: string): Promise<Category[]> {
+export async function fetchLinesFromSheet(sheetId: string): Promise<Line[]> {
   const auth = getAuthFromEnv()
   const sheets = google.sheets({ version: 'v4', auth })
 
   try {
-    const range = `${SHEET_NAME}!A1:F500`
+    const range = `${SHEET_NAME}!A1:E500`
     const res = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range })
     const rows = res.data.values ?? []
 
@@ -60,17 +59,19 @@ export async function fetchCategoriesFromSheet(sheetId: string): Promise<Categor
     const header = rows[0].map((h: string) => h.trim().toLowerCase())
     const idx = (name: string) => header.indexOf(name)
 
-    const categories: Category[] = []
+    const lines: Line[] = []
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i]
       if (!r || r.length === 0) continue
 
       const get = (n: string) => String(r[idx(n)] ?? '').trim()
+      const brand_key = get('brand_key')
       const key = get('key')
-      if (!key) continue
+      if (!brand_key || !key) continue
 
       const order = parseInt(get('order'), 10)
-      categories.push({
+      lines.push({
+        brand_key,
         key,
         title: get('title') || key,
         image: get('image') || '',
@@ -78,10 +79,9 @@ export async function fetchCategoriesFromSheet(sheetId: string): Promise<Categor
       })
     }
 
-    categories.sort((a, b) => a.order - b.order)
-    return categories
+    lines.sort((a, b) => a.order - b.order)
+    return lines
   } catch (e: any) {
-    // лист может не существовать
     const msg = String(e?.message || '')
     if (msg.includes('Unable to parse range') || msg.includes('распознать') || e?.code === 400) {
       return []
@@ -90,19 +90,21 @@ export async function fetchCategoriesFromSheet(sheetId: string): Promise<Categor
   }
 }
 
-// сохранение списка категорий (перезапись)
-export async function saveCategoriesToSheet(
-  sheetId: string,
-  categories: Category[]
-): Promise<void> {
+export async function fetchLinesByBrand(sheetId: string, brandKey: string): Promise<Line[]> {
+  const all = await fetchLinesFromSheet(sheetId)
+  return all.filter((l) => l.brand_key.toLowerCase() === brandKey.toLowerCase())
+}
+
+export async function saveLinesToSheet(sheetId: string, lines: Line[]): Promise<void> {
   const auth = getAuthFromEnv()
   const sheets = google.sheets({ version: 'v4', auth })
 
-  await ensureCategoriesSheet(sheets, sheetId)
+  await ensureLinesSheet(sheets, sheetId)
 
   const values = [
     DEFAULT_HEADERS,
-    ...categories.map((c, i) => [
+    ...lines.map((c, i) => [
+      c.brand_key,
       c.title,
       c.key,
       c.image,
@@ -112,35 +114,21 @@ export async function saveCategoriesToSheet(
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
-    range: `${SHEET_NAME}!A1:D${values.length}`,
+    range: `${SHEET_NAME}!A1:E${values.length}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values }
   })
 
-  // очищаем лишние строки (чтобы при удалении категории старые данные не оставались)
   if (values.length < 500) {
     try {
       await sheets.spreadsheets.values.clear({
         spreadsheetId: sheetId,
-        range: `${SHEET_NAME}!A${values.length + 1}:D500`
+        range: `${SHEET_NAME}!A${values.length + 1}:E500`
       })
     } catch (e: any) {
-      // если диапазон пуст — clear может вернуть ошибку, игнорируем
-      logger.debug({ error: e?.message }, 'очистка лишних строк categories')
+      logger.debug({ error: e?.message }, 'очистка лишних строк lines')
     }
   }
 
-  // создаём листы товаров для категорий, если их ещё нет (листы с товарами никогда не удаляем)
-  for (const c of categories) {
-    const key = c.key.trim()
-    if (key) {
-      try {
-        await ensureProductSheet(auth, sheetId, key)
-      } catch (e: any) {
-        logger.warn({ key, error: e?.message }, 'не удалось создать лист категории')
-      }
-    }
-  }
-
-  logger.info({ count: categories.length }, 'категории сохранены в Google Sheets')
+  logger.info({ count: lines.length }, 'линейки сохранены в Google Sheets')
 }

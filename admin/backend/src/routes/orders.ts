@@ -9,11 +9,13 @@ router.use(requireAuth)
 
 const allowedStatuses: OrderStatus[] = ['new', 'confirmed', 'packed', 'delivered', 'cancelled']
 
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
   try {
     const sheetId = process.env.GOOGLE_SHEET_ID
     if (!sheetId) return res.status(500).json({ error: 'GOOGLE_SHEET_ID not configured' })
-    const orders = await fetchOrdersFromSheet(sheetId)
+    let orders = await fetchOrdersFromSheet(sheetId)
+    const userId = typeof req.query.user_id === 'string' ? req.query.user_id.trim() : null
+    if (userId) orders = orders.filter((o) => o.userId === userId)
     res.json({ orders })
   } catch (error: any) {
     logger.error({ error: error?.message }, 'failed to load orders')

@@ -39,8 +39,8 @@ router.post(
         logger.warn('запрос без файла или поле не "file"')
         return res.status(400).json({ error: 'файл не загружен' })
       }
-
-      const processed = await processImageBuffer(req.file.buffer)
+      const cropToSquare = req.query.square === '1' || req.query.square === 'true'
+      const processed = await processImageBuffer(req.file.buffer, { cropToSquare })
       const uploadResult = await uploadPublicMedia(
         processed.buffer,
         req.file.originalname,

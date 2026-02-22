@@ -16,14 +16,27 @@ export function isAllowedImageMime(mimeType: string): boolean {
   return allowedMimeTypes.has(mimeType.trim().toLowerCase())
 }
 
-export async function processImageBuffer(input: Buffer): Promise<ProcessedImage> {
-  const pipeline = sharp(input, { failOn: 'none' }).rotate()
-  const metadata = await pipeline.metadata()
-  const resized = metadata.width && metadata.width > mediaConfig.image.maxWidth
-    ? pipeline.resize({ width: mediaConfig.image.maxWidth, withoutEnlargement: true })
-    : pipeline
+export type ProcessImageOptions = {
+  cropToSquare?: boolean
+}
 
-  const output = await resized
+export async function processImageBuffer(input: Buffer, options?: ProcessImageOptions): Promise<ProcessedImage> {
+  const pipeline = sharp(input, { failOn: 'none' }).rotate()
+  let current = pipeline
+  const metadata = await pipeline.metadata()
+  if (metadata.width && metadata.width > mediaConfig.image.maxWidth) {
+    current = current.resize({ width: mediaConfig.image.maxWidth, withoutEnlargement: true })
+  }
+  if (options?.cropToSquare) {
+    const meta = await current.metadata()
+    const w = meta.width ?? 0
+    const h = meta.height ?? 0
+    const size = Math.min(w, h, mediaConfig.image.maxWidth)
+    if (size > 0) {
+      current = current.resize({ width: size, height: size, fit: 'cover', position: 'center' })
+    }
+  }
+  const output = await current
     .webp({ quality: mediaConfig.image.webpQuality })
     .toBuffer({ resolveWithObject: true })
 

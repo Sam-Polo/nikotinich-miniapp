@@ -50,3 +50,26 @@ export function normalizeArticle(article: string | undefined): string | undefine
   return num != null ? formatArticle(num) : undefined
 }
 
+// нормализация ключа бренда/линейки: нижний регистр, без пробелов
+export function normalizeKey(value: string): string {
+  return value.replace(/\s/g, '').toLowerCase()
+}
+
+// допустимы только латиница, цифры, дефис, подчёркивание
+const KEY_REGEX = /^[a-z0-9_-]*$/
+export function isValidKey(value: string): boolean {
+  return KEY_REGEX.test(value)
+}
+
+// недопустимые символы в ключе (для сообщения пользователю)
+export function getInvalidKeyChars(value: string): string[] {
+  const seen = new Set<string>()
+  const lower = value.toLowerCase()
+  for (const char of lower) {
+    if (!/[a-z0-9_-]/.test(char) && char !== ' ') {
+      seen.add(char)
+    }
+  }
+  return Array.from(seen)
+}
+

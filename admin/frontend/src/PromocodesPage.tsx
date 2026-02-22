@@ -18,7 +18,7 @@ type Product = {
   article?: string
 }
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'catalogMeta' | 'content' | 'orders'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users'
 
 function PromocodesPage({ onNavigate }: { onNavigate?: (page: AdminPage) => void }) {
   const handleLogout = () => {
@@ -113,27 +113,30 @@ function PromocodesPage({ onNavigate }: { onNavigate?: (page: AdminPage) => void
           >
             Категории
           </button>
-          <button className="nav-btn" onClick={() => onNavigate?.('catalogMeta')}>
-            Справочники
-          </button>
+          <button className="nav-btn" onClick={() => onNavigate?.('brands')}>Бренды</button>
+          <button className="nav-btn" onClick={() => onNavigate?.('lines')}>Линейки</button>
           <button className="nav-btn" onClick={() => onNavigate?.('content')}>
             Контент
           </button>
           <button className="nav-btn" onClick={() => onNavigate?.('orders')}>
             Заказы
           </button>
+          <button className="nav-btn" onClick={() => onNavigate?.('users')}>Пользователи</button>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-add" onClick={() => setIsAddModalOpen(true)}>
-            + Добавить промокод
-          </button>
-          <button onClick={handleLogout} className="logout-btn">
-            Выйти
-          </button>
-        </div>
+        <button onClick={handleLogout} className="logout-btn">
+          Выйти
+        </button>
       </header>
 
-      <div className="promocodes-list">
+      <div className="admin-content">
+        <div className="toolbar toolbar--transparent">
+          <div className="toolbar-row-actions">
+            <button className="btn btn-add" onClick={() => setIsAddModalOpen(true)}>
+              Добавить промокод
+            </button>
+          </div>
+        </div>
+        <div className="promocodes-list">
         {promocodes.length === 0 ? (
           <div className="empty-state">Промокоды не найдены</div>
         ) : (
@@ -194,6 +197,7 @@ function PromocodesPage({ onNavigate }: { onNavigate?: (page: AdminPage) => void
             </tbody>
           </table>
         )}
+        </div>
       </div>
 
       {isAddModalOpen && (
@@ -522,10 +526,10 @@ function PromocodeFormModal({
                             display: 'flex',
                             alignItems: 'center',
                             padding: '0.75rem',
-                            border: `1px solid ${isSelected ? '#a855f7' : '#eee'}`,
+                            border: `1px solid ${isSelected ? '#0891b2' : '#eee'}`,
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            backgroundColor: isSelected ? 'rgba(168, 85, 247, 0.1)' : 'white',
+                            backgroundColor: isSelected ? 'rgba(8, 145, 178, 0.08)' : 'white',
                             transition: 'all 0.2s'
                           }}
                         >

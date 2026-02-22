@@ -35,7 +35,7 @@ function sanitizeOptionalString(value: unknown, maxLength = 120): string | undef
 // функция для вызова импорта в основном бэкенде
 async function triggerBackendImport() {
   try {
-    const backendUrl = process.env.BACKEND_URL || 'https://shop-koshekjewerly.onrender.com'
+    const backendUrl = process.env.BACKEND_URL || ''
     const adminKey = process.env.ADMIN_IMPORT_KEY
     
     if (adminKey) {
@@ -56,19 +56,35 @@ async function triggerBackendImport() {
 // все роуты требуют авторизации
 router.use(requireAuth)
 
-// получение списка всех товаров
+// получение списка всех товаров; опционально ?search= — фильтр по названию, артикулу, slug (до 50 шт.)
+const PRODUCT_SEARCH_LIMIT = 50
+
 router.get('/', async (req, res) => {
   try {
     const sheetId = process.env.GOOGLE_SHEET_ID
     if (!sheetId) {
       return res.status(500).json({ error: 'GOOGLE_SHEET_ID not configured' })
     }
-    
+
     logger.info('загрузка товаров из Google Sheets')
-    const products = await fetchProductsFromSheet(sheetId)
-    // товары уже в порядке строк таблицы, сортировка не нужна
-    
-    logger.info({ count: products.length }, 'товары загружены')
+    let products = await fetchProductsFromSheet(sheetId)
+
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : ''
+    if (search.length > 0) {
+      const q = search.toLowerCase()
+      products = products
+        .filter((p) => {
+          const title = (p.title || '').toLowerCase()
+          const slug = (p.slug || '').toLowerCase()
+          const article = (p.article != null ? String(p.article) : '').toLowerCase()
+          return title.includes(q) || slug.includes(q) || article.includes(q)
+        })
+        .slice(0, PRODUCT_SEARCH_LIMIT)
+      logger.info({ search: q, count: products.length }, 'поиск товаров')
+    } else {
+      logger.info({ count: products.length }, 'товары загружены')
+    }
+
     res.json({ products })
   } catch (error: any) {
     logger.error({ error: error?.message }, 'ошибка загрузки товаров')
@@ -105,8 +121,12 @@ router.post('/', async (req, res) => {
     if (productData.description && productData.description.length > 5000) {
       return res.status(400).json({ error: 'description_too_long' })
     }
-    if (productData.badge_text && productData.badge_text.length > 50) {
-      return res.status(400).json({ error: 'badge_text_too_long' })
+    const allowedStrength = ['легкая', 'средняя', 'крепкая']
+    if (productData.strength !== undefined && productData.strength !== null && productData.strength !== '') {
+      const s = String(productData.strength).trim().toLowerCase()
+      if (!allowedStrength.includes(s)) {
+        return res.status(400).json({ error: 'invalid_strength' })
+      }
     }
     if (productData.article && productData.article.length > 50) {
       return res.status(400).json({ error: 'article_too_long' })
@@ -210,19 +230,17 @@ router.post('/', async (req, res) => {
       discount_price_rub: productData.discount_price_rub !== undefined && productData.discount_price_rub !== null
         ? Number(productData.discount_price_rub)
         : undefined,
-      badge_text: productData.badge_text?.trim() || undefined,
       images: productData.images && Array.isArray(productData.images)
         ? productData.images.filter((img: string) => img.trim())
         : [],
       active: productData.active !== undefined ? Boolean(productData.active) : true,
       stock: productData.stock !== undefined ? Number(productData.stock) : undefined,
       article: newArticleNorm || productData.article?.trim() || undefined,
-      product_type: sanitizeOptionalString(productData.product_type, 40),
       brand: sanitizeOptionalString(productData.brand, 80),
       line: sanitizeOptionalString(productData.line, 80),
-      model: sanitizeOptionalString(productData.model, 80),
-      flavor: sanitizeOptionalString(productData.flavor, 120),
-      strength: sanitizeOptionalString(productData.strength, 80),
+      strength: productData.strength && String(productData.strength).trim()
+        ? String(productData.strength).trim().toLowerCase()
+        : undefined,
       image_keys: productData.image_keys && Array.isArray(productData.image_keys)
         ? productData.image_keys.filter((key: string) => key.trim())
         : []
@@ -273,8 +291,12 @@ router.put('/:slug', async (req, res) => {
     if (productData.description && productData.description.length > 1000) {
       return res.status(400).json({ error: 'description_too_long' })
     }
-    if (productData.badge_text && productData.badge_text.length > 50) {
-      return res.status(400).json({ error: 'badge_text_too_long' })
+    const allowedStrengthEdit = ['легкая', 'средняя', 'крепкая']
+    if (productData.strength !== undefined && productData.strength !== null && productData.strength !== '') {
+      const s = String(productData.strength).trim().toLowerCase()
+      if (!allowedStrengthEdit.includes(s)) {
+        return res.status(400).json({ error: 'invalid_strength' })
+      }
     }
     if (productData.article && productData.article.length > 50) {
       return res.status(400).json({ error: 'article_too_long' })
@@ -374,19 +396,17 @@ router.put('/:slug', async (req, res) => {
       discount_price_rub: productData.discount_price_rub !== undefined && productData.discount_price_rub !== null
         ? Number(productData.discount_price_rub)
         : undefined,
-      badge_text: productData.badge_text?.trim() || undefined,
       images: productData.images && Array.isArray(productData.images)
         ? productData.images.filter((img: string) => img.trim())
         : [],
       active: productData.active !== undefined ? Boolean(productData.active) : true,
       stock: productData.stock !== undefined ? Number(productData.stock) : undefined,
       article: oldProduct.article,
-      product_type: sanitizeOptionalString(productData.product_type, 40),
       brand: sanitizeOptionalString(productData.brand, 80),
       line: sanitizeOptionalString(productData.line, 80),
-      model: sanitizeOptionalString(productData.model, 80),
-      flavor: sanitizeOptionalString(productData.flavor, 120),
-      strength: sanitizeOptionalString(productData.strength, 80),
+      strength: productData.strength && String(productData.strength).trim()
+        ? String(productData.strength).trim().toLowerCase()
+        : undefined,
       image_keys: productData.image_keys && Array.isArray(productData.image_keys)
         ? productData.image_keys.filter((key: string) => key.trim())
         : (oldProduct.image_keys || [])

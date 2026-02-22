@@ -60,6 +60,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
       'article_already_exists': 'Артикул уже существует',
       'slug_already_exists': 'Slug уже существует',
       'invalid_category': 'Некорректная категория',
+      'invalid_strength': 'Крепость: выберите легкая, средняя или крепкая',
       'product_not_found': 'Товар не найден',
       'product_not_in_category': 'Товар не найден в указанной категории',
       'file_too_large': 'Файл слишком большой (максимум 10 МБ)',
@@ -67,8 +68,9 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
       'failed_to_update_product': 'Ошибка обновления товара',
       'failed_to_delete_product': 'Ошибка удаления товара',
       'GOOGLE_SHEET_ID not configured': 'GOOGLE_SHEET_ID не настроен',
-      'ordersClosed must be a boolean': 'ordersClosed должен быть boolean',
-      'closeDate must be in format YYYY-MM-DD': 'Дата должна быть в формате YYYY-MM-DD'
+      'missing_telegram_id': 'Укажите Telegram ID',
+      'telegram_id_already_exists': 'Пользователь с таким Telegram ID уже есть',
+      'user_not_found': 'Пользователь не найден',
     }
     
     throw new Error(errorMessages[errorMessage] || errorMessage)
@@ -96,9 +98,12 @@ export const api = {
     return data
   },
   
-  // получение списка товаров
-  async getProducts() {
-    return fetchWithAuth('/api/products')
+  // получение списка товаров; опционально search — фильтр по названию, артикулу, slug
+  async getProducts(search?: string) {
+    const url = search && search.trim()
+      ? `/api/products?search=${encodeURIComponent(search.trim())}`
+      : '/api/products'
+    return fetchWithAuth(url)
   },
 
   // добавление товара
@@ -138,8 +143,8 @@ export const api = {
     })
   },
 
-  // загрузка фото в media storage (таймаут 2 мин — большие фото по медленной сети)
-  async uploadImage(file: File): Promise<{ url: string; key?: string }> {
+  // загрузка фото в media storage (таймаут 2 мин). options.square — обрезка до 1:1 по центру
+  async uploadImage(file: File, options?: { square?: boolean }): Promise<{ url: string; key?: string }> {
     const formData = new FormData()
     formData.append('file', file)
 
@@ -147,7 +152,8 @@ export const api = {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 120000)
 
-    const response = await fetch(`${API_URL}/api/upload`, {
+    const uploadUrl = options?.square ? `${API_URL}/api/upload?square=1` : `${API_URL}/api/upload`
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -199,32 +205,12 @@ export const api = {
     })
   },
 
-  // настройки заказов
-  async getOrdersSettings() {
-    return fetchWithAuth('/api/settings/orders-status')
-  },
-
-  async updateOrdersSettings(settings: {
-    ordersClosed: boolean
-    closeDate?: string
-    deliveryFee?: number
-    freeDeliveryFrom?: number
-    referralPercentBefore10?: number
-    referralPercentAfter10?: number
-  }) {
-    return fetchWithAuth('/api/settings/orders-status', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings)
-    })
-  },
-
   // категории
   async getCategories() {
     return fetchWithAuth('/api/categories')
   },
 
-  async saveCategories(categories: Array<{ key: string; title: string; description?: string; image: string; image_position?: string }>) {
+  async saveCategories(categories: Array<{ key: string; title: string; image: string }>) {
     return fetchWithAuth('/api/categories', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -232,50 +218,72 @@ export const api = {
     })
   },
 
-  // словари каталога
-  async getCatalogMeta() {
-    return fetchWithAuth('/api/catalog-meta')
+  // бренды и линейки
+  async getBrands(categoryKey?: string) {
+    const url = categoryKey
+      ? `/api/brands?category_key=${encodeURIComponent(categoryKey)}`
+      : '/api/brands'
+    return fetchWithAuth(url)
   },
-  async saveCatalogMeta(items: any[]) {
-    return fetchWithAuth('/api/catalog-meta', {
+  async saveBrands(brands: Array<{ category_key: string; key: string; title: string; image: string }>) {
+    return fetchWithAuth('/api/brands', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brands })
+    })
+  },
+  async getLines(brandKey?: string) {
+    const url = brandKey
+      ? `/api/lines?brand_key=${encodeURIComponent(brandKey)}`
+      : '/api/lines'
+    return fetchWithAuth(url)
+  },
+  async saveLines(lines: Array<{ brand_key: string; key: string; title: string; image: string }>) {
+    return fetchWithAuth('/api/lines', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lines })
+    })
+  },
+
+  // пользователи миниаппа
+  async getUsers() {
+    return fetchWithAuth('/api/users')
+  },
+  async createUser(user: { telegram_id: string; username: string; email?: string; phone?: string; role: string; active: boolean }) {
+    return fetchWithAuth('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    })
+  },
+  async updateUser(user: { telegram_id: string; username?: string; email?: string; phone?: string; role?: string; active?: boolean }) {
+    return fetchWithAuth('/api/users', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    })
+  },
+  async deleteUser(telegramId: string) {
+    return fetchWithAuth(`/api/users?telegram_id=${encodeURIComponent(telegramId)}`, { method: 'DELETE' })
+  },
+
+  // лента контента (новости + подборки в одном порядке)
+  async getContent() {
+    return fetchWithAuth('/api/content')
+  },
+  async saveContent(items: any[]) {
+    return fetchWithAuth('/api/content', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items })
     })
   },
 
-  // новости
-  async getNews() {
-    return fetchWithAuth('/api/news')
-  },
-  async saveNews(news: any[]) {
-    return fetchWithAuth('/api/news', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ news })
-    })
-  },
-  async deleteNews(id: string) {
-    return fetchWithAuth(`/api/news/${id}`, {
-      method: 'DELETE'
-    })
-  },
-
-  // подборки
-  async getCollections() {
-    return fetchWithAuth('/api/collections')
-  },
-  async saveCollections(collections: any[]) {
-    return fetchWithAuth('/api/collections', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collections })
-    })
-  },
-
   // заказы
-  async getOrders() {
-    return fetchWithAuth('/api/orders')
+  async getOrders(userId?: string) {
+    const url = userId ? `/api/orders?user_id=${encodeURIComponent(userId)}` : '/api/orders'
+    return fetchWithAuth(url)
   },
   async createOrder(order: any) {
     return fetchWithAuth('/api/orders', {

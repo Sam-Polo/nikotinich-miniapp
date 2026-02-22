@@ -3,9 +3,11 @@ import { api, getToken, saveToken, removeToken } from './api'
 import { generateSlug, formatArticle, parseArticle, normalizeArticle } from './utils'
 import PromocodesPage from './PromocodesPage'
 import CategoriesPage from './CategoriesPage'
-import CatalogMetaPage from './CatalogMetaPage'
 import ContentPage from './ContentPage'
 import OrdersPage from './OrdersPage'
+import BrandsPage from './BrandsPage'
+import LinesPage from './LinesPage'
+import UsersPage from './UsersPage'
 import {
   DndContext,
   closestCenter,
@@ -25,7 +27,10 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import './App.css'
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'catalogMeta' | 'content' | 'orders'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users'
+
+export type ProductFiltersParams = { category_key?: string; brand_key?: string; line_key?: string }
+export type OrderFiltersParams = { user_id?: string }
 
 // компонент уведомлений
 function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
@@ -115,17 +120,13 @@ type Product = {
   categories?: string[] // все категории товара
   price_rub: number
   discount_price_rub?: number // цена со скидкой (если заполнена - используется вместо price_rub)
-  badge_text?: string // текст плашки (например, "СКИДКА", "НОВИНКА", "ПЕРСОНАЛИЗАЦИЯ")
   images: string[]
   active: boolean
   stock?: number
   article?: string
-  product_type?: string
   brand?: string
   line?: string
-  model?: string
-  flavor?: string
-  strength?: string
+  strength?: string // легкая | средняя | крепкая
   image_keys?: string[]
   /** порядок в каждой категории (ключ — категория, значение — индекс строки в листе) */
   orderInCategory?: Record<string, number>
@@ -190,12 +191,24 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
 
 type CategoryOption = { key: string; title: string }
 
-function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }) {
+function ProductsList({
+  onNavigate,
+  initialProductFilters,
+  onClearInitialFilters
+}: {
+  onNavigate?: (page: AdminPage, params?: ProductFiltersParams) => void
+  initialProductFilters?: ProductFiltersParams | null
+  onClearInitialFilters?: () => void
+}) {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<CategoryOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedBrand, setSelectedBrand] = useState<string>('all')
+  const [selectedLine, setSelectedLine] = useState<string>('all')
+  const [brandsForFilter, setBrandsForFilter] = useState<CategoryOption[]>([])
+  const [linesForFilter, setLinesForFilter] = useState<CategoryOption[]>([])
   const [searchArticle, setSearchArticle] = useState<string>('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -209,20 +222,78 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
   const [reorderedProductsByCategory, setReorderedProductsByCategory] = useState<Record<string, Product[]>>({})
   const [isSavingProductsOrder, setIsSavingProductsOrder] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
-  const [ordersClosed, setOrdersClosed] = useState(false)
-  const [ordersCloseDate, setOrdersCloseDate] = useState<string>('')
-  const [deliveryFee, setDeliveryFee] = useState<number>(300)
-  const [freeDeliveryFrom, setFreeDeliveryFrom] = useState<number>(3500)
-  const [referralPercentBefore10, setReferralPercentBefore10] = useState<number>(3)
-  const [referralPercentAfter10, setReferralPercentAfter10] = useState<number>(5)
-  const [isOrdersSettingsModalOpen, setIsOrdersSettingsModalOpen] = useState(false)
-  const [isSavingOrdersSettings, setIsSavingOrdersSettings] = useState(false)
+  const [productSortKey, setProductSortKey] = useState<'order' | 'title' | 'article'>('order')
 
   useEffect(() => {
     loadProducts()
-    loadOrdersSettings()
     loadCategories()
   }, [])
+
+  // бренды для фильтра по выбранной категории
+  useEffect(() => {
+    if (selectedCategory === 'all') {
+      setBrandsForFilter([])
+      setSelectedBrand('all')
+      setSelectedLine('all')
+      setLinesForFilter([])
+      return
+    }
+    api.getBrands(selectedCategory)
+      .then((data: { brands?: { key: string; title: string }[] }) => {
+        setBrandsForFilter((data.brands || []).map((b) => ({ key: b.key, title: b.title || b.key })))
+        setSelectedBrand('all')
+        setSelectedLine('all')
+        setLinesForFilter([])
+      })
+      .catch(() => {
+        setBrandsForFilter([])
+        setSelectedBrand('all')
+        setSelectedLine('all')
+        setLinesForFilter([])
+      })
+  }, [selectedCategory])
+
+  // линейки для фильтра по выбранному бренду
+  useEffect(() => {
+    if (selectedBrand === 'all') {
+      setLinesForFilter([])
+      setSelectedLine('all')
+      return
+    }
+    api.getLines(selectedBrand)
+      .then((data: { lines?: { key: string; title: string }[] }) => {
+        setLinesForFilter((data.lines || []).map((l) => ({ key: l.key, title: l.title || l.key })))
+        setSelectedLine('all')
+      })
+      .catch(() => {
+        setLinesForFilter([])
+        setSelectedLine('all')
+      })
+  }, [selectedBrand])
+
+  // применение начальных фильтров при переходе из Бренды/Линейки
+  useEffect(() => {
+    if (!initialProductFilters?.category_key) return
+    setSelectedCategory(initialProductFilters.category_key)
+  }, [initialProductFilters?.category_key])
+
+  // сначала выставляем только бренд; иначе эффект загрузки линеек по selectedBrand в .then() затирает selectedLine на 'all'
+  useEffect(() => {
+    if (!initialProductFilters || !brandsForFilter.length) return
+    const brand = initialProductFilters.brand_key || 'all'
+    setSelectedBrand(brand)
+    if (!initialProductFilters.line_key) {
+      setSelectedLine('all')
+      onClearInitialFilters?.()
+    }
+  }, [initialProductFilters, brandsForFilter.length])
+
+  // после загрузки линеек по бренду выставляем линейку из initialProductFilters и сбрасываем params
+  useEffect(() => {
+    if (!initialProductFilters?.line_key || !linesForFilter.length) return
+    setSelectedLine(initialProductFilters.line_key)
+    onClearInitialFilters?.()
+  }, [initialProductFilters?.line_key, linesForFilter.length])
 
   const loadCategories = async () => {
     try {
@@ -231,74 +302,6 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
       setCategories(list)
     } catch (err: any) {
       console.error('Ошибка загрузки категорий:', err)
-    }
-  }
-
-  const loadOrdersSettings = async () => {
-    try {
-      const settings = await api.getOrdersSettings()
-      setOrdersClosed(settings.ordersClosed || false)
-      setOrdersCloseDate(settings.closeDate || '')
-      setDeliveryFee(Number(settings.deliveryFee ?? 300))
-      setFreeDeliveryFrom(Number(settings.freeDeliveryFrom ?? 3500))
-      setReferralPercentBefore10(Number(settings.referralPercentBefore10 ?? 3))
-      setReferralPercentAfter10(Number(settings.referralPercentAfter10 ?? 5))
-    } catch (error: any) {
-      console.error('Ошибка загрузки настроек заказов:', error)
-    }
-  }
-
-  const handleToggleOrdersStatus = () => {
-    if (ordersClosed) {
-      // если заказы закрыты - открываем простое подтверждающее окно
-      setIsOrdersSettingsModalOpen(true)
-    } else {
-      // если заказы открыты - открываем модальное окно с полем для даты
-      setIsOrdersSettingsModalOpen(true)
-    }
-  }
-
-  const handleOpenOrders = async () => {
-    try {
-      setIsSavingOrdersSettings(true)
-      await api.updateOrdersSettings({
-        ordersClosed: false,
-        closeDate: undefined, // очищаем дату при открытии
-        deliveryFee,
-        freeDeliveryFrom,
-        referralPercentBefore10,
-        referralPercentAfter10
-      })
-      // перезагружаем настройки из API, чтобы синхронизировать состояние
-      await loadOrdersSettings()
-      setIsOrdersSettingsModalOpen(false)
-      setToast({ message: 'Заказы открыты', type: 'success' })
-    } catch (error: any) {
-      setToast({ message: error.message || 'Ошибка открытия заказов', type: 'error' })
-    } finally {
-      setIsSavingOrdersSettings(false)
-    }
-  }
-
-  const handleSaveOrdersSettings = async () => {
-    try {
-      setIsSavingOrdersSettings(true)
-      await api.updateOrdersSettings({
-        ordersClosed: true,
-        closeDate: ordersCloseDate || undefined,
-        deliveryFee,
-        freeDeliveryFrom,
-        referralPercentBefore10,
-        referralPercentAfter10
-      })
-      // перезагружаем настройки из API, чтобы синхронизировать состояние
-      await loadOrdersSettings()
-      setIsOrdersSettingsModalOpen(false)
-      setToast({ message: 'Заказы закрыты', type: 'success' })
-    } catch (error: any) {
-      setToast({ message: error.message || 'Ошибка сохранения настроек', type: 'error' })
-    } finally {
-      setIsSavingOrdersSettings(false)
     }
   }
 
@@ -416,13 +419,17 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
     ? categories.map((c) => c.key)
     : Array.from(new Set(products.flatMap((p) => p.categories || [p.category]))).sort()
 
-  // фильтруем товары по категории и артикулу
+  // фильтруем товары по категории, бренду, линейке и артикулу
   const filteredProducts = products.filter(p => {
     const productCats = p.categories || [p.category]
     const matchesCategory = selectedCategory === 'all' || productCats.includes(selectedCategory)
+    const productBrand = (p.brand || '').trim().toLowerCase()
+    const matchesBrand = selectedBrand === 'all' || productBrand === selectedBrand
+    const productLine = (p.line || '').trim().toLowerCase()
+    const matchesLine = selectedLine === 'all' || productLine === selectedLine
     const matchesArticle = !searchArticle.trim() ||
       (p.article && p.article.toLowerCase().includes(searchArticle.trim().toLowerCase()))
-    return matchesCategory && matchesArticle
+    return matchesCategory && matchesBrand && matchesLine && matchesArticle
   })
 
   // группируем по категориям и сортируем по порядку в листе (orderInCategory), чтобы порядок не «улетал»
@@ -434,12 +441,18 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
     }
     return acc
   }, {} as Record<string, Product[]>)
-  // в каждой категории сортируем по orderInCategory[cat] (порядок строк в таблице)
+  // в каждой категории сортируем по выбранному полю (порядок / название / артикул)
   for (const cat of Object.keys(groupedProducts)) {
     groupedProducts[cat].sort((a, b) => {
-      const orderA = a.orderInCategory?.[cat] ?? 9999
-      const orderB = b.orderInCategory?.[cat] ?? 9999
-      return orderA - orderB
+      if (productSortKey === 'order') {
+        const orderA = a.orderInCategory?.[cat] ?? 9999
+        const orderB = b.orderInCategory?.[cat] ?? 9999
+        return orderA - orderB
+      }
+      if (productSortKey === 'title') {
+        return (a.title || '').localeCompare(b.title || '')
+      }
+      return (a.article || '').localeCompare(b.article || '')
     })
   }
 
@@ -609,14 +622,20 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
           >
             Категории
           </button>
-          <button className="nav-btn" onClick={() => onNavigate?.('catalogMeta')}>
-            Справочники
+          <button className="nav-btn" onClick={() => onNavigate?.('brands')}>
+            Бренды
+          </button>
+          <button className="nav-btn" onClick={() => onNavigate?.('lines')}>
+            Линейки
           </button>
           <button className="nav-btn" onClick={() => onNavigate?.('content')}>
             Контент
           </button>
           <button className="nav-btn" onClick={() => onNavigate?.('orders')}>
             Заказы
+          </button>
+          <button className="nav-btn" onClick={() => onNavigate?.('users')}>
+            Пользователи
           </button>
         </div>
         <button onClick={handleLogout} className="logout-btn">
@@ -625,76 +644,111 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
       </header>
 
       <div className="admin-content">
-        <div className="toolbar">
-          <div className="toolbar-filters">
-            <label>
-              Категория:
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                <option value="all">Все категории</option>
-                {categoriesForFilter.map((cat) => {
-                  const catOption = categories.find((c) => c.key === cat)
-                  return (
-                    <option key={cat} value={cat}>
-                      {catOption ? catOption.title : cat}
-                    </option>
-                  )
-                })}
-              </select>
-            </label>
-            <label className="search-label">
-              Поиск по артикулу:
-              <div className="search-input-wrapper">
-                <input
-                  type="text"
-                  value={searchArticle}
-                  onChange={(e) => setSearchArticle(e.target.value)}
-                  placeholder="Введите артикул"
-                  className="search-input"
-                />
-                {searchArticle && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchArticle('')}
-                    className="search-clear"
-                    title="Очистить поиск"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            </label>
-            <button onClick={loadProducts} disabled={loading || isActivating || isDeactivating || isSavingProductsOrder} className="btn-refresh" title="Обновить">
-              <span className={`refresh-icon ${(loading || isActivating || isDeactivating || isSavingProductsOrder) ? 'spinning' : ''}`}>↻</span>
-            </button>
+        <div className="toolbar toolbar--products">
+          <div className="toolbar-row-filters">
+            <div className="toolbar-filters">
+              <label>
+                Категория:
+                <select
+                  className="admin-select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="all">Все категории</option>
+                  {categoriesForFilter.map((cat) => {
+                    const catOption = categories.find((c) => c.key === cat)
+                    return (
+                      <option key={cat} value={cat}>
+                        {catOption ? catOption.title : cat}
+                      </option>
+                    )
+                  })}
+                </select>
+              </label>
+              <label>
+                Бренд:
+                <select
+                  className="admin-select"
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  disabled={selectedCategory === 'all' || brandsForFilter.length === 0}
+                >
+                  <option value="all">Все бренды</option>
+                  {brandsForFilter.map((b) => (
+                    <option key={b.key} value={b.key}>{b.title}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Сортировка:
+                <select
+                  className="admin-select"
+                  value={productSortKey}
+                  onChange={(e) => setProductSortKey(e.target.value as 'order' | 'title' | 'article')}
+                >
+                  <option value="order">По порядку</option>
+                  <option value="title">По названию</option>
+                  <option value="article">По артикулу</option>
+                </select>
+              </label>
+              <label>
+                Линейка:
+                <select
+                  className="admin-select"
+                  value={selectedLine}
+                  onChange={(e) => setSelectedLine(e.target.value)}
+                  disabled={selectedBrand === 'all' || linesForFilter.length === 0}
+                >
+                  <option value="all">Все линейки</option>
+                  {linesForFilter.map((l) => (
+                    <option key={l.key} value={l.key}>{l.title}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="search-label">
+                Поиск по артикулу:
+                <div className="search-input-wrapper">
+                  <input
+                    type="text"
+                    value={searchArticle}
+                    onChange={(e) => setSearchArticle(e.target.value)}
+                    placeholder="Введите артикул"
+                    className="search-input"
+                  />
+                  {searchArticle && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchArticle('')}
+                      className="search-clear"
+                      title="Очистить поиск"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </label>
+            </div>
             {selectedProductSlugs.size > 0 && (() => {
-              // определяем, активны ли выбранные товары
               const selectedProducts = products.filter(p => selectedProductSlugs.has(p.slug))
               const allActive = selectedProducts.every(p => p.active)
               const allInactive = selectedProducts.every(p => !p.active)
-              
-              // если все активны - показываем кнопку отключить
-              // если все неактивны - показываем кнопку включить
-              // если смешанные - показываем обе кнопки
               return (
                 <>
                   {allActive && (
-                    <button 
-                      onClick={handleDeactivateSelected} 
+                    <button
+                      onClick={handleDeactivateSelected}
                       disabled={isDeactivating || isActivating || loading}
-                      className="btn-deactivate" 
+                      className="btn-deactivate"
                       title="Отключить выбранные"
                     >
                       {isDeactivating ? 'Отключение...' : `Отключить (${selectedProductSlugs.size})`}
                     </button>
                   )}
                   {allInactive && (
-                    <button 
-                      onClick={handleActivateSelected} 
+                    <button
+                      onClick={handleActivateSelected}
                       disabled={isActivating || isDeactivating || loading}
-                      className="btn-activate" 
+                      className="btn-activate"
                       title="Включить выбранные"
                     >
                       {isActivating ? 'Включение...' : `Включить (${selectedProductSlugs.size})`}
@@ -702,18 +756,18 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
                   )}
                   {!allActive && !allInactive && (
                     <>
-                      <button 
-                        onClick={handleActivateSelected} 
+                      <button
+                        onClick={handleActivateSelected}
                         disabled={isActivating || isDeactivating || loading}
-                        className="btn-activate" 
+                        className="btn-activate"
                         title="Включить выбранные"
                       >
                         {isActivating ? 'Включение...' : `Включить (${selectedProductSlugs.size})`}
                       </button>
-                      <button 
-                        onClick={handleDeactivateSelected} 
+                      <button
+                        onClick={handleDeactivateSelected}
                         disabled={isDeactivating || isActivating || loading}
-                        className="btn-deactivate" 
+                        className="btn-deactivate"
                         title="Отключить выбранные"
                       >
                         {isDeactivating ? 'Отключение...' : `Отключить (${selectedProductSlugs.size})`}
@@ -724,18 +778,18 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
               )
             })()}
           </div>
-          <div className="toolbar-actions">
+          <div className="toolbar-row-actions">
+            <button onClick={loadProducts} disabled={loading || isActivating || isDeactivating || isSavingProductsOrder} className="btn-refresh" title="Обновить">
+              <span className={`refresh-icon ${(loading || isActivating || isDeactivating || isSavingProductsOrder) ? 'spinning' : ''}`}>↻</span>
+            </button>
             {!isReorderProductsMode ? (
               <>
-                <button onClick={handleToggleOrdersStatus} className="btn-orders-status">
-                  {ordersClosed ? 'Открыть заказы' : 'Закрыть заказы'}
-                </button>
                 <button onClick={handleStartReorderProducts} className="btn-reorder-products">
                   Порядок товаров
                 </button>
                 <button
                   onClick={() => {
-                    loadCategories() // обновляем список категорий (могли добавить новую)
+                    loadCategories()
                     setIsAddModalOpen(true)
                   }}
                   className="btn-add"
@@ -745,14 +799,14 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
               </>
             ) : (
               <>
-                <button 
+                <button
                   onClick={handleSaveProductsOrder}
                   disabled={isSavingProductsOrder}
                   className="btn-save"
                 >
                   {isSavingProductsOrder ? 'Сохранение...' : 'Сохранить'}
                 </button>
-                <button 
+                <button
                   onClick={handleCancelReorderProducts}
                   disabled={isSavingProductsOrder}
                   className="btn-cancel"
@@ -821,14 +875,7 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
                         >
                         <div className="product-images">
                           {product.images.length > 0 ? (
-                            <>
-                              <img src={product.images[0]} alt={product.title} />
-                              {product.badge_text && (
-                                <div className="product-card-badge">
-                                  {product.badge_text}
-                                </div>
-                              )}
-                            </>
+                            <img src={product.images[0]} alt={product.title} />
                           ) : (
                             <div className="no-image">Нет фото</div>
                           )}
@@ -970,154 +1017,6 @@ function ProductsList({ onNavigate }: { onNavigate?: (page: AdminPage) => void }
         />
       )}
 
-      {isOrdersSettingsModalOpen && (
-        <OrdersSettingsModal
-          ordersClosed={ordersClosed}
-          closeDate={ordersCloseDate}
-          deliveryFee={deliveryFee}
-          freeDeliveryFrom={freeDeliveryFrom}
-          referralPercentBefore10={referralPercentBefore10}
-          referralPercentAfter10={referralPercentAfter10}
-          onClose={() => setIsOrdersSettingsModalOpen(false)}
-          onSave={ordersClosed ? handleOpenOrders : handleSaveOrdersSettings}
-          isSaving={isSavingOrdersSettings}
-          onCloseDateChange={setOrdersCloseDate}
-          onDeliveryFeeChange={setDeliveryFee}
-          onFreeDeliveryFromChange={setFreeDeliveryFrom}
-          onReferralPercentBefore10Change={setReferralPercentBefore10}
-          onReferralPercentAfter10Change={setReferralPercentAfter10}
-        />
-      )}
-    </div>
-  )
-}
-
-// модальное окно для управления статусом заказов
-function OrdersSettingsModal({
-  ordersClosed,
-  closeDate,
-  deliveryFee,
-  freeDeliveryFrom,
-  referralPercentBefore10,
-  referralPercentAfter10,
-  onClose,
-  onSave,
-  isSaving,
-  onCloseDateChange,
-  onDeliveryFeeChange,
-  onFreeDeliveryFromChange,
-  onReferralPercentBefore10Change,
-  onReferralPercentAfter10Change
-}: {
-  ordersClosed: boolean
-  closeDate: string
-  deliveryFee: number
-  freeDeliveryFrom: number
-  referralPercentBefore10: number
-  referralPercentAfter10: number
-  onClose: () => void
-  onSave: () => void
-  isSaving: boolean
-  onCloseDateChange: (date: string) => void
-  onDeliveryFeeChange: (value: number) => void
-  onFreeDeliveryFromChange: (value: number) => void
-  onReferralPercentBefore10Change: (value: number) => void
-  onReferralPercentAfter10Change: (value: number) => void
-}) {
-  // если заказы закрыты - показываем простое подтверждающее окно для открытия
-  if (ordersClosed) {
-    return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content" onClick={e => e.stopPropagation()}>
-          <button className="modal-close" onClick={onClose}>&times;</button>
-          <h2>Открыть заказы</h2>
-          <p style={{ marginBottom: '1.5rem' }}>Вы уверены, что хотите открыть заказы?</p>
-          <div className="modal-actions">
-            <button className="btn btn-primary" onClick={onSave} disabled={isSaving}>
-              {isSaving ? 'Открытие...' : 'Да, открыть заказы'}
-            </button>
-            <button className="btn btn-secondary" onClick={onClose} disabled={isSaving}>
-              Отмена
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // если заказы открыты - показываем модальное окно с полем для даты закрытия
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>&times;</button>
-        <h2>Закрыть заказы</h2>
-        <div className="form-group">
-          <label htmlFor="close-date">Дата закрытия (для информационного сообщения):</label>
-          <input
-            type="date"
-            id="close-date"
-            value={closeDate}
-            onChange={(e) => onCloseDateChange(e.target.value)}
-            className="form-input"
-            min={new Date().toISOString().split('T')[0]}
-          />
-          <p className="form-hint">Дата нужна только для информационного сообщения пользователям. Открытие/закрытие происходит вручную.</p>
-        </div>
-        <div className="form-group">
-          <label htmlFor="delivery-fee">Стоимость доставки, ₽</label>
-          <input
-            type="number"
-            id="delivery-fee"
-            min={0}
-            value={deliveryFee}
-            onChange={(e) => onDeliveryFeeChange(Math.max(0, Number(e.target.value || 0)))}
-            className="form-input"
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="free-delivery-from">Бесплатная доставка от, ₽</label>
-          <input
-            type="number"
-            id="free-delivery-from"
-            min={0}
-            value={freeDeliveryFrom}
-            onChange={(e) => onFreeDeliveryFromChange(Math.max(0, Number(e.target.value || 0)))}
-            className="form-input"
-          />
-        </div>
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="ref-before-10">Реферал % до 10 заказов</label>
-            <input
-              type="number"
-              id="ref-before-10"
-              min={0}
-              value={referralPercentBefore10}
-              onChange={(e) => onReferralPercentBefore10Change(Math.max(0, Number(e.target.value || 0)))}
-              className="form-input"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="ref-after-10">Реферал % после 10 заказов</label>
-            <input
-              type="number"
-              id="ref-after-10"
-              min={0}
-              value={referralPercentAfter10}
-              onChange={(e) => onReferralPercentAfter10Change(Math.max(0, Number(e.target.value || 0)))}
-              className="form-input"
-            />
-          </div>
-        </div>
-        <div className="modal-actions">
-          <button className="btn btn-primary" onClick={onSave} disabled={isSaving}>
-            {isSaving ? 'Сохранение...' : 'Закрыть заказы'}
-          </button>
-          <button className="btn btn-secondary" onClick={onClose} disabled={isSaving}>
-            Отмена
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
@@ -1364,26 +1263,6 @@ function ProductModal({
                 </span>
               </div>
               
-              {product.badge_text && (
-                <div className="detail-row">
-                  <span className="detail-label">Бейдж:</span>
-                  <span className="detail-value">
-                    <span style={{ 
-                      background: '#5e6623', 
-                      color: 'white', 
-                      padding: '2px 12px', /* вертикальный отступ (сверху и снизу) между границей текста и бейджем */
-                      borderRadius: '20px', 
-                      fontSize: '12px', 
-                      fontWeight: 600,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
-                    }}>
-                      {product.badge_text}
-                    </span>
-                  </span>
-                </div>
-              )}
-              
               {product.stock !== undefined && (
                 <div className="detail-row">
                   <span className="detail-label">Остаток:</span>
@@ -1558,14 +1437,7 @@ function SortableProductCard({
       >
         <div className="product-images">
           {product.images.length > 0 ? (
-            <>
-              <img src={product.images[0]} alt={product.title} />
-              {product.badge_text && (
-                <div className="product-card-badge">
-                  {product.badge_text}
-                </div>
-              )}
-            </>
+            <img src={product.images[0]} alt={product.title} />
           ) : (
             <div className="no-image">Нет фото</div>
           )}
@@ -1801,7 +1673,6 @@ function ProductFormModal({
     return formatArticle(maxArticle + 1)
   }
 
-  const defaultDescription = '• материал...\n• длина...'
   const nextArticle = !isEdit ? getNextArticle() : ''
   
   const [formData, setFormData] = useState<Partial<Product> & { categories?: string[] }>(() => {
@@ -1812,22 +1683,18 @@ function ProductFormModal({
     return {
       title: initialTitle,
       slug: initialSlug,
-      description: product?.description || (isEdit ? '' : defaultDescription),
+      description: product?.description ?? '',
       category: product?.category || '',
       categories: initialCategories,
       price_rub: product?.price_rub || 0,
       discount_price_rub: product?.discount_price_rub || undefined,
-      badge_text: product?.badge_text || undefined,
       active: product?.active !== undefined ? product.active : true,
       stock: product?.stock || undefined,
       article: initialArticle,
       images: product?.images || [],
       image_keys: product?.image_keys || [],
-      product_type: product?.product_type || '',
       brand: product?.brand || '',
       line: product?.line || '',
-      model: product?.model || '',
-      flavor: product?.flavor || '',
       strength: product?.strength || ''
     }
   })
@@ -1844,6 +1711,40 @@ function ProductFormModal({
       })
     }
   }, [formData.title, formData.article, isEdit, formData.slug])
+
+  const [brandsForForm, setBrandsForForm] = useState<{ key: string; title: string }[]>([])
+  const [linesForForm, setLinesForForm] = useState<{ key: string; title: string }[]>([])
+  const firstCategoryKey = formData.categories?.[0] || ''
+
+  useEffect(() => {
+    if (!firstCategoryKey) {
+      setBrandsForForm([])
+      return
+    }
+    api.getBrands(firstCategoryKey)
+      .then((data: { brands?: { key: string; title: string }[] }) => setBrandsForForm((data.brands || []).map((b) => ({ key: b.key, title: b.title || b.key }))))
+      .catch(() => setBrandsForForm([]))
+  }, [firstCategoryKey])
+
+  useEffect(() => {
+    const brandKey = formData.brand || ''
+    if (!brandKey) {
+      setLinesForForm([])
+      return
+    }
+    api.getLines(brandKey)
+      .then((data: { lines?: { key: string; title: string }[] }) => setLinesForForm((data.lines || []).map((l) => ({ key: l.key, title: l.title || l.key }))))
+      .catch(() => setLinesForForm([]))
+  }, [formData.brand])
+
+  // при смене первой категории (пользователем) сбрасываем бренд и линейку
+  const prevFirstCatRef = useRef(firstCategoryKey)
+  useEffect(() => {
+    if (prevFirstCatRef.current && prevFirstCatRef.current !== firstCategoryKey) {
+      setFormData((prev) => ({ ...prev, brand: '', line: '' }))
+    }
+    prevFirstCatRef.current = firstCategoryKey
+  }, [firstCategoryKey])
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
@@ -1928,12 +1829,7 @@ function ProductFormModal({
 
     setSaving(true)
     try {
-      // очищаем пробелы в начале и конце badge_text перед сохранением
-      const cleanedData = {
-        ...formData,
-        badge_text: formData.badge_text?.trim() || undefined
-      }
-      await onSave(cleanedData)
+      await onSave(formData)
     } catch (err: any) {
       setErrors({ submit: err.message || 'Ошибка сохранения' })
     } finally {
@@ -2104,65 +2000,31 @@ function ProductFormModal({
 
           <div className="form-row">
             <div className="form-group">
-              <label>Тип товара</label>
+              <label>Бренд</label>
               <select
-                value={formData.product_type || ''}
-                onChange={(e) => handleChange('product_type', e.target.value)}
+                value={formData.brand || ''}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setFormData((prev) => ({ ...prev, brand: v, line: '' }))
+                }}
               >
-                <option value="">Не выбран</option>
-                <option value="electronic">Электронные сигареты</option>
-                <option value="pod">POD-системы</option>
-                <option value="liquid">Жидкости для вейпа</option>
-                <option value="consumable">Расходники</option>
+                <option value="">— Не выбран —</option>
+                {brandsForForm.map((b) => (
+                  <option key={b.key} value={b.key}>{b.title}</option>
+                ))}
               </select>
             </div>
             <div className="form-group">
-              <label>Бренд</label>
-              <input
-                type="text"
-                value={formData.brand || ''}
-                onChange={(e) => handleChange('brand', e.target.value)}
-                placeholder="Например, Vaporesso"
-              />
-            </div>
-            <div className="form-group">
               <label>Линейка</label>
-              <input
-                type="text"
+              <select
                 value={formData.line || ''}
                 onChange={(e) => handleChange('line', e.target.value)}
-                placeholder="Например, XROS"
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>Модель</label>
-              <input
-                type="text"
-                value={formData.model || ''}
-                onChange={(e) => handleChange('model', e.target.value)}
-                placeholder="Например, Paisley Blue"
-              />
-            </div>
-            <div className="form-group">
-              <label>Вкус</label>
-              <input
-                type="text"
-                value={formData.flavor || ''}
-                onChange={(e) => handleChange('flavor', e.target.value)}
-                placeholder="Например, малина"
-              />
-            </div>
-            <div className="form-group">
-              <label>Крепость</label>
-              <input
-                type="text"
-                value={formData.strength || ''}
-                onChange={(e) => handleChange('strength', e.target.value)}
-                placeholder="Например, 20mg"
-              />
+              >
+                <option value="">— Не выбрана —</option>
+                {linesForForm.map((l) => (
+                  <option key={l.key} value={l.key}>{l.title}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -2177,7 +2039,35 @@ function ProductFormModal({
                 placeholder='Введите название товара'
               />
             </div>
-            
+          </div>
+
+          <div className="form-group">
+            <label>Описание</label>
+            <textarea
+              value={formData.description || ''}
+              onChange={(e) => handleChange('description', e.target.value)}
+              rows={4}
+              placeholder="Ароматизатор пищевой на основе пропиленгликоля ..."
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Крепость</label>
+              <select
+                value={formData.strength || ''}
+                onChange={(e) => handleChange('strength', e.target.value || undefined)}
+                style={{ padding: '0.5rem' }}
+              >
+                <option value="">— Не выбрана —</option>
+                <option value="легкая">легкая</option>
+                <option value="средняя">средняя</option>
+                <option value="крепкая">крепкая</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
             <div className="form-group">
               <label>Цена (₽) *</label>
               <input
@@ -2201,20 +2091,6 @@ function ProductFormModal({
               {errors.discount_price_rub && <small style={{ color: '#dc3545' }}>{errors.discount_price_rub}</small>}
               {!errors.discount_price_rub && formData.discount_price_rub && (
                 <small style={{ color: '#666' }}>Старая цена будет перечеркнута, отобразится новая</small>
-              )}
-            </div>
-            
-            <div className="form-group">
-              <label>Текст бейджа</label>
-              <input
-                type="text"
-                value={formData.badge_text || ''}
-                onChange={(e) => handleChange('badge_text', e.target.value || undefined)}
-                placeholder="Оставь пустым, чтобы убрать бейдж"
-                maxLength={50}
-              />
-              {formData.badge_text && (
-                <small style={{ color: '#666' }}>Бейдж будет отображаться сверху карточки товара</small>
               )}
             </div>
           </div>
@@ -2261,16 +2137,6 @@ function ProductFormModal({
               />
               {errors.article && <small style={{ color: '#dc3545' }}>{errors.article}</small>}
             </div>
-          </div>
-
-          <div className="form-group">
-            <label>Описание</label>
-            <textarea
-              value={formData.description || ''}
-              onChange={(e) => handleChange('description', e.target.value)}
-              rows={4}
-              placeholder="Описание товара"
-            />
           </div>
 
           <div className="form-group">
@@ -2364,6 +2230,8 @@ export default function App() {
   const [checking, setChecking] = useState(true)
   const [currentPage, setCurrentPage] = useState<AdminPage>('products')
   const [isPageLoading, setIsPageLoading] = useState(false)
+  const [initialProductFilters, setInitialProductFilters] = useState<ProductFiltersParams | null>(null)
+  const [initialOrderUserId, setInitialOrderUserId] = useState<string | null>(null)
 
   useEffect(() => {
     // проверяем наличие токена
@@ -2374,10 +2242,15 @@ export default function App() {
     setChecking(false)
   }, [])
 
-  const handlePageChange = (page: AdminPage) => {
+  const handlePageChange = (page: AdminPage, params?: ProductFiltersParams | OrderFiltersParams) => {
+    if (page === 'products' && params && 'category_key' in params) {
+      setInitialProductFilters(params)
+    }
+    if (page === 'orders' && params && 'user_id' in params && params.user_id) {
+      setInitialOrderUserId(params.user_id)
+    }
     if (page !== currentPage) {
       setIsPageLoading(true)
-      // небольшая задержка для плавной анимации
       setTimeout(() => {
         setCurrentPage(page)
         setIsPageLoading(false)
@@ -2405,14 +2278,26 @@ export default function App() {
           <PromocodesPage onNavigate={handlePageChange} />
         ) : currentPage === 'categories' ? (
           <CategoriesPage onNavigate={handlePageChange} />
-        ) : currentPage === 'catalogMeta' ? (
-          <CatalogMetaPage onNavigate={handlePageChange} />
+        ) : currentPage === 'brands' ? (
+          <BrandsPage onNavigate={handlePageChange} />
+        ) : currentPage === 'lines' ? (
+          <LinesPage onNavigate={handlePageChange} />
         ) : currentPage === 'content' ? (
           <ContentPage onNavigate={handlePageChange} />
         ) : currentPage === 'orders' ? (
-          <OrdersPage onNavigate={handlePageChange} />
+          <OrdersPage
+            onNavigate={handlePageChange}
+            initialOrderUserId={initialOrderUserId}
+            onClearInitialOrderUserId={() => setInitialOrderUserId(null)}
+          />
+        ) : currentPage === 'users' ? (
+          <UsersPage onNavigate={handlePageChange} />
         ) : (
-          <ProductsList onNavigate={handlePageChange} />
+          <ProductsList
+            onNavigate={handlePageChange}
+            initialProductFilters={initialProductFilters}
+            onClearInitialFilters={() => setInitialProductFilters(null)}
+          />
         )}
       </div>
     </div>

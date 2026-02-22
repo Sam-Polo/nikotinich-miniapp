@@ -5,8 +5,6 @@ import pino from 'pino'
 const logger = pino()
 
 export type OrdersSettings = {
-  ordersClosed: boolean // закрыты ли заказы
-  closeDate?: string // дата закрытия в формате YYYY-MM-DD (опционально, только для информационного сообщения)
   deliveryFee: number
   freeDeliveryFrom: number
   referralPercentBefore10: number
@@ -46,8 +44,6 @@ export async function fetchOrdersSettingsFromSheet(sheetId: string): Promise<Ord
         requestBody: {
           values: [
             ['key', 'value'],
-            ['orders_closed', 'false'],
-            ['close_date', ''],
             ['delivery_fee', '300'],
             ['free_delivery_from', '3500'],
             ['referral_percent_before_10', '3'],
@@ -57,7 +53,6 @@ export async function fetchOrdersSettingsFromSheet(sheetId: string): Promise<Ord
       })
       
       return {
-        ordersClosed: false,
         deliveryFee: 300,
         freeDeliveryFrom: 3500,
         referralPercentBefore10: 3,
@@ -72,7 +67,6 @@ export async function fetchOrdersSettingsFromSheet(sheetId: string): Promise<Ord
     
     if (rows.length === 0) {
       return {
-        ordersClosed: false,
         deliveryFee: 300,
         freeDeliveryFrom: 3500,
         referralPercentBefore10: 3,
@@ -82,7 +76,6 @@ export async function fetchOrdersSettingsFromSheet(sheetId: string): Promise<Ord
     
     // парсим настройки из таблицы (первая строка - заголовки)
     const settings: OrdersSettings = {
-      ordersClosed: false,
       deliveryFee: 300,
       freeDeliveryFrom: 3500,
       referralPercentBefore10: 3,
@@ -94,19 +87,8 @@ export async function fetchOrdersSettingsFromSheet(sheetId: string): Promise<Ord
       if (!row || row.length < 2) continue
       
       const key = String(row[0] || '').trim().toLowerCase()
-      const value = String(row[1] || '').trim().toLowerCase()
       
-      // поддерживаем оба варианта ключа (orders_closed и order_closed)
-      if (key === 'orders_closed' || key === 'order_closed') {
-        settings.ordersClosed = value === 'true' || value === '1' || value === 'yes'
-        logger.info({ key, value, ordersClosed: settings.ordersClosed }, 'найдена настройка orders_closed')
-      } else if (key === 'close_date') {
-        // для даты берем оригинальное значение (не lowercase)
-        const originalValue = String(row[1] || '').trim()
-        if (originalValue) {
-          settings.closeDate = originalValue
-        }
-      } else if (key === 'delivery_fee') {
+      if (key === 'delivery_fee') {
         const parsed = Number(String(row[1] || '').trim())
         if (Number.isFinite(parsed) && parsed >= 0) settings.deliveryFee = parsed
       } else if (key === 'free_delivery_from') {
@@ -121,13 +103,11 @@ export async function fetchOrdersSettingsFromSheet(sheetId: string): Promise<Ord
       }
     }
     
-    logger.info({ ordersClosed: settings.ordersClosed, closeDate: settings.closeDate }, 'настройки заказов прочитаны из таблицы')
+    logger.info('настройки заказов прочитаны из таблицы')
     return settings
   } catch (error: any) {
     logger.error({ error: error?.message }, 'ошибка чтения настроек заказов')
-    // возвращаем значения по умолчанию при ошибке
     return {
-      ordersClosed: false,
       deliveryFee: 300,
       freeDeliveryFrom: 3500,
       referralPercentBefore10: 3,
@@ -199,8 +179,6 @@ export async function saveOrdersSettingsToSheet(sheetId: string, settings: Order
     
     const dataRows = dataRes.data.values ?? []
     
-    let ordersClosedRowIndex = -1
-    let closeDateRowIndex = -1
     let deliveryFeeRowIndex = -1
     let freeDeliveryFromRowIndex = -1
     let referralBeforeRowIndex = -1
@@ -208,11 +186,7 @@ export async function saveOrdersSettingsToSheet(sheetId: string, settings: Order
     
     for (let i = 1; i < dataRows.length; i++) {
       const key = String(dataRows[i]?.[0] || '').trim().toLowerCase()
-      if (key === 'orders_closed') {
-        ordersClosedRowIndex = i + 1 // +1 потому что строки начинаются с 1 (заголовок на строке 1)
-      } else if (key === 'close_date') {
-        closeDateRowIndex = i + 1
-      } else if (key === 'delivery_fee') {
+      if (key === 'delivery_fee') {
         deliveryFeeRowIndex = i + 1
       } else if (key === 'free_delivery_from') {
         freeDeliveryFromRowIndex = i + 1
@@ -221,53 +195,6 @@ export async function saveOrdersSettingsToSheet(sheetId: string, settings: Order
       } else if (key === 'referral_percent_after_10') {
         referralAfterRowIndex = i + 1
       }
-    }
-    
-    // обновляем или добавляем orders_closed
-    if (ordersClosedRowIndex > 0) {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: sheetId,
-        range: `settings!B${ordersClosedRowIndex}`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [[settings.ordersClosed ? 'true' : 'false']]
-        }
-      })
-    } else {
-      // добавляем новую строку
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: sheetId,
-        range: 'settings!A:B',
-        valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
-        requestBody: {
-          values: [['orders_closed', settings.ordersClosed ? 'true' : 'false']]
-        }
-      })
-    }
-    
-    // обновляем или добавляем close_date
-    const closeDateValue = settings.closeDate || ''
-    if (closeDateRowIndex > 0) {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: sheetId,
-        range: `settings!B${closeDateRowIndex}`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [[closeDateValue]]
-        }
-      })
-    } else {
-      // добавляем новую строку
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: sheetId,
-        range: 'settings!A:B',
-        valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
-        requestBody: {
-          values: [['close_date', closeDateValue]]
-        }
-      })
     }
 
     const updateOrAppend = async (rowIndex: number, key: string, value: string) => {
@@ -294,7 +221,7 @@ export async function saveOrdersSettingsToSheet(sheetId: string, settings: Order
     await updateOrAppend(referralBeforeRowIndex, 'referral_percent_before_10', String(settings.referralPercentBefore10))
     await updateOrAppend(referralAfterRowIndex, 'referral_percent_after_10', String(settings.referralPercentAfter10))
     
-    logger.info({ ordersClosed: settings.ordersClosed, closeDate: settings.closeDate }, 'настройки заказов сохранены')
+    logger.info('настройки заказов сохранены')
   } catch (error: any) {
     logger.error({ error: error?.message }, 'ошибка сохранения настроек заказов')
     throw error

@@ -22,13 +22,11 @@ import './App.css'
 type Category = {
   key: string
   title: string
-  description?: string
   image: string
-  image_position?: string
   order: number
 }
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'catalogMeta' | 'content' | 'orders'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users'
 
 const EditIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -76,17 +74,16 @@ function SortableCategoryRow({
       </td>
       <td>
         <div
-          className="category-row-preview"
+          className="category-row-preview category-row-preview-square"
           style={{
             backgroundImage: category.image ? `url(${category.image})` : undefined,
             backgroundSize: 'cover',
-            backgroundPosition: category.image_position || 'center'
+            backgroundPosition: 'center'
           }}
         />
       </td>
-      <td>{category.key}</td>
       <td>{category.title}</td>
-      <td>{category.description || '—'}</td>
+      <td>{category.key}</td>
       <td>
         <button type="button" className="btn-icon btn-edit" onClick={onEdit} title="Редактировать"><EditIcon /></button>
         <button type="button" className="btn-icon btn-delete" onClick={onDelete} title="Убрать из мини-приложения"><TrashIcon /></button>
@@ -106,10 +103,9 @@ function CategoriesPage({
   const [deleteConfirm, setDeleteConfirm] = useState<Category | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [formData, setFormData] = useState<{ key: string; title: string; description: string; image: string }>({
+  const [formData, setFormData] = useState<{ key: string; title: string; image: string }>({
     key: '',
     title: '',
-    description: '',
     image: ''
   })
   const [uploading, setUploading] = useState(false)
@@ -146,7 +142,6 @@ function CategoriesPage({
     setFormData({
       key: '',
       title: '',
-      description: '',
       image: ''
     })
     setIsModalOpen(true)
@@ -157,7 +152,6 @@ function CategoriesPage({
     setFormData({
       key: c.key,
       title: c.title,
-      description: c.description || '',
       image: c.image || ''
     })
     setIsModalOpen(true)
@@ -177,12 +171,10 @@ function CategoriesPage({
 
   const saveCategories = async (list: Category[]) => {
     try {
-      await api.saveCategories(list.map(({ key, title, description, image, image_position }) => ({
+      await api.saveCategories(list.map(({ key, title, image }) => ({
         key,
         title,
-        description: description || undefined,
-        image,
-        image_position: image_position || 'center'
+        image
       })))
       setCategories(list)
       showToast('Категории сохранены', 'success')
@@ -193,7 +185,7 @@ function CategoriesPage({
   }
 
   const handleSave = async () => {
-    const { key, title, description, image } = formData
+    const { key, title, image } = formData
     if (!key.trim()) {
       showToast('Укажите ключ (имя листа в таблице)', 'error')
       return
@@ -209,18 +201,17 @@ function CategoriesPage({
       return
     }
 
-    const imagePosition = 'center'
     let next: Category[]
     if (editingCategory) {
       next = categories.map((c) =>
         c.key === editingCategory.key
-          ? { ...c, key: normalizedKey, title: title.trim(), description: description.trim() || undefined, image, image_position: imagePosition }
+          ? { ...c, key: normalizedKey, title: title.trim(), image }
           : c
       )
     } else {
       next = [
         ...categories,
-        { key: normalizedKey, title: title.trim(), description: description.trim() || undefined, image, image_position: imagePosition, order: categories.length }
+        { key: normalizedKey, title: title.trim(), image, order: categories.length }
       ]
     }
     await saveCategories(next)
@@ -230,7 +221,7 @@ function CategoriesPage({
   const handleFileUpload = async (file: File) => {
     setUploading(true)
     try {
-      const uploaded = await api.uploadImage(file)
+      const uploaded = await api.uploadImage(file, { square: true })
       setFormData((prev) => ({ ...prev, image: uploaded.url }))
     } catch (error: any) {
       showToast(error.message || 'Ошибка загрузки фото', 'error')
@@ -287,50 +278,37 @@ function CategoriesPage({
           <button className="nav-btn active" onClick={() => onNavigate?.('categories')}>
             Категории
           </button>
-          <button className="nav-btn" onClick={() => onNavigate?.('catalogMeta')}>
-            Справочники
-          </button>
+          <button className="nav-btn" onClick={() => onNavigate?.('brands')}>Бренды</button>
+          <button className="nav-btn" onClick={() => onNavigate?.('lines')}>Линейки</button>
           <button className="nav-btn" onClick={() => onNavigate?.('content')}>
             Контент
           </button>
           <button className="nav-btn" onClick={() => onNavigate?.('orders')}>
             Заказы
           </button>
+          <button className="nav-btn" onClick={() => onNavigate?.('users')}>Пользователи</button>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-add" onClick={handleAdd}>
-            + Добавить категорию
-          </button>
-          <button onClick={handleLogout} className="logout-btn">
-            Выйти
-          </button>
-        </div>
+        <button onClick={handleLogout} className="logout-btn">
+          Выйти
+        </button>
       </header>
 
       <div className="categories-content">
+        <div className="toolbar toolbar--transparent">
+          <div className="toolbar-row-actions">
+            <button type="button" className="btn btn-add" onClick={handleAdd}>
+              Добавить категорию
+            </button>
+          </div>
+        </div>
         <p className="categories-hint">
           Категории отображаются в мини-приложении. Ключ — имя листа в Google Таблице с товарами. Удаление убирает только строку из листа categories, лист с товарами категории остаётся без изменений.
         </p>
         {categories.length === 0 ? (
           <div className="empty-state">
-            <p>Нет категорий. Добавьте вручную или создайте из стандартных листов.</p>
-            <button
-              type="button"
-              className="btn btn-add"
-              onClick={async () => {
-                const seed: Category[] = [
-                  { key: 'ягоды', title: 'Ягоды', description: '', image: '', image_position: '50% 50%', order: 0 },
-                  { key: 'выпечка', title: 'Выпечка', description: '', image: '', image_position: '50% 50%', order: 1 },
-                  { key: 'pets', title: 'FOR PETS', description: 'Украшения для ваших питомцев.', image: '', image_position: '50% 50%', order: 2 },
-                  { key: 'шея', title: 'Шея', description: 'Чокеры, колье, подвески', image: '', image_position: '50% 50%', order: 3 },
-                  { key: 'руки', title: 'Руки', description: 'Браслеты, кольца', image: '', image_position: '50% 50%', order: 4 },
-                  { key: 'уши', title: 'Уши', description: 'Серьги, каффы', image: '', image_position: '50% 50%', order: 5 },
-                  { key: 'сертификаты', title: 'Сертификаты', description: '', image: '', image_position: '50% 50%', order: 6 }
-                ]
-                await saveCategories(seed)
-              }}
-            >
-              Создать из стандартных листов
+            <p>Нет категорий. Добавьте первую категорию кнопкой ниже.</p>
+            <button type="button" className="btn btn-add" onClick={handleAdd}>
+              Добавить категорию
             </button>
           </div>
         ) : (
@@ -340,9 +318,8 @@ function CategoriesPage({
                 <tr>
                   <th></th>
                   <th>Фото</th>
-                  <th>Ключ</th>
                   <th>Название</th>
-                  <th>Описание</th>
+                  <th>Ключ</th>
                   <th>Действия</th>
                 </tr>
               </thead>
@@ -393,33 +370,24 @@ function CategoriesPage({
             <button className="modal-close" onClick={() => setIsModalOpen(false)}>×</button>
             <h2>{editingCategory ? 'Редактировать категорию' : 'Добавить категорию'}</h2>
             <div className="form-group">
-              <label>Ключ (имя листа в Google Таблице) *</label>
-              <input
-                type="text"
-                value={formData.key}
-                onChange={(e) => setFormData((p) => ({ ...p, key: e.target.value }))}
-                placeholder="например: ягоды"
-                disabled={!!editingCategory}
-              />
-              {editingCategory && <small>Ключ нельзя изменить</small>}
-            </div>
-            <div className="form-group">
               <label>Название *</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
-                placeholder="Ягоды"
+                placeholder="Жидкости"
               />
             </div>
             <div className="form-group">
-              <label>Описание</label>
+              <label>Ключ (имя листа в Google Таблице) *</label>
               <input
                 type="text"
-                value={formData.description}
-                onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
-                placeholder="Эксклюзивная коллекция..."
+                value={formData.key}
+                onChange={(e) => setFormData((p) => ({ ...p, key: e.target.value }))}
+                placeholder="например: e-liquid"
+                disabled={!!editingCategory}
               />
+              {editingCategory && <small>Ключ нельзя изменить</small>}
             </div>
             <div className="form-group">
               <label>Фото категории *</label>

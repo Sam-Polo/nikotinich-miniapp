@@ -19,17 +19,13 @@ export type SheetProduct = {
   categories: string[] // все категории товара
   price_rub: number
   discount_price_rub?: number // цена со скидкой (если заполнена - используется вместо price_rub)
-  badge_text?: string // текст плашки (например, "СКИДКА", "НОВИНКА", "ПЕРСОНАЛИЗАЦИЯ")
   images: string[]
   active: boolean
   stock?: number
   article?: string
-  product_type?: string
   brand?: string
   line?: string
-  model?: string
-  flavor?: string
-  strength?: string
+  strength?: string // легкая | средняя | крепкая
   image_keys?: string[]
   /** порядок товара в каждом листе (ключ — имя категории, значение — индекс строки) */
   orderInCategory?: Record<string, number>
@@ -81,8 +77,7 @@ async function fetchSheetRange(
     const price = Number(String(get('price_rub')).replace(',', '.'))
     const discountPriceRaw = String(get('discount_price_rub') || '').trim()
     const discountPrice = discountPriceRaw ? Number(discountPriceRaw.replace(',', '.')) : undefined
-    const badgeText = String(get('badge_text') || '').trim() || undefined
-    
+
     // парсим изображения: разделители - запятая или перенос строки
     const imagesRaw = String(get('images'))
     const images: string[] = imagesRaw
@@ -116,16 +111,12 @@ async function fetchSheetRange(
       categories: [categoryName],
       price_rub: Number.isFinite(price) ? price : 0,
       discount_price_rub: discountPrice && Number.isFinite(discountPrice) ? discountPrice : undefined,
-      badge_text: badgeText,
       images,
       active,
       stock: Number.isFinite(stock) ? stock : undefined,
       article: article || undefined,
-      product_type: String(get('product_type') || '').trim() || undefined,
       brand: String(get('brand') || '').trim() || undefined,
       line: String(get('line') || '').trim() || undefined,
-      model: String(get('model') || '').trim() || undefined,
-      flavor: String(get('flavor') || '').trim() || undefined,
       strength: String(get('strength') || '').trim() || undefined,
       image_keys: imageKeys.length > 0 ? imageKeys : undefined
     }
@@ -187,7 +178,6 @@ export async function fetchProductsFromSheet(sheetId: string): Promise<SheetProd
             existing.description = p.description
             existing.price_rub = p.price_rub
             existing.discount_price_rub = p.discount_price_rub
-            existing.badge_text = p.badge_text
             existing.images = p.images
             existing.active = p.active
             existing.stock = p.stock

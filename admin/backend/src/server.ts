@@ -40,10 +40,11 @@ import uploadRoutes from './routes/upload.js'
 import promocodeRoutes from './routes/promocodes.js'
 import settingsRoutes from './routes/settings.js'
 import categoriesRoutes from './routes/categories.js'
-import newsRoutes from './routes/news.js'
-import collectionsRoutes from './routes/collections.js'
+import contentRoutes from './routes/content.js'
 import ordersRoutes from './routes/orders.js'
-import catalogMetaRoutes from './routes/catalog-meta.js'
+import brandsRoutes from './routes/brands.js'
+import linesRoutes from './routes/lines.js'
+import usersRoutes from './routes/users.js'
 
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
@@ -51,10 +52,11 @@ app.use('/api/upload', uploadRoutes)
 app.use('/api/promocodes', promocodeRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/categories', categoriesRoutes)
-app.use('/api/news', newsRoutes)
-app.use('/api/collections', collectionsRoutes)
+app.use('/api/content', contentRoutes)
 app.use('/api/orders', ordersRoutes)
-app.use('/api/catalog-meta', catalogMetaRoutes)
+app.use('/api/brands', brandsRoutes)
+app.use('/api/lines', linesRoutes)
+app.use('/api/users', usersRoutes)
 
 app.listen(PORT, () => {
   logger.info({
