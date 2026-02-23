@@ -16,7 +16,13 @@ router.get('/', async (req, res) => {
     let orders = await fetchOrdersFromSheet(sheetId)
     const userId = typeof req.query.user_id === 'string' ? req.query.user_id.trim() : null
     if (userId) orders = orders.filter((o) => o.userId === userId)
-    res.json({ orders })
+    const status = typeof req.query.status === 'string' ? req.query.status.trim().toLowerCase() : null
+    if (status) orders = orders.filter((o) => o.status === status)
+    const total = orders.length
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || 20), 10) || 20))
+    const offset = Math.max(0, parseInt(String(req.query.offset || 0), 10) || 0)
+    const page = orders.slice(offset, offset + limit)
+    res.json({ orders: page, total })
   } catch (error: any) {
     logger.error({ error: error?.message }, 'failed to load orders')
     res.status(500).json({ error: 'failed_to_load_orders' })

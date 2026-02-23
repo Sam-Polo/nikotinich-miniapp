@@ -280,10 +280,15 @@ export const api = {
     })
   },
 
-  // заказы
-  async getOrders(userId?: string) {
-    const url = userId ? `/api/orders?user_id=${encodeURIComponent(userId)}` : '/api/orders'
-    return fetchWithAuth(url)
+  // заказы (пагинация: limit/offset, фильтры user_id, status)
+  async getOrders(params?: { userId?: string; status?: string; limit?: number; offset?: number }) {
+    const sp = new URLSearchParams()
+    if (params?.userId) sp.set('user_id', params.userId)
+    if (params?.status) sp.set('status', params.status)
+    if (params?.limit != null) sp.set('limit', String(params.limit))
+    if (params?.offset != null) sp.set('offset', String(params.offset))
+    const q = sp.toString()
+    return fetchWithAuth(q ? `/api/orders?${q}` : '/api/orders')
   },
   async createOrder(order: any) {
     return fetchWithAuth('/api/orders', {
@@ -298,6 +303,11 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
     })
+  },
+
+  // статистика посещений
+  async getVisitsStats(period: '7d' | '30d' | 'all') {
+    return fetchWithAuth(`/api/analytics/visits-stats?period=${period}`)
   }
 }
 

@@ -278,6 +278,39 @@
   gap: 0.75rem 1rem;
 }
 
+/* строка фильтров заказов: слева фильтры, справа поиск */
+.toolbar-row-filters--orders {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.toolbar-search-orders {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.toolbar-search-orders-label {
+  font-size: 0.875rem;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.orders-search-input {
+  width: 200px;
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+
+.orders-search-input:focus {
+  outline: none;
+  border-color: var(--admin-accent);
+}
+
 .toolbar--transparent .toolbar-row-actions {
   justify-content: flex-end;
   margin-left: auto;
@@ -2932,6 +2965,244 @@
   cursor: pointer;
   accent-color: var(--admin-accent);
   margin: 0;
+}
+
+/* страница заказов: таблица и статистика */
+.orders-page .toolbar-tabs {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.orders-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 1rem;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orders-table th,
+.orders-table td {
+  padding: 0.75rem;
+  border-bottom: var(--admin-border);
+  text-align: left;
+}
+
+.orders-table th {
+  font-weight: 600;
+  color: #374151;
+  background: var(--admin-bg-subtle);
+}
+
+.orders-address-cell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orders-load-more {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.orders-load-more .btn-secondary {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--admin-border);
+  background: var(--admin-bg);
+  color: var(--admin-fg);
+  cursor: pointer;
+  font-size: 0.9375rem;
+}
+
+.orders-load-more .btn-secondary:hover:not(:disabled) {
+  background: var(--admin-bg-subtle);
+}
+
+.orders-load-more .btn-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* блок статистики */
+.stats-page {
+  margin-top: 1rem;
+}
+
+.stats-section {
+  background: var(--admin-bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.stats-section-title {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.stats-subtitle {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.stats-hint {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+/* круглые индикаторы продаж — именно круги, синяя обводка, текст синий */
+.stats-cards--circle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: flex-start;
+  max-width: 520px;
+}
+
+.stats-card--circle {
+  width: 140px;
+  height: 140px;
+  min-width: 140px;
+  min-height: 140px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: #fff;
+  color: var(--admin-accent);
+  border: 3px solid #06b6d4;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.25);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.stats-card--circle .stats-card-label {
+  color: var(--admin-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.stats-card--circle .stats-card-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0891b2;
+  text-align: center;
+  line-height: 1.2;
+}
+
+@media (max-width: 600px) {
+  .stats-cards--circle {
+    gap: 1.5rem;
+  }
+
+  .stats-card--circle {
+    width: 120px;
+    height: 120px;
+    min-width: 120px;
+    min-height: 120px;
+    padding: 0.75rem;
+  }
+
+  .stats-card--circle .stats-card-value {
+    font-size: 1.15rem;
+  }
+}
+
+.stats-card {
+  background: var(--admin-bg-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  border: var(--admin-border);
+}
+
+/* круглые карточки переопределяют форму — именно круг */
+.stats-card.stats-card--circle {
+  border-radius: 50%;
+}
+
+.stats-card-label {
+  display: block;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.35rem;
+}
+
+.stats-card-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.stats-by-status {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: var(--admin-border);
+}
+
+.stats-status-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.stats-status-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.stats-status-list strong {
+  color: var(--admin-accent);
+}
+
+.stats-period-select {
+  margin-bottom: 1rem;
+}
+
+.stats-period-select label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stats-period-select .admin-select {
+  min-width: 140px;
+}
+
+.stats-loading {
+  padding: 1rem;
+  color: #6b7280;
+  font-size: 0.95rem;
 }
 
 /* кликабельное название бренда/линейки — переход в товары с фильтрами */

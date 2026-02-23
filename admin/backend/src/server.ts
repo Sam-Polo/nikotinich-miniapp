@@ -45,6 +45,8 @@ import ordersRoutes from './routes/orders.js'
 import brandsRoutes from './routes/brands.js'
 import linesRoutes from './routes/lines.js'
 import usersRoutes from './routes/users.js'
+import visitsRoutes from './routes/visits.js'
+import analyticsRoutes from './routes/analytics.js'
 
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
@@ -57,6 +59,8 @@ app.use('/api/orders', ordersRoutes)
 app.use('/api/brands', brandsRoutes)
 app.use('/api/lines', linesRoutes)
 app.use('/api/users', usersRoutes)
+app.use('/api/visits', visitsRoutes)
+app.use('/api/analytics', analyticsRoutes)
 
 app.listen(PORT, () => {
   logger.info({
