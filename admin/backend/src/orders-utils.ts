@@ -2,7 +2,7 @@ import { google } from 'googleapis'
 import { randomUUID } from 'node:crypto'
 import { getAuthFromEnv } from './sheets-utils.js'
 
-export type OrderStatus = 'new' | 'confirmed' | 'packed' | 'delivered' | 'cancelled'
+export type OrderStatus = 'new' | 'confirmed' | 'packed' | 'completed' | 'cancelled'
 
 export type OrderItem = {
   slug: string
@@ -25,6 +25,7 @@ export type Order = {
   createdAt: string
   confirmedAt?: string
   note?: string
+  referralBonusAccrued?: boolean
 }
 
 const SHEET_NAME = 'orders'
@@ -41,7 +42,8 @@ const HEADERS = [
   'status',
   'created_at',
   'confirmed_at',
-  'note'
+  'note',
+  'referral_bonus_accrued'
 ]
 
 async function ensureOrdersSheet(auth: any, sheetId: string): Promise<void> {
@@ -55,7 +57,7 @@ async function ensureOrdersSheet(auth: any, sheetId: string): Promise<void> {
     })
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A1:M1`,
+      range: `${SHEET_NAME}!A1:N1`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [HEADERS] }
     })
@@ -68,7 +70,7 @@ export async function fetchOrdersFromSheet(sheetId: string): Promise<Order[]> {
   await ensureOrdersSheet(auth, sheetId)
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${SHEET_NAME}!A2:M2000`
+    range: `${SHEET_NAME}!A2:N2000`
   })
   const rows = res.data.values ?? []
   const orders = rows.map((row) => {
@@ -89,10 +91,17 @@ export async function fetchOrdersFromSheet(sheetId: string): Promise<Order[]> {
       totalRub: Number(row[6] || 0),
       promoCode: String(row[7] || '').trim() || undefined,
       deliveryFee: Number(row[8] || 0),
-      status: (String(row[9] || 'new').trim().toLowerCase() as OrderStatus),
+      status: (() => {
+        const s = String(row[9] || 'new').trim().toLowerCase()
+        return (s === 'delivered' ? 'completed' : s) as OrderStatus
+      })(),
       createdAt: String(row[10] || '').trim() || new Date().toISOString(),
       confirmedAt: String(row[11] || '').trim() || undefined,
-      note: String(row[12] || '').trim() || undefined
+      note: String(row[12] || '').trim() || undefined,
+      referralBonusAccrued: (() => {
+        const v = String(row[13] || '').trim().toLowerCase()
+        return v === '1' || v === 'true' || v === 'да' || v === 'yes'
+      })()
     } satisfies Order
   }).filter((order) => order.customerName.length > 0)
 
@@ -118,19 +127,20 @@ export async function saveOrdersToSheet(sheetId: string, orders: Order[]): Promi
       order.status,
       order.createdAt,
       order.confirmedAt || '',
-      order.note || ''
+      order.note || '',
+      order.referralBonusAccrued ? '1' : '0'
     ])
   ]
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
-    range: `${SHEET_NAME}!A1:M${values.length}`,
+    range: `${SHEET_NAME}!A1:N${values.length}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values }
   })
   if (values.length < 2000) {
     await sheets.spreadsheets.values.clear({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A${values.length + 1}:M2000`
+      range: `${SHEET_NAME}!A${values.length + 1}:N2000`
     })
   }
 }

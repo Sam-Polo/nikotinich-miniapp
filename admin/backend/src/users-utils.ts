@@ -11,10 +11,12 @@ export type User = {
   phone: string
   role: string
   active: boolean
+  referrer_id?: string
+  referral_balance_rub?: number
 }
 
 const SHEET_NAME = 'miniapp_users'
-const DEFAULT_HEADERS = ['telegram_id', 'username', 'email', 'phone', 'role', 'active']
+const DEFAULT_HEADERS = ['telegram_id', 'username', 'email', 'phone', 'role', 'active', 'referrer_id', 'referral_balance_rub']
 
 async function ensureUsersSheet(sheets: any, sheetId: string): Promise<void> {
   const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: sheetId })
@@ -34,7 +36,7 @@ async function ensureUsersSheet(sheets: any, sheetId: string): Promise<void> {
     })
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A1:F1`,
+      range: `${SHEET_NAME}!A1:H1`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [DEFAULT_HEADERS]
@@ -54,7 +56,7 @@ export async function fetchUsersFromSheet(sheetId: string): Promise<User[]> {
   const sheets = google.sheets({ version: 'v4', auth })
 
   try {
-    const range = `${SHEET_NAME}!A1:F2000`
+    const range = `${SHEET_NAME}!A1:H2000`
     const res = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range })
     const rows = res.data.values ?? []
 
@@ -80,7 +82,9 @@ export async function fetchUsersFromSheet(sheetId: string): Promise<User[]> {
         email: get('email') || '',
         phone: get('phone') || '',
         role: get('role') || 'user',
-        active: parseBool(get('active'))
+        active: parseBool(get('active')),
+        referrer_id: get('referrer_id') || undefined,
+        referral_balance_rub: Math.max(0, Number(get('referral_balance_rub')) || 0)
       })
     }
 
@@ -108,13 +112,15 @@ export async function saveUsersToSheet(sheetId: string, users: User[]): Promise<
       u.email || '',
       u.phone || '',
       u.role || 'user',
-      u.active ? '1' : '0'
+      u.active ? '1' : '0',
+      u.referrer_id || '',
+      String(Math.max(0, Number(u.referral_balance_rub) || 0))
     ])
   ]
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
-    range: `${SHEET_NAME}!A1:F${values.length}`,
+    range: `${SHEET_NAME}!A1:H${values.length}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values }
   })

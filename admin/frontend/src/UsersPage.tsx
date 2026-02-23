@@ -9,9 +9,11 @@ type User = {
   phone: string
   role: string
   active: boolean
+  referrer_id?: string
+  referral_balance_rub?: number
 }
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
 type UserSortKey = 'telegram_id' | 'username' | 'email' | 'phone' | 'role' | 'active'
 
 const EditIcon = () => (
@@ -210,13 +212,13 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
         <h1>Админ-панель - Никотиныч</h1>
         <div className="header-nav">
           <button className="nav-btn" onClick={() => onNavigate?.('products')}>Товары</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('promocodes')}>Промокоды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('categories')}>Категории</button>
           <button className="nav-btn" onClick={() => onNavigate?.('brands')}>Бренды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('lines')}>Линейки</button>
           <button className="nav-btn" onClick={() => onNavigate?.('content')}>Контент</button>
           <button className="nav-btn" onClick={() => onNavigate?.('orders')}>Заказы</button>
           <button className="nav-btn active" onClick={() => onNavigate?.('users')}>Пользователи</button>
+          <button className="nav-btn" onClick={() => onNavigate?.('referral')}>Реферальная система</button>
         </div>
         <button onClick={handleLogout} className="logout-btn">Выйти</button>
       </header>
@@ -246,11 +248,15 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
                   {th('phone', 'Телефон')}
                   {th('role', 'Роль')}
                   {th('active', 'Активен')}
+                  <th>Привёл</th>
+                  <th>Реф. баланс</th>
                   <th>Действия</th>
                 </tr>
               </thead>
               <tbody>
-                {sortedUsers.map((u) => (
+                {sortedUsers.map((u) => {
+                  const referrer = u.referrer_id ? users.find((r) => r.telegram_id === u.referrer_id) : null
+                  return (
                   <tr key={u.telegram_id}>
                     <td>{u.telegram_id}</td>
                     <td>{u.username ? `@${u.username.replace(/^@/, '')}` : '—'}</td>
@@ -258,13 +264,15 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
                     <td>{u.phone || '—'}</td>
                     <td>{u.role || 'user'}</td>
                     <td>{u.active ? 'Да' : 'Нет'}</td>
+                    <td>{referrer ? `@${referrer.username?.replace(/^@/, '') || referrer.telegram_id}` : '—'}</td>
+                    <td>{u.referral_balance_rub != null ? `${u.referral_balance_rub} ₽` : '—'}</td>
                     <td>
                       <button type="button" className="btn-icon btn-orders" onClick={() => onNavigate?.('orders', { user_id: u.telegram_id })} title="Посмотреть заказы"><OrdersIcon /></button>
                       <button type="button" className="btn-icon btn-edit" onClick={() => handleEdit(u)} title="Редактировать"><EditIcon /></button>
                       <button type="button" className="btn-icon btn-delete" onClick={() => handleDeleteClick(u)} title="Удалить"><TrashIcon /></button>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>

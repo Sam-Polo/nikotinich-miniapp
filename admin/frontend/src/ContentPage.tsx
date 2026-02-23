@@ -19,7 +19,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import './App.css'
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
 type ContentItemType = 'news' | 'collection'
 type ContentItem = {
   id: string
@@ -382,13 +382,13 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
         <h1>Админ-панель - Никотиныч</h1>
         <div className="header-nav">
           <button className="nav-btn" onClick={() => onNavigate?.('products')}>Товары</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('promocodes')}>Промокоды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('categories')}>Категории</button>
           <button className="nav-btn" onClick={() => onNavigate?.('brands')}>Бренды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('lines')}>Линейки</button>
           <button className="nav-btn active" onClick={() => onNavigate?.('content')}>Контент</button>
           <button className="nav-btn" onClick={() => onNavigate?.('orders')}>Заказы</button>
           <button className="nav-btn" onClick={() => onNavigate?.('users')}>Пользователи</button>
+          <button className="nav-btn" onClick={() => onNavigate?.('referral')}>Реферальная система</button>
         </div>
         <button onClick={logout} className="logout-btn">Выйти</button>
       </header>

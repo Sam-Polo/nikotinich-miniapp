@@ -18,7 +18,7 @@ type Product = {
   article?: string
 }
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
 
 function PromocodesPage({ onNavigate }: { onNavigate?: (page: AdminPage) => void }) {
   const handleLogout = () => {
@@ -95,22 +95,10 @@ function PromocodesPage({ onNavigate }: { onNavigate?: (page: AdminPage) => void
       <header className="admin-header">
         <h1>Админ-панель - Никотиныч</h1>
         <div className="header-nav">
-          <button 
-            className="nav-btn"
-            onClick={() => onNavigate?.('products')}
-          >
+          <button className="nav-btn" onClick={() => onNavigate?.('products')}>
             Товары
           </button>
-          <button 
-            className="nav-btn active"
-            onClick={() => onNavigate?.('promocodes')}
-          >
-            Промокоды
-          </button>
-          <button 
-            className="nav-btn"
-            onClick={() => onNavigate?.('categories')}
-          >
+          <button className="nav-btn" onClick={() => onNavigate?.('categories')}>
             Категории
           </button>
           <button className="nav-btn" onClick={() => onNavigate?.('brands')}>Бренды</button>
@@ -122,6 +110,7 @@ function PromocodesPage({ onNavigate }: { onNavigate?: (page: AdminPage) => void
             Заказы
           </button>
           <button className="nav-btn" onClick={() => onNavigate?.('users')}>Пользователи</button>
+          <button className="nav-btn" onClick={() => onNavigate?.('referral')}>Реферальная система</button>
         </div>
         <button onClick={handleLogout} className="logout-btn">
           Выйти

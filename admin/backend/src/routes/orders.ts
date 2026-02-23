@@ -2,12 +2,15 @@ import express from 'express'
 import { randomUUID } from 'node:crypto'
 import { requireAuth } from '../auth.js'
 import { fetchOrdersFromSheet, saveOrdersToSheet, type Order, type OrderStatus } from '../orders-utils.js'
+import { fetchUsersFromSheet, saveUsersToSheet } from '../users-utils.js'
+import { fetchOrdersSettingsFromSheet } from '../settings-utils.js'
+import { accrueReferralBonusOnConfirmed } from '../referral-utils.js'
 import { logger } from '../logger.js'
 
 const router = express.Router()
 router.use(requireAuth)
 
-const allowedStatuses: OrderStatus[] = ['new', 'confirmed', 'packed', 'delivered', 'cancelled']
+const allowedStatuses: OrderStatus[] = ['new', 'confirmed', 'packed', 'completed', 'cancelled']
 
 router.get('/', async (req, res) => {
   try {
@@ -84,8 +87,21 @@ router.put('/:id/status', async (req, res) => {
       confirmedAt: status === 'confirmed' ? new Date().toISOString() : current.confirmedAt
     }
     orders[index] = updated
+
+    // начисление реф. бонуса при первом переходе в "подтверждён"
+    if (current.status !== 'confirmed' && status === 'confirmed') {
+      try {
+        const users = await fetchUsersFromSheet(sheetId)
+        const settings = await fetchOrdersSettingsFromSheet(sheetId)
+        accrueReferralBonusOnConfirmed(req.params.id, orders, users, settings)
+        await saveUsersToSheet(sheetId, users)
+      } catch (err: any) {
+        logger.warn({ error: err?.message }, 'ошибка начисления реф. бонуса')
+      }
+    }
+
     await saveOrdersToSheet(sheetId, orders)
-    res.json({ success: true, order: updated })
+    res.json({ success: true, order: orders[index] })
   } catch (error: any) {
     logger.error({ error: error?.message }, 'failed to update order status')
     res.status(500).json({ error: 'failed_to_update_order_status' })

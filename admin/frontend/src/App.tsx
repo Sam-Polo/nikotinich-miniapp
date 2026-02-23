@@ -8,6 +8,7 @@ import OrdersPage from './OrdersPage'
 import BrandsPage from './BrandsPage'
 import LinesPage from './LinesPage'
 import UsersPage from './UsersPage'
+import ReferralPage from './ReferralPage'
 import {
   DndContext,
   closestCenter,
@@ -27,7 +28,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import './App.css'
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
 
 export type ProductFiltersParams = { category_key?: string; brand_key?: string; line_key?: string }
 export type OrderFiltersParams = { user_id?: string }
@@ -612,12 +613,6 @@ function ProductsList({
           </button>
           <button 
             className="nav-btn"
-            onClick={() => onNavigate?.('promocodes')}
-          >
-            Промокоды
-          </button>
-          <button 
-            className="nav-btn"
             onClick={() => onNavigate?.('categories')}
           >
             Категории
@@ -636,6 +631,9 @@ function ProductsList({
           </button>
           <button className="nav-btn" onClick={() => onNavigate?.('users')}>
             Пользователи
+          </button>
+          <button className="nav-btn" onClick={() => onNavigate?.('referral')}>
+            Реферальная система
           </button>
         </div>
         <button onClick={handleLogout} className="logout-btn">
@@ -2292,6 +2290,8 @@ export default function App() {
           />
         ) : currentPage === 'users' ? (
           <UsersPage onNavigate={handlePageChange} />
+        ) : currentPage === 'referral' ? (
+          <ReferralPage onNavigate={handlePageChange} />
         ) : (
           <ProductsList
             onNavigate={handlePageChange}

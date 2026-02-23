@@ -3159,6 +3159,49 @@
   color: #111;
 }
 
+/* страница реферальной системы */
+.referral-settings-section,
+.referral-memo-section {
+  margin-bottom: 2rem;
+}
+
+.referral-section-title {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.referral-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.5rem;
+}
+
+.referral-form .form-group {
+  margin-bottom: 0;
+}
+
+.referral-form .admin-input {
+  width: 100%;
+  min-width: 120px;
+  max-width: 140px;
+}
+
+.referral-memo {
+  white-space: pre-wrap;
+  font-family: var(--admin-font);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  background: var(--admin-bg-subtle);
+  border: var(--admin-border);
+  border-radius: var(--radius-md);
+  color: #374151;
+}
+
 .stats-by-status {
   margin-top: 1.25rem;
   padding-top: 1rem;

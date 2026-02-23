@@ -8,7 +8,7 @@
 - контентная лента: один лист `content` (тип элемента: новость или подборка), единый порядок вывода в мини-аппе.
 - операционный контур заказов:
   - лист `orders`,
-  - статусы `new/confirmed/packed/delivered/cancelled`,
+  - статусы `new/confirmed/packed/completed/cancelled`,
   - подтверждение заказа с фиксацией `confirmed_at`.
 - настройки коммерции в листе `settings`:
   - `delivery_fee`,

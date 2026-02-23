@@ -33,7 +33,9 @@ function toUser(raw: any): User {
     email: String(raw.email ?? '').trim(),
     phone: String(raw.phone ?? '').trim(),
     role: String(raw.role ?? 'user').trim() || 'user',
-    active: raw === true || raw === 'true' || raw === '1' || raw === 1
+    active: raw === true || raw === 'true' || raw === '1' || raw === 1,
+    referrer_id: raw.referrer_id !== undefined ? String(raw.referrer_id).trim() || undefined : undefined,
+    referral_balance_rub: raw.referral_balance_rub !== undefined ? Math.max(0, Number(raw.referral_balance_rub) || 0) : undefined
   }
 }
 
@@ -53,10 +55,15 @@ router.post('/', async (req, res) => {
     if (users.some((x) => x.telegram_id === u.telegram_id)) {
       return res.status(400).json({ error: 'telegram_id_already_exists' })
     }
-
-    users.push(u)
+    // при создании из мини-аппа с ref передаётся referrer_id; остальные поля могут быть пустыми
+    const newUser: User = {
+      ...u,
+      referrer_id: u.referrer_id || undefined,
+      referral_balance_rub: u.referral_balance_rub !== undefined ? u.referral_balance_rub : 0
+    }
+    users.push(newUser)
     await saveUsersToSheet(sheetId, users)
-    return res.json({ success: true, user: u })
+    return res.json({ success: true, user: newUser })
   } catch (error: any) {
     logger.error({ error: error?.message }, 'ошибка создания пользователя')
     return res.status(500).json({ error: error?.message || 'Ошибка создания пользователя' })
@@ -89,7 +96,9 @@ router.put('/', async (req, res) => {
       email: raw.email !== undefined ? String(raw.email).trim() : existing.email,
       phone: raw.phone !== undefined ? String(raw.phone).trim() : existing.phone,
       role: raw.role !== undefined ? (String(raw.role).trim() || 'user') : existing.role,
-      active: raw.active !== undefined ? (raw.active === true || raw.active === 'true' || raw.active === '1') : existing.active
+      active: raw.active !== undefined ? (raw.active === true || raw.active === 'true' || raw.active === '1') : existing.active,
+      referrer_id: raw.referrer_id !== undefined ? (String(raw.referrer_id).trim() || undefined) : existing.referrer_id,
+      referral_balance_rub: raw.referral_balance_rub !== undefined ? Math.max(0, Number(raw.referral_balance_rub) || 0) : existing.referral_balance_rub
     }
     await saveUsersToSheet(sheetId, users)
     return res.json({ success: true, user: users[idx] })

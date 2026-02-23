@@ -26,7 +26,7 @@ type Category = {
   order: number
 }
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
 
 const EditIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -272,9 +272,6 @@ function CategoriesPage({
           <button className="nav-btn" onClick={() => onNavigate?.('products')}>
             Товары
           </button>
-          <button className="nav-btn" onClick={() => onNavigate?.('promocodes')}>
-            Промокоды
-          </button>
           <button className="nav-btn active" onClick={() => onNavigate?.('categories')}>
             Категории
           </button>
@@ -287,6 +284,7 @@ function CategoriesPage({
             Заказы
           </button>
           <button className="nav-btn" onClick={() => onNavigate?.('users')}>Пользователи</button>
+          <button className="nav-btn" onClick={() => onNavigate?.('referral')}>Реферальная система</button>
         </div>
         <button onClick={handleLogout} className="logout-btn">
           Выйти

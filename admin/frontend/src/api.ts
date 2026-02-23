@@ -308,6 +308,23 @@ export const api = {
   // статистика посещений
   async getVisitsStats(period: '7d' | '30d' | 'all') {
     return fetchWithAuth(`/api/analytics/visits-stats?period=${period}`)
+  },
+
+  // настройки заказов (доставка + реферальные проценты)
+  async getOrdersSettings() {
+    return fetchWithAuth('/api/settings/orders-status')
+  },
+  async putOrdersSettings(settings: {
+    deliveryFee?: number
+    freeDeliveryFrom?: number
+    referralPercentBefore10?: number
+    referralPercentAfter10?: number
+  }) {
+    return fetchWithAuth('/api/settings/orders-status', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    })
   }
 }
 

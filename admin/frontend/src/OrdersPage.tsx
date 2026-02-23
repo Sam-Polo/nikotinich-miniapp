@@ -2,8 +2,8 @@ import { useEffect, useState, useMemo } from 'react'
 import { api, removeToken } from './api'
 import './App.css'
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users'
-type OrderStatus = 'new' | 'confirmed' | 'packed' | 'delivered' | 'cancelled'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
+type OrderStatus = 'new' | 'confirmed' | 'packed' | 'completed' | 'cancelled'
 type Order = {
   id: string
   userId?: string
@@ -23,7 +23,7 @@ const statusLabels: Record<OrderStatus, string> = {
   new: 'Новый',
   confirmed: 'Подтвержден',
   packed: 'Собран',
-  delivered: 'Доставлен',
+  completed: 'Выполнен',
   cancelled: 'Отменен'
 }
 
@@ -230,13 +230,13 @@ export default function OrdersPage({
         <h1>Админ-панель - Никотиныч</h1>
         <div className="header-nav">
           <button className="nav-btn" onClick={() => onNavigate?.('products')}>Товары</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('promocodes')}>Промокоды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('categories')}>Категории</button>
           <button className="nav-btn" onClick={() => onNavigate?.('brands')}>Бренды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('lines')}>Линейки</button>
           <button className="nav-btn" onClick={() => onNavigate?.('content')}>Контент</button>
           <button className="nav-btn active" onClick={() => onNavigate?.('orders')}>Заказы</button>
           <button className="nav-btn" onClick={() => onNavigate?.('users')}>Пользователи</button>
+          <button className="nav-btn" onClick={() => onNavigate?.('referral')}>Реферальная система</button>
         </div>
         <button onClick={handleLogout} className="logout-btn">Выйти</button>
       </header>
