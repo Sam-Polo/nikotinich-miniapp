@@ -2293,7 +2293,7 @@
 
   /* уведомления */
   .toast {
-    bottom: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
     right: 1rem;
     left: 1rem;
     min-width: auto;
@@ -2541,6 +2541,36 @@
   .modal-form .image-upload-button {
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
+  }
+
+  /* навигация: кнопки компактнее */
+  .header-nav {
+    gap: 0.35rem;
+  }
+
+  .nav-btn {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .nav-btn:not(:last-child)::after {
+    height: 50%;
+  }
+
+  /* реферальная страница */
+  .referral-memo {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .referral-section-title {
+    font-size: 1rem;
+  }
+
+  /* кнопка «Загрузить ещё» на всю ширину */
+  .orders-load-more .btn-secondary {
+    width: 100%;
+    max-width: 280px;
   }
 
   .modal-form .category-form-preview {
@@ -3412,6 +3442,176 @@
 
   .promocodes-table td:last-child::before {
     display: none;
+  }
+
+  /* таблица заказов — карточный вид как у промокодов */
+  .orders-table-wrapper {
+    margin-top: 0.75rem;
+  }
+
+  .orders-table.promocodes-table {
+    display: block;
+    overflow-x: visible;
+  }
+
+  .orders-table.promocodes-table thead {
+    display: none;
+  }
+
+  .orders-table.promocodes-table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--radius-md);
+    background: var(--admin-bg);
+    box-shadow: var(--shadow-sm);
+    padding: 0.75rem;
+  }
+
+  .orders-table.promocodes-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    text-align: right;
+  }
+
+  .orders-table.promocodes-table td:last-child {
+    border-bottom: none;
+    padding-top: 0.5rem;
+  }
+
+  .orders-table.promocodes-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-align: left;
+    color: var(--admin-accent);
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .orders-table.promocodes-table td:last-child::before {
+    display: none;
+  }
+
+  .orders-table.promocodes-table td[data-label="Статус"] {
+    align-items: center;
+  }
+
+  .orders-table.promocodes-table .admin-select {
+    min-width: 0;
+    flex: 1;
+    max-width: 160px;
+  }
+
+  /* фильтры заказов: поиск и селекты на узких экранах в колонку */
+  .toolbar-row-filters--orders {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-search-orders {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .orders-search-input {
+    width: 100%;
+    max-width: none;
+  }
+
+  /* страница рефералки */
+  .referral-settings-section,
+  .referral-memo-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .referral-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .referral-form .admin-input {
+    max-width: none;
+    min-width: 0;
+  }
+
+  .referral-memo {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .stats-section {
+    padding: 1rem;
+  }
+
+  .stats-period-select {
+    margin-bottom: 0.75rem;
+  }
+
+  /* тост с учётом safe-area (вырез, индикатор) */
+  .toast {
+    left: 1rem;
+    right: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    padding: 0.75rem 1rem;
+  }
+
+  /* таблица категорий и пользователей — карточный вид */
+  .categories-table-wrapper {
+    overflow-x: visible;
+  }
+
+  .categories-table {
+    display: block;
+  }
+
+  .categories-table thead {
+    display: none;
+  }
+
+  .categories-table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--radius-md);
+    background: var(--admin-bg);
+    box-shadow: var(--shadow-sm);
+    padding: 0.75rem;
+  }
+
+  .categories-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    text-align: right;
+  }
+
+  .categories-table td:last-child {
+    border-bottom: none;
+    padding-top: 0.5rem;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .categories-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-align: left;
+    color: var(--admin-accent);
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .categories-table td:last-child::before {
+    display: none;
+  }
+
+  .categories-table .btn-icon {
+    flex-shrink: 0;
   }
 }
 

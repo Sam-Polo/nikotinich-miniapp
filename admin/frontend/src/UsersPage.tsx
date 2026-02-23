@@ -258,15 +258,15 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
                   const referrer = u.referrer_id ? users.find((r) => r.telegram_id === u.referrer_id) : null
                   return (
                   <tr key={u.telegram_id}>
-                    <td>{u.telegram_id}</td>
-                    <td>{u.username ? `@${u.username.replace(/^@/, '')}` : '—'}</td>
-                    <td>{u.email || '—'}</td>
-                    <td>{u.phone || '—'}</td>
-                    <td>{u.role || 'user'}</td>
-                    <td>{u.active ? 'Да' : 'Нет'}</td>
-                    <td>{referrer ? `@${referrer.username?.replace(/^@/, '') || referrer.telegram_id}` : '—'}</td>
-                    <td>{u.referral_balance_rub != null ? `${u.referral_balance_rub} ₽` : '—'}</td>
-                    <td>
+                    <td data-label="Telegram ID">{u.telegram_id}</td>
+                    <td data-label="Username">{u.username ? `@${u.username.replace(/^@/, '')}` : '—'}</td>
+                    <td data-label="Email">{u.email || '—'}</td>
+                    <td data-label="Телефон">{u.phone || '—'}</td>
+                    <td data-label="Роль">{u.role || 'user'}</td>
+                    <td data-label="Активен">{u.active ? 'Да' : 'Нет'}</td>
+                    <td data-label="Привёл">{referrer ? `@${referrer.username?.replace(/^@/, '') || referrer.telegram_id}` : '—'}</td>
+                    <td data-label="Реф. баланс">{u.referral_balance_rub != null ? `${u.referral_balance_rub} ₽` : '—'}</td>
+                    <td data-label="Действия">
                       <button type="button" className="btn-icon btn-orders" onClick={() => onNavigate?.('orders', { user_id: u.telegram_id })} title="Посмотреть заказы"><OrdersIcon /></button>
                       <button type="button" className="btn-icon btn-edit" onClick={() => handleEdit(u)} title="Редактировать"><EditIcon /></button>
                       <button type="button" className="btn-icon btn-delete" onClick={() => handleDeleteClick(u)} title="Удалить"><TrashIcon /></button>

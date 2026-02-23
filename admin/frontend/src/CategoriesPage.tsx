@@ -69,10 +69,10 @@ function SortableCategoryRow({
 
   return (
     <tr ref={setNodeRef} style={style} className={isDragging ? 'dragging' : ''}>
-      <td>
+      <td data-label="Порядок">
         <span className="drag-handle" {...attributes} {...listeners}>⋮⋮</span>
       </td>
-      <td>
+      <td data-label="Превью">
         <div
           className="category-row-preview category-row-preview-square"
           style={{
@@ -82,9 +82,9 @@ function SortableCategoryRow({
           }}
         />
       </td>
-      <td>{category.title}</td>
-      <td>{category.key}</td>
-      <td>
+      <td data-label="Название">{category.title}</td>
+      <td data-label="Ключ">{category.key}</td>
+      <td data-label="Действия">
         <button type="button" className="btn-icon btn-edit" onClick={onEdit} title="Редактировать"><EditIcon /></button>
         <button type="button" className="btn-icon btn-delete" onClick={onDelete} title="Убрать из мини-приложения"><TrashIcon /></button>
       </td>

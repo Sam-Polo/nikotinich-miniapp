@@ -325,14 +325,14 @@ export default function OrdersPage({
                 <tbody>
                   {filteredOrders.map((order) => (
                     <tr key={order.id}>
-                      <td>{order.id.slice(0, 8)}</td>
-                      <td>{order.customerName}</td>
-                      <td>{order.phone || '—'}</td>
-                      <td>{order.totalRub} ₽</td>
-                      <td className="orders-address-cell" title={order.address || undefined}>
+                      <td data-label="ID">{order.id.slice(0, 8)}</td>
+                      <td data-label="Клиент">{order.customerName}</td>
+                      <td data-label="Телефон">{order.phone || '—'}</td>
+                      <td data-label="Сумма">{order.totalRub} ₽</td>
+                      <td className="orders-address-cell" data-label="Адрес" title={order.address || undefined}>
                         {truncateAddress(order.address || '')}
                       </td>
-                      <td>
+                      <td data-label="Статус">
                         <select
                           className="admin-select"
                           value={order.status}
@@ -343,7 +343,7 @@ export default function OrdersPage({
                           ))}
                         </select>
                       </td>
-                      <td>{new Date(order.createdAt).toLocaleString('ru-RU')}</td>
+                      <td data-label="Создан">{new Date(order.createdAt).toLocaleString('ru-RU')}</td>
                     </tr>
                   ))}
                 </tbody>
