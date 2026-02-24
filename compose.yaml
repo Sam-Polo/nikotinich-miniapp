@@ -1,0 +1,38 @@
+services:
+  admin-backend:
+    build:
+      context: ./admin/backend
+    container_name: nikotinich-admin-backend
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    env_file:
+      - ./admin/backend/.env
+    volumes:
+      # uploads для локального хранилища медиа; при S3 этот volume не используется
+      - admin_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  admin-frontend:
+    build:
+      context: ./admin/frontend
+      args:
+        # для локального запуска — http://localhost:4001
+        # на сервере переопределяется через .env в корне репо: VITE_API_URL=https://api.example.com
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4001}
+    container_name: nikotinich-admin-frontend
+    restart: unless-stopped
+    ports:
+      - "5174:80"
+    depends_on:
+      admin-backend:
+        condition: service_healthy
+
+volumes:
+  admin_uploads:
+    driver: local

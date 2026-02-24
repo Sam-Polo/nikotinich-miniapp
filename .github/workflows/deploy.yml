@@ -1,0 +1,41 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+
+            # переходим в директорию репозитория на сервере
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            echo "=== git pull ==="
+            git pull origin main
+
+            echo "=== docker compose build ==="
+            docker compose build
+
+            echo "=== docker compose up ==="
+            docker compose up -d
+
+            echo "=== waiting for healthcheck ==="
+            sleep 10
+            docker compose ps
+
+            echo "=== deploy done ==="
