@@ -104,7 +104,7 @@ function SortableContentRow({
 export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminPage) => void }) {
   const [items, setItems] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)

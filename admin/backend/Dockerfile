@@ -17,6 +17,9 @@ FROM node:20-alpine AS runner
 # sharp требует libc (glibc), в alpine используем libc6-compat
 RUN apk add --no-cache libc6-compat
 
+# в контейнере всегда production — отключает pino-pretty (devDep) и включает prod-оптимизации
+ENV NODE_ENV=production
+
 WORKDIR /app
 
 # ставим только продакшн-зависимости

@@ -11,6 +11,8 @@ services:
     volumes:
       # uploads для локального хранилища медиа; при S3 этот volume не используется
       - admin_uploads:/app/uploads
+      # сервисный аккаунт Google — файл не в репо, монтируется с хоста
+      - ./admin/backend/saa.json:/app/sa.json:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
       interval: 30s
@@ -31,6 +33,54 @@ services:
       - "5174:80"
     depends_on:
       admin-backend:
+        condition: service_healthy
+
+  miniapp-bot:
+    build:
+      context: ./miniapp/bot
+    container_name: nikotinich-miniapp-bot
+    restart: unless-stopped
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      MINIAPP_URL: ${MINIAPP_URL}
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+      NODE_ENV: production
+
+  miniapp-backend:
+    build:
+      context: ./miniapp/backend
+    container_name: nikotinich-miniapp-backend
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+      GOOGLE_SHEET_ID: ${GOOGLE_SHEET_ID}
+      GOOGLE_SA_FILE: /app/sa.json
+      ALLOWED_ORIGINS: ${MINIAPP_ALLOWED_ORIGINS:-http://localhost:5173}
+    volumes:
+      # тот же сервисный аккаунт Google, что у admin-backend
+      - ./admin/backend/saa.json:/app/sa.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  miniapp-frontend:
+    build:
+      context: ./miniapp/frontend
+      args:
+        # URL API мини-апп бэкенда (для прода — публичный https URL)
+        VITE_API_URL: ${MINIAPP_API_URL:-http://localhost:4002}
+    container_name: nikotinich-miniapp-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      miniapp-backend:
         condition: service_healthy
 
 volumes:
