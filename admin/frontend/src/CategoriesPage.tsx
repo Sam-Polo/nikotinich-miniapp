@@ -280,6 +280,7 @@ function CategoriesPage({
           <button className="nav-btn" onClick={() => onNavigate?.('content')}>
             Контент
           </button>
+          <button className="nav-btn" onClick={() => onNavigate?.('promocodes')}>Промокоды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('orders')}>
             Заказы
           </button>

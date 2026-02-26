@@ -106,6 +106,7 @@ function PromocodesPage({ onNavigate }: { onNavigate?: (page: AdminPage) => void
           <button className="nav-btn" onClick={() => onNavigate?.('content')}>
             Контент
           </button>
+          <button className="nav-btn active" onClick={() => onNavigate?.('promocodes')}>Промокоды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('orders')}>
             Заказы
           </button>

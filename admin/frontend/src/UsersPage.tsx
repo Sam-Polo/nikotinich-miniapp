@@ -216,6 +216,7 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
           <button className="nav-btn" onClick={() => onNavigate?.('brands')}>Бренды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('lines')}>Линейки</button>
           <button className="nav-btn" onClick={() => onNavigate?.('content')}>Контент</button>
+          <button className="nav-btn" onClick={() => onNavigate?.('promocodes')}>Промокоды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('orders')}>Заказы</button>
           <button className="nav-btn active" onClick={() => onNavigate?.('users')}>Пользователи</button>
           <button className="nav-btn" onClick={() => onNavigate?.('referral')}>Реферальная система</button>
