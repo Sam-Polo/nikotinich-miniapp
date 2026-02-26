@@ -90,6 +90,7 @@ export default function ReferralPage({ onNavigate }: { onNavigate?: (page: Admin
           <button className="nav-btn" onClick={() => onNavigate?.('brands')}>Бренды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('lines')}>Линейки</button>
           <button className="nav-btn" onClick={() => onNavigate?.('content')}>Контент</button>
+          <button className="nav-btn" onClick={() => onNavigate?.('promocodes')}>Промокоды</button>
           <button className="nav-btn" onClick={() => onNavigate?.('orders')}>Заказы</button>
           <button className="nav-btn" onClick={() => onNavigate?.('users')}>Пользователи</button>
           <button className="nav-btn active" onClick={() => onNavigate?.('referral')}>Реферальная система</button>
