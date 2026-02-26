@@ -199,6 +199,36 @@ bot.callbackQuery(/^os:/, async (ctx) => {
   }
 })
 
+// --- входящий контакт (requestContact из мини-апп) ---
+bot.on('message:contact', async (ctx) => {
+  const contact = ctx.message.contact
+  const userId = String(ctx.from?.id || '')
+  const phone = contact.phone_number
+
+  logger.info({ userId, hasPhone: !!phone }, 'получен контакт от пользователя')
+
+  // сохраняем телефон через miniapp-backend API
+  const apiUrl = process.env.MINIAPP_API_URL?.trim()
+  if (apiUrl && userId && phone) {
+    try {
+      const res = await fetch(`${apiUrl}/api/users/${encodeURIComponent(userId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      })
+      if (res.ok) {
+        logger.info({ userId }, 'телефон сохранён через API')
+      } else {
+        logger.warn({ userId, status: res.status }, 'не удалось сохранить телефон через API')
+      }
+    } catch (e: any) {
+      logger.warn({ error: e?.message, userId }, 'ошибка сохранения телефона')
+    }
+  }
+
+  await ctx.reply('Номер сохранён! Вернитесь в магазин 👇', { reply_markup: shopKeyboard() })
+})
+
 // --- любое другое сообщение ---
 bot.on('message', async (ctx) => {
   await ctx.reply('Открой магазин через кнопку ниже 👇', { reply_markup: shopKeyboard() })

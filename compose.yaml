@@ -51,6 +51,8 @@ services:
       # URL admin-backend для смены статуса заказа через inline-кнопки в канале
       ADMIN_BACKEND_URL: ${ADMIN_BACKEND_URL:-http://nikotinich-admin-backend:4001}
       BOT_INTERNAL_SECRET: ${BOT_INTERNAL_SECRET}
+      # URL miniapp-backend для сохранения телефона при requestContact
+      MINIAPP_API_URL: ${MINIAPP_API_URL:-http://nikotinich-miniapp-backend:4002}
 
   miniapp-backend:
     build:

@@ -233,10 +233,10 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* кнопка оформить заказ */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 pb-safe">
+      {/* кнопка оформить заказ — z-[60] чтобы перекрывать BottomNav (z-50) */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 pb-safe z-[60]">
         <Button fullWidth onClick={() => navigate('/checkout')}>
-          Оформить заказ
+          Оформить заказ — ₽{finalTotal.toLocaleString('ru-RU')}
         </Button>
       </div>
     </div>

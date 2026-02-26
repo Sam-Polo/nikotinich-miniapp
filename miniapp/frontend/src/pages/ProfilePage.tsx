@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '../store/user'
-import { updateUser, getUserOrders } from '../api'
+import { updateUser, getUserOrders, getUser } from '../api'
 import type { Order } from '../api'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
@@ -87,17 +87,48 @@ export default function ProfilePage() {
       }
 
       const handler = (data: any) => {
-        setPhoneLoading(false)
-        if (data?.status === 'sent' && data?.contact?.phone_number) {
-          let phone = data.contact.phone_number
-          if (!phone.startsWith('+')) phone = '+' + phone
-          setEditPhone(phone)
-          setPhoneError('')
-        } else {
-          setPhoneError('Доступ к номеру отклонён')
-        }
         tg.offEvent('contactRequested', handler)
         contactHandlerRef.current = null
+
+        // определяем статус — Telegram может вернуть объект или булево
+        const isSent = data?.status === 'sent' || data === true
+
+        if (!isSent) {
+          setPhoneLoading(false)
+          setPhoneError('Запрос отменён')
+          return
+        }
+
+        // телефон может быть прямо в event data (новые клиенты)
+        const directPhone = data?.contact?.phone_number || data?.phoneNumber
+
+        if (directPhone) {
+          setEditPhone(directPhone.startsWith('+') ? directPhone : '+' + directPhone)
+          setPhoneLoading(false)
+          return
+        }
+
+        // телефон не пришёл в event — бот получил контакт и должен был обновить профиль
+        // делаем refresh профиля через 1.5 сек
+        if (!user?.telegram_id) {
+          setPhoneLoading(false)
+          setPhoneError('Контакт отправлен. Обновите страницу для получения номера.')
+          return
+        }
+
+        setTimeout(() => {
+          getUser(user.telegram_id)
+            .then(updated => {
+              if (updated.phone) {
+                setEditPhone(updated.phone)
+                setUser(updated)
+              } else {
+                setPhoneError('Контакт отправлен, но номер ещё не сохранён. Попробуйте позже.')
+              }
+            })
+            .catch(() => setPhoneError('Контакт отправлен. Обновите профиль вручную.'))
+            .finally(() => setPhoneLoading(false))
+        }, 1500)
       }
 
       contactHandlerRef.current = handler
@@ -191,10 +222,17 @@ export default function ProfilePage() {
                     type="button"
                     onClick={requestPhoneFromTelegram}
                     disabled={phoneLoading}
-                    className="px-3 py-2 bg-bg-base rounded-[10px] text-accent text-[13px] font-semibold border border-border-light active:bg-blue-50 disabled:opacity-50 flex-shrink-0"
+                    className="w-10 h-10 flex items-center justify-center bg-[#2AABEE] rounded-[10px] active:opacity-80 disabled:opacity-50 flex-shrink-0"
                     title="Получить номер из Telegram"
                   >
-                    {phoneLoading ? '...' : 'Из TG'}
+                    {phoneLoading ? (
+                      <span className="text-white text-[12px]">...</span>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
                   </button>
                 </div>
                 {phoneError && <p className="text-destructive text-[12px] mt-1">{phoneError}</p>}
