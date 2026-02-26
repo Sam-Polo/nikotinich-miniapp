@@ -8,6 +8,9 @@ services:
       - "4001:4001"
     env_file:
       - ./admin/backend/.env
+    environment:
+      # секрет для internal endpoint (вызов от бота)
+      BOT_INTERNAL_SECRET: ${BOT_INTERNAL_SECRET}
     volumes:
       # uploads для локального хранилища медиа; при S3 этот volume не используется
       - admin_uploads:/app/uploads
@@ -45,6 +48,9 @@ services:
       MINIAPP_URL: ${MINIAPP_URL}
       APP_VERSION: ${APP_VERSION:-0.1.0}
       NODE_ENV: production
+      # URL admin-backend для смены статуса заказа через inline-кнопки в канале
+      ADMIN_BACKEND_URL: ${ADMIN_BACKEND_URL:-http://nikotinich-admin-backend:4001}
+      BOT_INTERNAL_SECRET: ${BOT_INTERNAL_SECRET}
 
   miniapp-backend:
     build:
@@ -59,6 +65,9 @@ services:
       GOOGLE_SHEET_ID: ${GOOGLE_SHEET_ID}
       GOOGLE_SA_FILE: /app/sa.json
       ALLOWED_ORIGINS: ${MINIAPP_ALLOWED_ORIGINS:-http://localhost:5173}
+      # telegram bot api для уведомлений о новых заказах в канал
+      BOT_TOKEN: ${BOT_TOKEN}
+      ORDERS_CHANNEL_ID: ${ORDERS_CHANNEL_ID}
     volumes:
       # тот же сервисный аккаунт Google, что у admin-backend
       - ./admin/backend/saa.json:/app/sa.json:ro

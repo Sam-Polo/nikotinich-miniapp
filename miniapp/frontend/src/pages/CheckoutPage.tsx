@@ -8,7 +8,7 @@ import Button from '../components/Button'
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
-  const { items, subtotal, clearCart } = useCartStore()
+  const { items, subtotal, clearCart, promoApplied, referralBonusUsed } = useCartStore()
   const { user, settings } = useUserStore()
 
   const [name, setName] = useState(user?.username || '')
@@ -23,7 +23,11 @@ export default function CheckoutPage() {
   const sub = subtotal()
   const isFree = sub >= freeFrom
   const delivery = isFree ? 0 : deliveryFee
-  const total = sub + delivery
+  const totalBeforeDiscount = sub + delivery
+  const promoDiscount = promoApplied?.discount ?? 0
+  const afterPromo = Math.max(0, totalBeforeDiscount - promoDiscount)
+  const effectiveBonus = Math.min(referralBonusUsed, afterPromo)
+  const total = Math.max(0, afterPromo - effectiveBonus)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,7 +50,9 @@ export default function CheckoutPage() {
         address: address.trim() || undefined,
         totalRub: total,
         deliveryFee: delivery,
-        note: note.trim() || undefined
+        promoCode: promoApplied?.code || undefined,
+        note: note.trim() || undefined,
+        referralBonusUsed: effectiveBonus > 0 ? effectiveBonus : undefined
       })
 
       clearCart()
@@ -100,6 +106,18 @@ export default function CheckoutPage() {
             <span>Доставка</span>
             <span className={isFree ? 'text-green-500' : ''}>{isFree ? 'Бесплатно' : `₽${delivery}`}</span>
           </div>
+          {promoDiscount > 0 && (
+            <div className="flex justify-between text-[14px] text-green-500">
+              <span>Промокод {promoApplied?.code}</span>
+              <span>−₽{promoDiscount.toLocaleString('ru-RU')}</span>
+            </div>
+          )}
+          {effectiveBonus > 0 && (
+            <div className="flex justify-between text-[14px] text-green-500">
+              <span>Реферальные баллы</span>
+              <span>−₽{effectiveBonus.toLocaleString('ru-RU')}</span>
+            </div>
+          )}
           <div className="flex justify-between text-[17px] font-bold text-text-primary border-t border-border-light pt-2 mt-1">
             <span>Итого</span>
             <span>₽{total.toLocaleString('ru-RU')}</span>

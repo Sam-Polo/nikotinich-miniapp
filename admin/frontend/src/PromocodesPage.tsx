@@ -257,6 +257,7 @@ function PromocodeFormModal({
     expiresAt: promocode?.expiresAt 
       ? new Date(promocode.expiresAt).toISOString().slice(0, 16)
       : '',
+    active: promocode?.active !== undefined ? promocode.active : true,
     productSlugs: promocode?.productSlugs as string[] | undefined
   })
   const [saving, setSaving] = useState(false)
@@ -299,7 +300,7 @@ function PromocodeFormModal({
         type: formData.type,
         value,
         expiresAt: formData.expiresAt || undefined,
-        active: promocode?.active !== undefined ? promocode.active : true,
+        active: formData.active,
         productSlugs: formData.productSlugs && formData.productSlugs.length > 0 ? formData.productSlugs : undefined
       }
       
@@ -428,6 +429,21 @@ function PromocodeFormModal({
             />
             <small>Оставьте пустым, если промокод без срока действия. Промокод будет активен до указанной даты.</small>
           </div>
+
+          {isEditMode && (
+            <div className="form-group">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={formData.active}
+                  onChange={e => setFormData({ ...formData, active: e.target.checked })}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                Активен
+              </label>
+              <small>Снимите галочку чтобы деактивировать промокод без удаления</small>
+            </div>
+          )}
 
           <div className="form-group">
             <label>Товары</label>

@@ -8,34 +8,67 @@ import Button from '../components/Button'
 
 export default function CartPage() {
   const navigate = useNavigate()
-  const { items, removeItem, updateQty, subtotal } = useCartStore()
-  const { settings } = useUserStore()
+  const { items, removeItem, updateQty, subtotal, promoApplied, applyPromo, clearPromo, referralBonusUsed, applyReferralBonus, clearReferralBonus } = useCartStore()
+  const { user, settings } = useUserStore()
 
   const deliveryFee = settings?.deliveryFee ?? 300
   const freeFrom = settings?.freeDeliveryFrom ?? 3500
   const sub = subtotal()
   const isFreeDelivery = sub >= freeFrom
   const delivery = isFreeDelivery ? 0 : deliveryFee
-  const total = sub + delivery
+  const totalBeforeDiscount = sub + delivery
 
   const [promoInput, setPromoInput] = useState('')
-  const [promoApplied, setPromoApplied] = useState<{ code: string; discount: number } | null>(null)
   const [promoError, setPromoError] = useState('')
   const [promoLoading, setPromoLoading] = useState(false)
 
-  const finalTotal = total - (promoApplied?.discount ?? 0)
+  const referralBalance = user?.referral_balance_rub ?? 0
 
-  async function applyPromo() {
+  const promoDiscount = promoApplied?.discount ?? 0
+  // итого после промокода, до реферального баланса
+  const afterPromo = Math.max(0, totalBeforeDiscount - promoDiscount)
+  // применённый реферальный бонус не может превышать итог после промокода
+  const effectiveReferralBonus = Math.min(referralBonusUsed, afterPromo)
+  const finalTotal = Math.max(0, afterPromo - effectiveReferralBonus)
+
+  async function applyPromoCode() {
     if (!promoInput.trim()) return
     setPromoLoading(true)
     setPromoError('')
     try {
-      const result = await validatePromo(promoInput.trim(), total)
-      setPromoApplied({ code: promoInput.trim().toUpperCase(), discount: result.discount })
+      const slugs = items.map(i => i.product.slug)
+      // сначала делаем запрос чтобы узнать productSlugs промокода
+      const result = await validatePromo(promoInput.trim(), totalBeforeDiscount, slugs)
+
+      let finalDiscount = result.discount
+      // для percent-промокодов с ограничением по товарам: пересчитываем от eligible subtotal
+      if (result.type === 'percent' && result.productSlugs && result.productSlugs.length > 0) {
+        const eligibleSubtotal = items
+          .filter(i => result.productSlugs.includes(i.product.slug))
+          .reduce((s, i) => s + i.product.display_price * i.qty, 0)
+        finalDiscount = Math.round(eligibleSubtotal * result.value / 100)
+      }
+
+      applyPromo({ code: promoInput.trim().toUpperCase(), discount: finalDiscount, productSlugs: result.productSlugs })
     } catch (e: any) {
-      setPromoError(e.message === 'invalid_code' ? 'Промокод не найден' : e.message === 'expired_code' ? 'Промокод истёк' : 'Ошибка проверки')
+      const msg = e.message
+      setPromoError(
+        msg === 'invalid_code' ? 'Промокод не найден' :
+        msg === 'expired_code' ? 'Промокод истёк' :
+        msg === 'not_applicable' ? 'Промокод не действует на товары в корзине' :
+        'Ошибка проверки'
+      )
     } finally {
       setPromoLoading(false)
+    }
+  }
+
+  function toggleReferralBonus() {
+    if (referralBonusUsed > 0) {
+      clearReferralBonus()
+    } else if (referralBalance > 0) {
+      // применяем столько, сколько нужно для оплаты (не больше баланса)
+      applyReferralBonus(Math.min(referralBalance, afterPromo))
     }
   }
 
@@ -83,14 +116,12 @@ export default function CartPage() {
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2">
-                {/* кнопка удалить */}
                 <button
                   onClick={() => removeItem(product.slug)}
                   className="text-destructive text-[20px] leading-none"
                 >
                   ×
                 </button>
-                {/* счётчик */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => updateQty(product.slug, qty - 1)}
@@ -112,12 +143,12 @@ export default function CartPage() {
         </div>
 
         {/* промокод */}
-        <div className="bg-card-bg rounded-card p-4 mb-4">
+        <div className="bg-card-bg rounded-card p-4 mb-3">
           <p className="text-[14px] font-semibold text-text-primary mb-2">Промокод</p>
           {promoApplied ? (
             <div className="flex items-center justify-between">
-              <p className="text-accent text-[14px]">🎉 {promoApplied.code} — −₽{promoApplied.discount}</p>
-              <button onClick={() => { setPromoApplied(null); setPromoInput('') }} className="text-destructive text-[13px]">
+              <p className="text-accent text-[14px]">🎉 {promoApplied.code} — −₽{promoApplied.discount.toLocaleString('ru-RU')}</p>
+              <button onClick={() => { clearPromo(); setPromoInput('') }} className="text-destructive text-[13px]">
                 Убрать
               </button>
             </div>
@@ -126,14 +157,14 @@ export default function CartPage() {
               <input
                 type="text"
                 value={promoInput}
-                onChange={e => setPromoInput(e.target.value)}
+                onChange={e => setPromoInput(e.target.value.toUpperCase())}
                 placeholder="Введите промокод"
                 className="flex-1 px-3 py-2 bg-bg-base rounded-[10px] text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
               />
               <Button
                 variant="secondary"
                 loading={promoLoading}
-                onClick={applyPromo}
+                onClick={applyPromoCode}
                 className="px-4 py-2 text-[14px]"
               >
                 Применить
@@ -142,6 +173,29 @@ export default function CartPage() {
           )}
           {promoError && <p className="text-destructive text-[12px] mt-1">{promoError}</p>}
         </div>
+
+        {/* реферальный баланс */}
+        {referralBalance > 0 && (
+          <div className="bg-card-bg rounded-card p-4 mb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[14px] font-semibold text-text-primary">Реферальные баллы</p>
+                <p className="text-[13px] text-text-secondary mt-0.5">
+                  Доступно: ₽{referralBalance.toLocaleString('ru-RU')}
+                </p>
+              </div>
+              <button
+                onClick={toggleReferralBonus}
+                className={`w-12 h-7 rounded-full transition-colors duration-200 relative ${effectiveReferralBonus > 0 ? 'bg-accent' : 'bg-border-light'}`}
+              >
+                <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 ${effectiveReferralBonus > 0 ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
+            {effectiveReferralBonus > 0 && (
+              <p className="text-accent text-[13px] mt-2">−₽{effectiveReferralBonus.toLocaleString('ru-RU')} баллами</p>
+            )}
+          </div>
+        )}
 
         {/* итоговая сумма */}
         <div className="bg-card-bg rounded-card p-4 space-y-2">
@@ -160,25 +214,28 @@ export default function CartPage() {
               Бесплатная доставка от ₽{freeFrom.toLocaleString('ru-RU')}
             </p>
           )}
-          {promoApplied && (
+          {promoDiscount > 0 && (
             <div className="flex justify-between text-[14px] text-green-500">
-              <span>Скидка</span>
-              <span>−₽{promoApplied.discount}</span>
+              <span>Промокод</span>
+              <span>−₽{promoDiscount.toLocaleString('ru-RU')}</span>
+            </div>
+          )}
+          {effectiveReferralBonus > 0 && (
+            <div className="flex justify-between text-[14px] text-green-500">
+              <span>Реферальные баллы</span>
+              <span>−₽{effectiveReferralBonus.toLocaleString('ru-RU')}</span>
             </div>
           )}
           <div className="flex justify-between text-[17px] font-bold text-text-primary border-t border-border-light pt-2 mt-1">
             <span>Итого</span>
-            <span>₽{Math.max(0, finalTotal).toLocaleString('ru-RU')}</span>
+            <span>₽{finalTotal.toLocaleString('ru-RU')}</span>
           </div>
         </div>
       </div>
 
       {/* кнопка оформить заказ */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 pb-safe">
-        <Button
-          fullWidth
-          onClick={() => navigate('/checkout')}
-        >
+        <Button fullWidth onClick={() => navigate('/checkout')}>
           Оформить заказ
         </Button>
       </div>

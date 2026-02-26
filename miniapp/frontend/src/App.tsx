@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import WebApp from '@twa-dev/sdk'
 import { trackVisit, upsertUser, getSettings } from './api'
 import { useUserStore } from './store/user'
@@ -58,6 +59,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
       <div className="flex flex-col min-h-full">
         <Routes>
           {/* основные экраны с нижней навигацией */}

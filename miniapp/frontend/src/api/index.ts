@@ -130,6 +130,7 @@ export const createOrder = (data: {
   deliveryFee?: number
   promoCode?: string
   note?: string
+  referralBonusUsed?: number
 }) => request<{ id: string; status: string; createdAt: string }>('/orders', {
   method: 'POST',
   body: JSON.stringify(data)
@@ -161,5 +162,8 @@ export const trackVisit = (userId?: string) =>
 
 // --- промокоды ---
 
-export const validatePromo = (code: string, totalRub: number) =>
-  request<PromoValidation>(`/promocodes/validate?code=${encodeURIComponent(code)}&totalRub=${totalRub}`)
+export const validatePromo = (code: string, totalRub: number, itemSlugs?: string[]) => {
+  const qs = new URLSearchParams({ code, totalRub: String(totalRub) })
+  if (itemSlugs && itemSlugs.length > 0) qs.set('itemSlugs', itemSlugs.join(','))
+  return request<PromoValidation>(`/promocodes/validate?${qs}`)
+}

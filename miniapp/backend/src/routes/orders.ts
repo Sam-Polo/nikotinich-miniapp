@@ -1,17 +1,50 @@
 import { Router } from 'express'
 import { randomUUID } from 'node:crypto'
 import { SHEET_ID } from '../config.js'
-import { readSheet, ensureSheet, appendRow } from '../sheets-utils.js'
+import { readSheet, ensureSheet, appendRow, getAuth, updateRange } from '../sheets-utils.js'
+import { sendOrderNotification } from '../notify.js'
+import { google } from 'googleapis'
 import { logger } from '../logger.js'
 
 const router = Router()
 
 const SHEET_NAME = 'orders'
+const USERS_SHEET = 'miniapp_users'
 const HEADERS = [
   'id', 'user_id', 'customer_name', 'phone', 'address',
   'items_json', 'total_rub', 'promo_code', 'delivery_fee',
-  'status', 'created_at', 'confirmed_at', 'note', 'referral_bonus_accrued'
+  'status', 'created_at', 'confirmed_at', 'note', 'referral_bonus_accrued', 'referral_bonus_used', 'tg_message_id'
 ]
+
+// списание реферального баланса пользователя
+async function deductUserReferralBalance(userId: string, amount: number): Promise<void> {
+  const rows = await readSheet(SHEET_ID, `${USERS_SHEET}!A1:H2000`)
+  if (rows.length < 2) throw new Error('users_not_found')
+
+  const header = rows[0].map((h: string) => h.trim().toLowerCase())
+  const idIdx = header.indexOf('telegram_id')
+  const balIdx = header.indexOf('referral_balance_rub')
+  if (idIdx === -1 || balIdx === -1) throw new Error('users_sheet_format_error')
+
+  const rowIndex = rows.findIndex((r, i) => i > 0 && String(r[idIdx] ?? '').trim() === userId)
+  if (rowIndex === -1) throw new Error('user_not_found')
+
+  const row = [...rows[rowIndex]]
+  const currentBalance = Math.max(0, Number(row[balIdx]) || 0)
+  if (currentBalance < amount) throw new Error('insufficient_balance')
+
+  row[balIdx] = String(currentBalance - amount)
+  // строки в Sheets 1-indexed, +1 за заголовок
+  const sheetRow = rowIndex + 1
+  const auth = getAuth()
+  const sheets = google.sheets({ version: 'v4', auth })
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${USERS_SHEET}!A${sheetRow}:H${sheetRow}`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [row] }
+  })
+}
 
 // GET /api/orders?userId= — история заказов пользователя
 router.get('/', async (req, res) => {
@@ -63,37 +96,78 @@ router.get('/', async (req, res) => {
 
 // POST /api/orders — создать заказ
 router.post('/', async (req, res) => {
-  const { customerName, items, userId, phone, address, totalRub, promoCode, deliveryFee, note } = req.body
+  const { customerName, items, userId, phone, address, totalRub, promoCode, deliveryFee, note, referralBonusUsed } = req.body
 
   if (!customerName || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'customerName and items are required' })
   }
 
+  const bonusUsed = Math.max(0, Number(referralBonusUsed) || 0)
+
+  // списать реферальный баланс до записи заказа (чтобы не создать заказ если баланса нет)
+  if (bonusUsed > 0 && userId) {
+    try {
+      await deductUserReferralBalance(String(userId), bonusUsed)
+    } catch (e: any) {
+      if (e.message === 'insufficient_balance') {
+        return res.status(400).json({ error: 'insufficient_referral_balance' })
+      }
+      // остальные ошибки списания логируем как предупреждение — заказ всё равно создаётся без бонуса
+      logger.warn({ error: e?.message, userId }, 'не удалось списать реферальный баланс')
+    }
+  }
+
   const id = randomUUID()
   const now = new Date().toISOString()
 
-  const row = [
+  const orderData = {
     id,
-    userId || '',
-    customerName,
-    phone || '',
-    address || '',
-    JSON.stringify(items),
-    String(totalRub ?? 0),
-    promoCode || '',
-    String(deliveryFee ?? 0),
-    'new',
-    now,
-    '',
-    note || '',
-    '0'
-  ]
+    userId: userId ? String(userId) : undefined,
+    customerName: String(customerName),
+    phone: phone ? String(phone) : undefined,
+    address: address ? String(address) : undefined,
+    items: items.map((i: any) => ({
+      slug: String(i.slug || ''),
+      qty: Number(i.qty) || 1,
+      title: i.title ? String(i.title) : undefined,
+      priceRub: i.priceRub !== undefined ? Number(i.priceRub) : undefined
+    })),
+    totalRub: Number(totalRub ?? 0),
+    promoCode: promoCode ? String(promoCode) : undefined,
+    deliveryFee: Number(deliveryFee ?? 0),
+    status: 'new',
+    note: note ? String(note) : undefined,
+    referralBonusUsed: bonusUsed > 0 ? bonusUsed : undefined
+  }
 
   try {
     await ensureSheet(SHEET_ID, SHEET_NAME, HEADERS)
+
+    // отправляем уведомление в канал (асинхронно, не блокируем ответ)
+    const msgId = await sendOrderNotification(orderData)
+
+    const row = [
+      id,
+      orderData.userId || '',
+      orderData.customerName,
+      orderData.phone || '',
+      orderData.address || '',
+      JSON.stringify(orderData.items),
+      String(orderData.totalRub),
+      orderData.promoCode || '',
+      String(orderData.deliveryFee),
+      'new',
+      now,
+      '',
+      orderData.note || '',
+      '0',
+      String(bonusUsed),
+      msgId || ''
+    ]
+
     await appendRow(SHEET_ID, SHEET_NAME, row)
 
-    logger.info({ orderId: id, userId, totalRub }, 'заказ создан')
+    logger.info({ orderId: id, userId, totalRub, bonusUsed }, 'заказ создан')
     res.status(201).json({ id, status: 'new', createdAt: now })
   } catch (e: any) {
     logger.error({ error: e?.message, userId }, 'ошибка создания заказа')

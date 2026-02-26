@@ -6,6 +6,8 @@ import pino from 'pino'
 const BOT_TOKEN = process.env.BOT_TOKEN || ''
 const MINIAPP_URL = process.env.MINIAPP_URL?.trim() || ''
 const APP_VERSION = process.env.APP_VERSION || '0.1.0'
+const ADMIN_BACKEND_URL = process.env.ADMIN_BACKEND_URL?.trim() || ''
+const BOT_INTERNAL_SECRET = process.env.BOT_INTERNAL_SECRET || ''
 
 if (!BOT_TOKEN) {
   console.error('BOT_TOKEN не задан — завершение')
@@ -123,6 +125,78 @@ bot.command('help', async (ctx) => {
 // --- колбэк заглушки (noop) ---
 bot.callbackQuery('noop', async (ctx) => {
   await ctx.answerCallbackQuery({ text: 'Магазин скоро откроется 🔧', show_alert: false })
+})
+
+// --- обработка смены статуса заказа из канала (os:orderId:status) ---
+const STATUS_NAMES: Record<string, string> = {
+  new: 'Новый',
+  confirmed: 'Подтверждён',
+  packed: 'Упаковывается',
+  completed: 'Выполнен',
+  cancelled: 'Отменён'
+}
+
+bot.callbackQuery(/^os:/, async (ctx) => {
+  const data = ctx.callbackQuery.data // "os:uuid:status"
+  const parts = data.split(':')
+  if (parts.length < 3) {
+    await ctx.answerCallbackQuery({ text: 'Некорректные данные', show_alert: true })
+    return
+  }
+  const orderId = parts[1]
+  const newStatus = parts.slice(2).join(':') // на случай если uuid содержит ":"
+
+  if (!ADMIN_BACKEND_URL || !BOT_INTERNAL_SECRET) {
+    logger.warn('ADMIN_BACKEND_URL или BOT_INTERNAL_SECRET не заданы — смена статуса невозможна')
+    await ctx.answerCallbackQuery({ text: 'Бот не настроен для смены статусов', show_alert: true })
+    return
+  }
+
+  try {
+    const res = await fetch(`${ADMIN_BACKEND_URL}/internal/order-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Bot-Secret': BOT_INTERNAL_SECRET
+      },
+      body: JSON.stringify({ orderId, status: newStatus })
+    })
+
+    const json = await res.json() as any
+
+    if (!res.ok || !json.success) {
+      const errText = json?.error || `HTTP ${res.status}`
+      logger.warn({ orderId, newStatus, error: errText }, 'ошибка смены статуса заказа')
+      await ctx.answerCallbackQuery({ text: `Ошибка: ${errText}`, show_alert: true })
+      return
+    }
+
+    logger.info({ orderId, newStatus }, 'статус заказа изменён через бот')
+    await ctx.answerCallbackQuery({ text: `✅ Статус → ${STATUS_NAMES[newStatus] ?? newStatus}` })
+
+    // обновляем статусные кнопки в сообщении канала
+    try {
+      const STATUS_LABELS: Record<string, string> = {
+        confirmed: '✅ Подтвердить',
+        packed: '📦 Упаковать',
+        completed: '✔️ Завершить',
+        cancelled: '❌ Отменить'
+      }
+      const buttons = Object.entries(STATUS_LABELS)
+        .filter(([s]) => s !== newStatus)
+        .map(([s, label]) => ({ text: label, callback_data: `os:${orderId}:${s}` }))
+      const rows: { text: string; callback_data: string }[][] = []
+      for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2))
+
+      await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: rows } })
+    } catch (editErr: any) {
+      // не критично если не удалось обновить клавиатуру
+      logger.warn({ error: editErr?.message }, 'не удалось обновить клавиатуру сообщения')
+    }
+  } catch (e: any) {
+    logger.error({ error: e?.message, orderId }, 'ошибка запроса к admin-backend')
+    await ctx.answerCallbackQuery({ text: 'Ошибка соединения с сервером', show_alert: true })
+  }
 })
 
 // --- любое другое сообщение ---

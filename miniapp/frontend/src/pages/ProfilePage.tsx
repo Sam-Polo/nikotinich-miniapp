@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '../store/user'
 import { updateUser, getUserOrders } from '../api'
@@ -43,6 +43,10 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false)
 
   const [refCopied, setRefCopied] = useState(false)
+  const [phoneLoading, setPhoneLoading] = useState(false)
+  const [phoneError, setPhoneError] = useState('')
+  // ссылка на обработчик для последующего удаления через offEvent
+  const contactHandlerRef = useRef<((data: any) => void) | null>(null)
 
   useEffect(() => {
     if (tab === 'orders' && user?.telegram_id) {
@@ -64,6 +68,45 @@ export default function ProfilePage() {
       setTimeout(() => setSaved(false), 2000)
     } catch { /* ошибка — не сохраняем */ }
     finally { setSaving(false) }
+  }
+
+  function requestPhoneFromTelegram() {
+    try {
+      const tg = (window as any).Telegram?.WebApp
+      if (!tg?.requestContact) {
+        setPhoneError('Ваша версия Telegram не поддерживает автозаполнение')
+        return
+      }
+
+      setPhoneLoading(true)
+      setPhoneError('')
+
+      // удаляем предыдущий обработчик если есть
+      if (contactHandlerRef.current) {
+        tg.offEvent('contactRequested', contactHandlerRef.current)
+      }
+
+      const handler = (data: any) => {
+        setPhoneLoading(false)
+        if (data?.status === 'sent' && data?.contact?.phone_number) {
+          let phone = data.contact.phone_number
+          if (!phone.startsWith('+')) phone = '+' + phone
+          setEditPhone(phone)
+          setPhoneError('')
+        } else {
+          setPhoneError('Доступ к номеру отклонён')
+        }
+        tg.offEvent('contactRequested', handler)
+        contactHandlerRef.current = null
+      }
+
+      contactHandlerRef.current = handler
+      tg.onEvent('contactRequested', handler)
+      tg.requestContact()
+    } catch {
+      setPhoneLoading(false)
+      setPhoneError('Не удалось запросить номер')
+    }
   }
 
   function copyRefLink() {
@@ -136,13 +179,25 @@ export default function ProfilePage() {
               <h2 className="text-[16px] font-semibold text-text-primary">Контактные данные</h2>
               <div>
                 <label className="block text-[13px] text-text-secondary mb-1">Телефон</label>
-                <input
-                  type="tel"
-                  value={editPhone}
-                  onChange={e => setEditPhone(e.target.value)}
-                  placeholder="+7 (___) ___-__-__"
-                  className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={e => setEditPhone(e.target.value)}
+                    placeholder="+7 (___) ___-__-__"
+                    className="flex-1 bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
+                  />
+                  <button
+                    type="button"
+                    onClick={requestPhoneFromTelegram}
+                    disabled={phoneLoading}
+                    className="px-3 py-2 bg-bg-base rounded-[10px] text-accent text-[13px] font-semibold border border-border-light active:bg-blue-50 disabled:opacity-50 flex-shrink-0"
+                    title="Получить номер из Telegram"
+                  >
+                    {phoneLoading ? '...' : 'Из TG'}
+                  </button>
+                </div>
+                {phoneError && <p className="text-destructive text-[12px] mt-1">{phoneError}</p>}
               </div>
               <div>
                 <label className="block text-[13px] text-text-secondary mb-1">Email</label>

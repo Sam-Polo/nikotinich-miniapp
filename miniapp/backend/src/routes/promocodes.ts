@@ -5,10 +5,13 @@ import { logger } from '../logger.js'
 
 const router = Router()
 
-// GET /api/promocodes/validate?code=&totalRub= — проверка промокода
+// GET /api/promocodes/validate?code=&totalRub=&itemSlugs= — проверка промокода
 router.get('/validate', async (req, res) => {
   const code = String(req.query.code || '').trim().toUpperCase()
   const totalRub = Number(req.query.totalRub) || 0
+  // slugs товаров в корзине — для расчёта скидки только на подходящие товары
+  const itemSlugsRaw = String(req.query.itemSlugs || '').trim()
+  const itemSlugs = itemSlugsRaw ? itemSlugsRaw.split(',').map(s => s.trim()).filter(Boolean) : []
 
   if (!code) return res.status(400).json({ error: 'code_required' })
 
@@ -45,10 +48,21 @@ router.get('/validate', async (req, res) => {
       }
     }
 
+    // если промокод ограничен товарами — проверяем пересечение с корзиной
+    const promoHasRestriction = promo.productSlugs.length > 0
+    if (promoHasRestriction && itemSlugs.length > 0) {
+      const intersection = itemSlugs.filter(s => promo.productSlugs.includes(s))
+      if (intersection.length === 0) {
+        return res.status(400).json({ error: 'not_applicable' })
+      }
+    }
+
     // расчёт скидки
+    // для percent с ограничением по товарам фронт должен передать totalRub только по подходящим товарам
+    // для amount — скидка применяется к переданному totalRub (не превышает его)
     let discount = 0
     if (promo.type === 'amount') {
-      discount = promo.value
+      discount = Math.min(promo.value, totalRub)
     } else if (promo.type === 'percent') {
       discount = Math.round(totalRub * promo.value / 100)
     }

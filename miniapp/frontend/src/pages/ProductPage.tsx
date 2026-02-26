@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { getProduct } from '../api'
 import type { Product } from '../api'
 import { useCartStore } from '../store/cart'
@@ -15,7 +16,7 @@ export default function ProductPage() {
   const [imgIdx, setImgIdx] = useState(0)
   const [expanded, setExpanded] = useState(false)
 
-  const addItem = useCartStore(s => s.addItem)
+  const { addItem, updateQty, getQty } = useCartStore()
   const isFav = useFavoritesStore(s => s.isFavorite(slug))
   const toggleFav = useFavoritesStore(s => s.toggle)
 
@@ -32,6 +33,12 @@ export default function ProductPage() {
   const displayPrice = product.display_price
   const hasDiscount = !!product.discount_price_rub
   const images = product.images.length > 0 ? product.images : ['']
+  const qty = getQty(product.slug)
+
+  function handleAdd() {
+    addItem(product)
+    toast.success('Добавлено в корзину', { id: `cart-${product.slug}` })
+  }
 
   return (
     <div className="flex flex-col min-h-full bg-white">
@@ -125,16 +132,30 @@ export default function ProductPage() {
         </div>
       </div>
 
-      {/* кнопка "Добавить в корзину" (sticky снизу) */}
+      {/* кнопка корзины (sticky снизу) — счётчик если уже добавлен */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 pb-safe">
-        <Button
-          fullWidth
-          onClick={() => addItem(product)}
-          className="justify-between"
-        >
-          <span>Добавить в корзину</span>
-          <span className="opacity-80">₽{displayPrice.toLocaleString('ru-RU')}</span>
-        </Button>
+        {qty > 0 ? (
+          <div className="flex items-center justify-between bg-accent rounded-[14px] px-4 py-3">
+            <button
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white text-[22px] font-light"
+              onClick={() => updateQty(product.slug, qty - 1)}
+            >
+              −
+            </button>
+            <span className="text-white font-semibold text-[16px]">{qty} в корзине</span>
+            <button
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white text-[22px] font-light"
+              onClick={handleAdd}
+            >
+              +
+            </button>
+          </div>
+        ) : (
+          <Button fullWidth onClick={handleAdd} className="justify-between">
+            <span>Добавить в корзину</span>
+            <span className="opacity-80">₽{displayPrice.toLocaleString('ru-RU')}</span>
+          </Button>
+        )}
       </div>
     </div>
   )

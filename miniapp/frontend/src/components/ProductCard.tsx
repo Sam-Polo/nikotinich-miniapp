@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast'
 import type { Product } from '../api'
 import { useCartStore } from '../store/cart'
 import { useFavoritesStore } from '../store/favorites'
@@ -10,12 +11,29 @@ type Props = {
 
 export default function ProductCard({ product, showAddButton = true }: Props) {
   const navigate = useNavigate()
-  const addItem = useCartStore(s => s.addItem)
+  const { addItem, updateQty, getQty } = useCartStore()
   const isFav = useFavoritesStore(s => s.isFavorite(product.slug))
   const toggleFav = useFavoritesStore(s => s.toggle)
 
   const displayPrice = product.display_price
   const hasDiscount = !!product.discount_price_rub
+  const qty = getQty(product.slug)
+
+  function handleAdd(e: React.MouseEvent) {
+    e.stopPropagation()
+    addItem(product)
+    toast.success('Добавлено в корзину', { id: `cart-${product.slug}` })
+  }
+
+  function handleDec(e: React.MouseEvent) {
+    e.stopPropagation()
+    updateQty(product.slug, qty - 1)
+  }
+
+  function handleInc(e: React.MouseEvent) {
+    e.stopPropagation()
+    updateQty(product.slug, qty + 1)
+  }
 
   return (
     <div
@@ -69,12 +87,34 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
         </div>
 
         {showAddButton && (
-          <button
-            className="mt-2 w-full py-2 bg-bg-base rounded-[10px] text-accent text-[13px] font-semibold active:bg-blue-50 transition-colors"
-            onClick={(e) => { e.stopPropagation(); addItem(product) }}
-          >
-            В корзину
-          </button>
+          qty > 0 ? (
+            // счётчик когда товар уже в корзине
+            <div
+              className="mt-2 flex items-center justify-between bg-bg-base rounded-[10px] px-1"
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                className="w-8 h-8 flex items-center justify-center text-accent text-[20px] font-light"
+                onClick={handleDec}
+              >
+                −
+              </button>
+              <span className="text-[14px] font-semibold text-text-primary">{qty}</span>
+              <button
+                className="w-8 h-8 flex items-center justify-center text-accent text-[20px] font-light"
+                onClick={handleInc}
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <button
+              className="mt-2 w-full py-2 bg-bg-base rounded-[10px] text-accent text-[13px] font-semibold active:bg-blue-50 transition-colors"
+              onClick={handleAdd}
+            >
+              В корзину
+            </button>
+          )
         )}
       </div>
     </div>

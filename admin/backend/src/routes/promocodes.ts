@@ -7,34 +7,12 @@ import {
   deletePromocodeFromSheet,
   updatePromocodeInSheet
 } from '../promocodes-utils.js'
-import pino from 'pino'
-import axios from 'axios'
+import { logger } from '../logger.js'
 
-const logger = pino()
 const router = express.Router()
 
 // все роуты требуют авторизации
 router.use(requireAuth)
-
-// функция для вызова импорта в основном бэкенде
-async function triggerBackendImport() {
-  try {
-    const backendUrl = process.env.BACKEND_URL || ''
-    const adminKey = process.env.ADMIN_IMPORT_KEY
-    
-    if (adminKey) {
-      await axios.post(`${backendUrl}/admin/import/sheets`, {}, {
-        headers: { 'x-admin-key': adminKey },
-        timeout: 30000
-      })
-      logger.info('импорт промокодов в основном бэкенде вызван')
-    } else {
-      logger.warn('ADMIN_IMPORT_KEY не задан, импорт в основном бэкенде пропущен')
-    }
-  } catch (error: any) {
-    logger.warn({ error: error?.message }, 'не удалось вызвать импорт в основном бэкенде')
-  }
-}
 
 // получение списка всех промокодов
 router.get('/', async (req, res) => {
@@ -139,10 +117,6 @@ router.post('/', async (req, res) => {
     await appendPromocodeToSheet(auth, sheetId, promocode)
 
     logger.info({ code: promocode.code }, 'промокод добавлен')
-    
-    // вызываем импорт в основном бэкенде для обновления мини-апки
-    await triggerBackendImport()
-    
     res.json({ success: true, promocode })
   } catch (error: any) {
     logger.error({ error: error?.message }, 'ошибка добавления промокода')
@@ -237,10 +211,6 @@ router.put('/:code', async (req, res) => {
     await updatePromocodeInSheet(auth, sheetId, oldCode, promocode)
 
     logger.info({ oldCode, newCode: promocode.code }, 'промокод обновлен')
-    
-    // вызываем импорт в основном бэкенде для обновления мини-апки
-    await triggerBackendImport()
-    
     res.json({ success: true, promocode })
   } catch (error: any) {
     logger.error({ error: error?.message }, 'ошибка обновления промокода')
@@ -265,10 +235,6 @@ router.delete('/:code', async (req, res) => {
     await deletePromocodeFromSheet(auth, sheetId, code)
 
     logger.info({ code }, 'промокод удален')
-    
-    // вызываем импорт в основном бэкенде для обновления мини-апки
-    await triggerBackendImport()
-    
     res.json({ success: true })
   } catch (error: any) {
     logger.error({ error: error?.message }, 'ошибка удаления промокода')
