@@ -118,6 +118,12 @@ export async function saveUsersToSheet(sheetId: string, users: User[]): Promise<
     ])
   ]
 
+  // очищаем весь лист перед записью, чтобы удалённые строки не оставались в таблице
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId: sheetId,
+    range: SHEET_NAME
+  })
+
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
     range: `${SHEET_NAME}!A1:H${values.length}`,

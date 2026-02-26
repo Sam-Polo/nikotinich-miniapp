@@ -37,6 +37,9 @@ async function parseUsersFromSheet(): Promise<{ users: User[]; rowMap: Map<strin
     const telegram_id = get('telegram_id')
     if (!telegram_id) continue
 
+    // пропускаем дубликаты — работаем только с первым вхождением
+    if (rowMap.has(telegram_id)) continue
+
     const activeVal = get('active').toLowerCase()
     rowMap.set(telegram_id, i + 1) // +1 т.к. строки в Sheets 1-indexed
 

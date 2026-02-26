@@ -119,12 +119,12 @@ router.delete('/', async (req, res) => {
       return res.status(400).json({ error: 'missing_telegram_id' })
     }
     const users = await fetchUsersFromSheet(sheetId)
-    const idx = users.findIndex((x) => x.telegram_id === telegram_id)
-    if (idx === -1) {
+    // удаляем все строки с данным telegram_id (могут быть дубликаты)
+    const filtered = users.filter((x) => x.telegram_id !== telegram_id)
+    if (filtered.length === users.length) {
       return res.status(404).json({ error: 'user_not_found' })
     }
-    users.splice(idx, 1)
-    await saveUsersToSheet(sheetId, users)
+    await saveUsersToSheet(sheetId, filtered)
     return res.json({ success: true })
   } catch (error: any) {
     logger.error({ error: error?.message }, 'ошибка удаления пользователя')

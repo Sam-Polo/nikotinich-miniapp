@@ -108,27 +108,43 @@ export default function ProfilePage() {
           return
         }
 
-        // телефон не пришёл в event — бот получил контакт и должен был обновить профиль
-        // делаем refresh профиля через 1.5 сек
+        // телефон не пришёл в event — бот должен обновить профиль через API
+        // опрашиваем с интервалом 2с до 5 раз (≈10с суммарно)
         if (!user?.telegram_id) {
           setPhoneLoading(false)
           setPhoneError('Контакт отправлен. Обновите страницу для получения номера.')
           return
         }
 
-        setTimeout(() => {
-          getUser(user.telegram_id)
+        let attempts = 0
+        const MAX_ATTEMPTS = 5
+        const tid = user.telegram_id
+
+        const poll = () => {
+          attempts++
+          getUser(tid)
             .then(updated => {
               if (updated.phone) {
                 setEditPhone(updated.phone)
                 setUser(updated)
+                setPhoneLoading(false)
+              } else if (attempts < MAX_ATTEMPTS) {
+                setTimeout(poll, 2000)
               } else {
-                setPhoneError('Контакт отправлен, но номер ещё не сохранён. Попробуйте позже.')
+                setPhoneLoading(false)
+                setPhoneError('Контакт отправлен, но номер не появился. Попробуйте ещё раз.')
               }
             })
-            .catch(() => setPhoneError('Контакт отправлен. Обновите профиль вручную.'))
-            .finally(() => setPhoneLoading(false))
-        }, 1500)
+            .catch(() => {
+              if (attempts < MAX_ATTEMPTS) {
+                setTimeout(poll, 2000)
+              } else {
+                setPhoneLoading(false)
+                setPhoneError('Контакт отправлен. Обновите профиль вручную.')
+              }
+            })
+        }
+        setTimeout(poll, 2000)
       }
 
       contactHandlerRef.current = handler
