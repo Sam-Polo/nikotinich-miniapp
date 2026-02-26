@@ -30,14 +30,16 @@ export default function ProductPage() {
   if (loading) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><Spinner /></div>
   if (!product) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><p className="text-center text-text-secondary mt-20">Товар не найден</p></div>
 
-  const displayPrice = product.display_price
-  const hasDiscount = !!product.discount_price_rub
-  const images = product.images.length > 0 ? product.images : ['']
-  const qty = getQty(product.slug)
+  // захватываем после null-проверки чтобы TypeScript не терял тип в замыканиях
+  const p = product
+  const displayPrice = p.display_price
+  const hasDiscount = !!p.discount_price_rub
+  const images = p.images.length > 0 ? p.images : ['']
+  const qty = getQty(p.slug)
 
   function handleAdd() {
-    addItem(product)
-    toast.success('Добавлено в корзину', { id: `cart-${product.slug}` })
+    addItem(p)
+    toast.success('Добавлено в корзину', { id: `cart-${p.slug}` })
   }
 
   return (
@@ -48,7 +50,7 @@ export default function ProductPage() {
         showBack
         right={
           <button
-            onClick={() => toggleFav(product)}
+            onClick={() => toggleFav(p)}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-bg-base"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -69,7 +71,7 @@ export default function ProductPage() {
           {images[imgIdx] ? (
             <img
               src={images[imgIdx]}
-              alt={product.title}
+              alt={p.title}
               className="w-full h-full object-contain p-4"
             />
           ) : (
@@ -93,7 +95,7 @@ export default function ProductPage() {
 
       {/* детали товара */}
       <div className="px-4 pt-4 pb-32">
-        <h1 className="text-[22px] font-bold text-text-primary mb-1">{product.title}</h1>
+        <h1 className="text-[22px] font-bold text-text-primary mb-1">{p.title}</h1>
 
         <div className="flex items-center gap-3 mb-4">
           <span className="text-[28px] font-bold text-text-primary">
@@ -101,18 +103,18 @@ export default function ProductPage() {
           </span>
           {hasDiscount && (
             <span className="text-[18px] text-text-secondary line-through">
-              ₽{product.price_rub.toLocaleString('ru-RU')}
+              ₽{p.price_rub.toLocaleString('ru-RU')}
             </span>
           )}
         </div>
 
         {/* описание */}
-        {product.description && (
+        {p.description && (
           <div className="mb-4">
             <p className={`text-[14px] text-text-secondary leading-relaxed ${!expanded ? 'line-clamp-3' : ''}`}>
-              {product.description}
+              {p.description}
             </p>
-            {product.description.length > 120 && (
+            {p.description.length > 120 && (
               <button
                 onClick={() => setExpanded(v => !v)}
                 className="text-accent text-[14px] mt-1"
@@ -125,10 +127,10 @@ export default function ProductPage() {
 
         {/* характеристики */}
         <div className="bg-bg-base rounded-card p-4 space-y-2">
-          {product.brand && <Row label="Бренд" value={product.brand} />}
-          {product.line && <Row label="Линейка" value={product.line} />}
-          {product.strength && <Row label="Крепость" value={product.strength} />}
-          {product.article && <Row label="Артикул" value={product.article} />}
+          {p.brand && <Row label="Бренд" value={p.brand} />}
+          {p.line && <Row label="Линейка" value={p.line} />}
+          {p.strength && <Row label="Крепость" value={p.strength} />}
+          {p.article && <Row label="Артикул" value={p.article} />}
         </div>
       </div>
 
@@ -138,7 +140,7 @@ export default function ProductPage() {
           <div className="flex items-center justify-between bg-accent rounded-[14px] px-4 py-3">
             <button
               className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white text-[22px] font-light"
-              onClick={() => updateQty(product.slug, qty - 1)}
+              onClick={() => updateQty(p.slug, qty - 1)}
             >
               −
             </button>
