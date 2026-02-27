@@ -31,7 +31,7 @@ function buildRefLink(telegramId: string) {
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user, setUser } = useUserStore()
+  const { user, setUser, settings } = useUserStore()
 
   const [orders, setOrders] = useState<Order[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
@@ -269,58 +269,54 @@ export default function ProfilePage() {
             </section>
 
             {/* реферальная система */}
-            <section className="bg-card-bg rounded-card p-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0 text-accent">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 12V22H4V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M22 7H2V12H22V7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M12 22V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M12 7H16.5C17.163 7 17.7989 6.73661 18.2678 6.26777C18.7366 5.79893 19 5.16304 19 4.5C19 3.83696 18.7366 3.20107 18.2678 2.73223C17.7989 2.26339 17.163 2 16.5 2C13 2 12 7 12 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M12 7H7.5C6.83696 7 6.20107 6.73661 5.73223 6.26777C5.26339 5.79893 5 5.16304 5 4.5C5 3.83696 5.26339 3.20107 5.73223 2.73223C6.20107 2.26339 6.83696 2 7.5 2C11 2 12 7 12 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+            <section className="space-y-3">
+              <h2 className="text-[16px] font-semibold text-text-primary">Реферальная система</h2>
+
+              <div className="bg-accent rounded-[22px] p-4 border border-[#1A8FE7]">
+                <p className="text-white text-[36px] leading-none font-semibold">
+                  Ваша скидка {settings?.referralPercentBefore10 ?? 5}%
+                </p>
+
+                <div className="mt-3 h-11 rounded-[12px] bg-[#1082D5] px-3 flex items-center gap-2">
+                  <p className="flex-1 text-[18px] text-[#A9D5FB] truncate">{refLink}</p>
+                  <button
+                    onClick={copyRefLink}
+                    className="text-white active:opacity-70"
+                    aria-label="Скопировать ссылку"
+                  >
+                    {refCopied ? (
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <rect x="9" y="4" width="11" height="14" rx="2" stroke="white" strokeWidth="2" />
+                        <path d="M15 20H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
-                <div>
-                  <h2 className="text-[16px] font-bold text-text-primary">Реферальная система</h2>
-                  <p className="text-[13px] text-text-secondary mt-0.5 leading-tight">Приглашайте друзей и получайте бонусы</p>
+
+                <div className="mt-4 bg-[#F3F3F3] rounded-[16px] p-3 border border-[#D8E9F9]">
+                  <p className="text-[14px] text-[#575B60]">ещё 4 успешных заказа ваших друзей</p>
+
+                  <div className="relative mt-3 h-8">
+                    <div className="absolute left-1 right-1 top-1/2 -translate-y-1/2 h-5 rounded-full bg-[#E2E2E2]" />
+                    <div className="absolute left-1 top-1/2 -translate-y-1/2 h-5 rounded-full bg-gradient-to-r from-[#2E6EE8] to-[#6A9DF3] w-[58%]" />
+
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#3C78EB] text-white text-[13px] font-semibold flex items-center justify-center">
+                      {settings?.referralPercentBefore10 ?? 5}%
+                    </div>
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#E8E8E8] text-[#3D82E7] text-[13px] font-semibold flex items-center justify-center">
+                      {settings?.referralPercentAfter10 ?? 10}%
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-bg-base rounded-[10px] p-3 flex justify-between items-center">
-                <span className="text-[14px] font-medium text-text-secondary">Ваш баланс</span>
-                <span className="text-[18px] font-bold text-accent">{user.referral_balance_rub.toLocaleString('ru-RU')} ₽</span>
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  className="flex-1" 
-                  onClick={() => {
-                    const tg = (window as any).Telegram?.WebApp
-                    if (tg?.openTelegramLink) {
-                      tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('Присоединяйся и получай бонусы!')}`)
-                    } else {
-                      copyRefLink()
-                    }
-                  }}
-                >
-                  Пригласить друга
-                </Button>
-                <button 
-                  onClick={copyRefLink}
-                  className="w-12 h-12 bg-bg-base rounded-[10px] flex items-center justify-center text-text-secondary active:opacity-70 flex-shrink-0"
-                >
-                  {refCopied ? (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M20 6L9 17L4 12" stroke="#34C759" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  ) : (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M8 4V16C8 17.1046 8.89543 18 10 18H20C21.1046 18 22 17.1046 22 16V4C22 2.89543 21.1046 2 20 2H10C8.89543 2 8 2.89543 8 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M16 18V20C16 21.1046 15.1046 22 14 22H4C2.89543 22 2 21.1046 2 20V8C2 6.89543 2.89543 6 4 6H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                </button>
-              </div>
+              <button className="w-full text-center text-accent text-[15px] font-semibold active:opacity-70">
+                Как это работает?
+              </button>
             </section>
           </div>
         )}
@@ -338,7 +334,12 @@ export default function ProfilePage() {
               </div>
             )}
             {orders.map(order => (
-              <div key={order.id} className="bg-card-bg rounded-card p-4">
+              <button
+                key={order.id}
+                type="button"
+                onClick={() => navigate(`/order/${order.id}`)}
+                className="w-full text-left bg-card-bg rounded-card p-4 active:opacity-85 transition-opacity"
+              >
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <p className="text-[13px] font-mono text-text-secondary">#{order.id.slice(0, 8).toUpperCase()}</p>
@@ -356,7 +357,7 @@ export default function ProfilePage() {
                 <p className="text-[16px] font-bold text-text-primary">
                   ₽{order.totalRub.toLocaleString('ru-RU')}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         )}

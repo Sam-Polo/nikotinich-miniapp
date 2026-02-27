@@ -13,6 +13,7 @@ import FavoritesPage from './pages/FavoritesPage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import OrderSuccessPage from './pages/OrderSuccessPage'
+import OrderDetailsPage from './pages/OrderDetailsPage'
 import ProfilePage from './pages/ProfilePage'
 
 export default function App() {
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/product/:slug" element={<ProductPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+          <Route path="/order/:orderId" element={<OrderDetailsPage />} />
         </Routes>
       </div>
     </BrowserRouter>
