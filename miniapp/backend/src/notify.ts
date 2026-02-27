@@ -44,23 +44,24 @@ export function formatOrderMessage(order: {
   let lines = [
     `📦 *Заказ #${order.id.slice(0, 8).toUpperCase()}*`,
     `Статус: ${statusLabel[status] ?? status}`,
-    '',
-    `👤 ${order.customerName}`,
-    order.phone ? `📞 ${order.phone}` : null,
-    order.address ? `📍 ${order.address}` : null,
-    order.userId ? `Telegram ID: ${order.userId}` : null,
-    '',
+    '',                                                                                          // абзац
+    `Имя: ${order.customerName}`,
+    order.phone ? `Телефон: ${order.phone}` : null,
+    order.address ? `Адрес: ${order.address}` : null,
+    '',                                                                                          // абзац
     '*Состав:*',
     itemsText,
-    '',
-    order.deliveryFee > 0 ? `🚚 Доставка: ₽${order.deliveryFee}` : '🚚 Доставка: Бесплатно',
-    order.promoCode ? `🎟 Промокод: ${order.promoCode}` : null,
-    order.referralBonusUsed && order.referralBonusUsed > 0 ? `💰 Реф. баллы: −₽${order.referralBonusUsed}` : null,
+    '',                                                                                          // абзац
+    '',                                                                                          // абзац (двойной отступ перед итогами)
+    order.promoCode ? `Промокод: ${order.promoCode}` : null,
+    order.referralBonusUsed && order.referralBonusUsed > 0 ? `Реф. баллы: −₽${order.referralBonusUsed}` : null,
+    order.deliveryFee > 0 ? `Доставка: ₽${order.deliveryFee}` : 'Доставка: Бесплатно',
     `💵 *Итого: ₽${order.totalRub}*`,
-    order.note ? `\n📝 ${order.note}` : null
+    order.note ? `\nКомментарий: ${order.note}` : null
   ]
 
-  return lines.filter(Boolean).join('\n')
+  // фильтруем только null (не пустые строки — они нужны как переносы)
+  return lines.filter(x => x !== null).join('\n')
 }
 
 // inline-клавиатура для управления статусом заказа

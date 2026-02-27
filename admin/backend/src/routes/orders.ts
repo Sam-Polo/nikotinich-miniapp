@@ -108,4 +108,20 @@ router.put('/:id/status', async (req, res) => {
   }
 })
 
+router.delete('/:id', async (req, res) => {
+  try {
+    const sheetId = process.env.GOOGLE_SHEET_ID
+    if (!sheetId) return res.status(500).json({ error: 'GOOGLE_SHEET_ID not configured' })
+    const orders = await fetchOrdersFromSheet(sheetId)
+    const filtered = orders.filter((o) => o.id !== req.params.id)
+    if (filtered.length === orders.length) return res.status(404).json({ error: 'order_not_found' })
+    await saveOrdersToSheet(sheetId, filtered)
+    logger.info({ orderId: req.params.id }, 'заказ удалён')
+    res.json({ success: true })
+  } catch (error: any) {
+    logger.error({ error: error?.message }, 'failed to delete order')
+    res.status(500).json({ error: 'failed_to_delete_order' })
+  }
+})
+
 export default router

@@ -1,6 +1,124 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { api, removeToken } from './api'
 import './App.css'
+
+const TrashIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" y1="11" x2="10" y2="17" />
+    <line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+)
+
+// выпадающий список пользователей с поиском (combobox)
+function UserSearchSelect({
+  users,
+  value,
+  onChange
+}: {
+  users: UserOption[]
+  value: string
+  onChange: (v: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // текущий выбранный пользователь
+  const selected = users.find(u => u.telegram_id === value)
+  const displayLabel = selected
+    ? (selected.username ? `@${selected.username}` : selected.telegram_id)
+    : 'Все'
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return users
+    return users.filter(u =>
+      (u.username || '').toLowerCase().includes(q) ||
+      u.telegram_id.includes(q)
+    )
+  }, [users, query])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleOpen = () => {
+    setOpen(true)
+    setQuery('')
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  const handleSelect = (telegramId: string) => {
+    onChange(telegramId)
+    setOpen(false)
+    setQuery('')
+  }
+
+  return (
+    <div ref={ref} className="user-search-select" style={{ position: 'relative', display: 'inline-block', minWidth: '180px' }}>
+      <button
+        type="button"
+        className="admin-select user-search-trigger"
+        onClick={handleOpen}
+        style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }}
+      >
+        {displayLabel}
+        <span style={{ float: 'right', opacity: 0.5 }}>▼</span>
+      </button>
+      {open && (
+        <div className="user-search-dropdown" style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+          background: '#fff', border: '1px solid #ddd', borderRadius: '6px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.12)', maxHeight: '260px', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column'
+        }}>
+          <div style={{ padding: '6px 8px', borderBottom: '1px solid #eee' }}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Поиск по @username или ID..."
+              style={{ width: '100%', border: '1px solid #ccc', borderRadius: '4px', padding: '4px 8px', fontSize: '13px', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+            <div
+              className={`user-search-option${value === '' ? ' selected' : ''}`}
+              style={{ padding: '7px 12px', cursor: 'pointer', fontSize: '13px', background: value === '' ? '#f0f8ff' : '' }}
+              onMouseDown={() => handleSelect('')}
+            >
+              Все пользователи
+            </div>
+            {filtered.map(u => (
+              <div
+                key={u.telegram_id}
+                className={`user-search-option${value === u.telegram_id ? ' selected' : ''}`}
+                style={{ padding: '7px 12px', cursor: 'pointer', fontSize: '13px', background: value === u.telegram_id ? '#f0f8ff' : '' }}
+                onMouseDown={() => handleSelect(u.telegram_id)}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
+                onMouseLeave={e => (e.currentTarget.style.background = value === u.telegram_id ? '#f0f8ff' : '')}
+              >
+                {u.username ? `@${u.username}` : u.telegram_id}
+                <span style={{ color: '#999', marginLeft: '6px', fontSize: '11px' }}>{u.telegram_id}</span>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div style={{ padding: '10px 12px', color: '#999', fontSize: '13px' }}>Не найдено</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
 type OrderStatus = 'new' | 'confirmed' | 'packed' | 'completed' | 'cancelled'
@@ -59,7 +177,12 @@ export default function OrdersPage({
   const [sortKey, setSortKey] = useState<SortKey>('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [statsTab, setStatsTab] = useState<StatsTab>('orders')
-  const [salesPeriod, setSalesPeriod] = useState<'7d' | '30d' | 'all'>('30d')
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null)
+  const [salesPeriod, setSalesPeriod] = useState<'7d' | '30d' | 'month' | 'all'>('30d')
+  const [salesMonth, setSalesMonth] = useState<string>(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
   const [visitsPeriod, setVisitsPeriod] = useState<'7d' | '30d' | 'all'>('30d')
   const [visitsStats, setVisitsStats] = useState<{ uniqueUsersPeriod: number; uniqueUsersAllTime: number } | null>(null)
   const [visitsLoading, setVisitsLoading] = useState(false)
@@ -176,15 +299,33 @@ export default function OrdersPage({
     })
   }, [orders, filterUserId, filterStatus, searchQuery, sortKey, sortDir])
 
+  const deleteOrder = async (id: string) => {
+    try {
+      await api.deleteOrder(id)
+      setOrders(prev => prev.filter(o => o.id !== id))
+      setTotalOrders(prev => prev - 1)
+    } catch (err: any) {
+      setError(err.message || 'Ошибка удаления заказа')
+    } finally {
+      setDeleteConfirm(null)
+    }
+  }
+
   // границы периода для фильтра по дате (по createdAt заказа)
   const salesDateRange = useMemo(() => {
     const now = new Date()
     const toDate = now.toISOString().slice(0, 10)
     if (salesPeriod === 'all') return { fromDate: '', toDate }
+    if (salesPeriod === 'month') {
+      const [y, m] = salesMonth.split('-').map(Number)
+      const from = new Date(y, m - 1, 1)
+      const to = new Date(y, m, 0) // последний день месяца
+      return { fromDate: from.toISOString().slice(0, 10), toDate: to.toISOString().slice(0, 10) }
+    }
     const from = new Date(now)
     from.setDate(from.getDate() - (salesPeriod === '7d' ? 7 : 30))
     return { fromDate: from.toISOString().slice(0, 10), toDate }
-  }, [salesPeriod])
+  }, [salesPeriod, salesMonth])
 
   // заказы за выбранный период (по дате создания)
   const filteredOrdersByPeriod = useMemo(() => {
@@ -269,20 +410,9 @@ export default function OrdersPage({
             <div className="toolbar toolbar--transparent" style={{ marginTop: '0.5rem' }}>
               <div className="toolbar-row-filters toolbar-row-filters--orders">
                 <div className="toolbar-filters">
-                  <label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     Пользователь:
-                    <select
-                      className="admin-select"
-                      value={filterUserId}
-                      onChange={(e) => setFilterUserId(e.target.value)}
-                    >
-                      <option value="">Все</option>
-                      {users.map((u) => (
-                        <option key={u.telegram_id} value={u.telegram_id}>
-                          {u.username ? `@${u.username}` : u.telegram_id}
-                        </option>
-                      ))}
-                    </select>
+                    <UserSearchSelect users={users} value={filterUserId} onChange={setFilterUserId} />
                   </label>
                   <label>
                     Статус:
@@ -321,6 +451,7 @@ export default function OrdersPage({
                     <th>Адрес</th>
                     {th('status', 'Статус')}
                     {th('createdAt', 'Создан')}
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -345,6 +476,15 @@ export default function OrdersPage({
                         </select>
                       </td>
                       <td data-label="Создан">{new Date(order.createdAt).toLocaleString('ru-RU')}</td>
+                      <td>
+                        <button
+                          className="btn-icon btn-delete"
+                          title="Удалить заказ"
+                          onClick={() => setDeleteConfirm({ id: order.id, name: order.customerName })}
+                        >
+                          <TrashIcon />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -367,19 +507,32 @@ export default function OrdersPage({
           <div className="stats-page">
             <section className="stats-section">
               <h2 className="stats-section-title">Продажи</h2>
-              <div className="stats-period-select">
-                <label>
+              <div className="stats-period-select" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   Период:
                   <select
                     className="admin-select"
                     value={salesPeriod}
-                    onChange={(e) => setSalesPeriod(e.target.value as '7d' | '30d' | 'all')}
+                    onChange={(e) => setSalesPeriod(e.target.value as '7d' | '30d' | 'month' | 'all')}
                   >
                     <option value="7d">7 дней</option>
                     <option value="30d">30 дней</option>
+                    <option value="month">По месяцу</option>
                     <option value="all">Всё время</option>
                   </select>
                 </label>
+                {salesPeriod === 'month' && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    Месяц:
+                    <input
+                      type="month"
+                      className="admin-select"
+                      value={salesMonth}
+                      onChange={e => setSalesMonth(e.target.value)}
+                      style={{ padding: '4px 8px' }}
+                    />
+                  </label>
+                )}
               </div>
               <div className="stats-cards stats-cards--circle">
                 <div className="stats-card stats-card--circle">
@@ -444,7 +597,18 @@ export default function OrdersPage({
             </section>
           </div>
         )}
-      </div>
+      {deleteConfirm && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+          <div className="modal-content confirm-modal" onClick={e => e.stopPropagation()}>
+            <h3>Подтверждение</h3>
+            <p>Удалить заказ клиента <strong>{deleteConfirm.name}</strong>? Это действие необратимо.</p>
+            <div className="confirm-actions">
+              <button onClick={() => setDeleteConfirm(null)} className="btn btn-cancel">Отмена</button>
+              <button onClick={() => deleteOrder(deleteConfirm.id)} className="btn btn-confirm">Удалить</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -167,7 +167,7 @@ export default function CartPage() {
                 onClick={applyPromoCode}
                 className="px-4 py-2 text-[14px]"
               >
-                Применить
+                {promoLoading ? null : 'Применить'}
               </Button>
             </div>
           )}

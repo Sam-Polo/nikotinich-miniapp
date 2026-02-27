@@ -210,7 +210,7 @@ function ProductsList({
   const [selectedLine, setSelectedLine] = useState<string>('all')
   const [brandsForFilter, setBrandsForFilter] = useState<CategoryOption[]>([])
   const [linesForFilter, setLinesForFilter] = useState<CategoryOption[]>([])
-  const [searchArticle, setSearchArticle] = useState<string>('')
+  const [searchQuery, setSearchQuery] = useState<string>('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -313,6 +313,7 @@ function ProductsList({
       const data = await api.getProducts()
       const productsList = data.products || []
       setProducts(productsList)
+      setSearchQuery('')
       setSelectedProductSlugs(new Set()) // сбрасываем выделение при обновлении
       return productsList
     } catch (err: any) {
@@ -428,9 +429,13 @@ function ProductsList({
     const matchesBrand = selectedBrand === 'all' || productBrand === selectedBrand
     const productLine = (p.line || '').trim().toLowerCase()
     const matchesLine = selectedLine === 'all' || productLine === selectedLine
-    const matchesArticle = !searchArticle.trim() ||
-      (p.article && p.article.toLowerCase().includes(searchArticle.trim().toLowerCase()))
-    return matchesCategory && matchesBrand && matchesLine && matchesArticle
+    const q = searchQuery.trim().toLowerCase()
+    const matchesSearch = !q ||
+      (p.title || '').toLowerCase().includes(q) ||
+      (p.slug || '').toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q) ||
+      (p.article || '').toLowerCase().includes(q)
+    return matchesCategory && matchesBrand && matchesLine && matchesSearch
   })
 
   // группируем по категориям и сортируем по порядку в листе (orderInCategory), чтобы порядок не «улетал»
@@ -707,19 +712,19 @@ function ProductsList({
                 </select>
               </label>
               <label className="search-label">
-                Поиск по артикулу:
+                Поиск:
                 <div className="search-input-wrapper">
                   <input
                     type="text"
-                    value={searchArticle}
-                    onChange={(e) => setSearchArticle(e.target.value)}
-                    placeholder="Введите артикул"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Название, артикул, slug, описание..."
                     className="search-input"
                   />
-                  {searchArticle && (
+                  {searchQuery && (
                     <button
                       type="button"
-                      onClick={() => setSearchArticle('')}
+                      onClick={() => setSearchQuery('')}
                       className="search-clear"
                       title="Очистить поиск"
                     >
@@ -827,7 +832,7 @@ function ProductsList({
           <div className="products-list">
             {Object.entries(isReorderProductsMode ? reorderedProductsByCategory : groupedProducts).map(([category, categoryProducts]) => (
               <div key={category} className="category-section">
-                <h2>{category.charAt(0).toUpperCase() + category.slice(1)}</h2>
+                <h2>{categories.find(c => c.key === category)?.title || category}</h2>
                 {isReorderProductsMode ? (
                   <DndContext
                     sensors={productsSensors}

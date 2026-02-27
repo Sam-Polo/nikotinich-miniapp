@@ -259,7 +259,7 @@ export default function ProfilePage() {
                   type="email"
                   value={editEmail}
                   onChange={e => setEditEmail(e.target.value)}
-                  placeholder="email@example.com"
+                    placeholder="email@mail.ru"
                   className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
                 />
               </div>

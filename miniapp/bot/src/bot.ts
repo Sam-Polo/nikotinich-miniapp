@@ -209,12 +209,21 @@ bot.on('message:contact', async (ctx) => {
 
   // сохраняем телефон через miniapp-backend API
   const apiUrl = process.env.MINIAPP_API_URL?.trim()
-  if (apiUrl && userId && phone) {
+  // нормализуем телефон: 79... → +7..., 7... (без +) → +7...
+  const normalizePhone = (p: string): string => {
+    const digits = p.replace(/\D/g, '')
+    if (digits.startsWith('7') && digits.length === 11) return '+' + digits
+    if (digits.startsWith('8') && digits.length === 11) return '+7' + digits.slice(1)
+    return p.startsWith('+') ? p : '+' + p
+  }
+  const normalizedPhone = normalizePhone(phone)
+
+  if (apiUrl && userId && normalizedPhone) {
     try {
       const res = await fetch(`${apiUrl}/api/users/${encodeURIComponent(userId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone })
+        body: JSON.stringify({ phone: normalizedPhone })
       })
       if (res.ok) {
         logger.info({ userId }, 'телефон сохранён через API')

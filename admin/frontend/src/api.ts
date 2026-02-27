@@ -304,6 +304,9 @@ export const api = {
       body: JSON.stringify({ status })
     })
   },
+  async deleteOrder(id: string) {
+    return fetchWithAuth(`/api/orders/${id}`, { method: 'DELETE' })
+  },
 
   // статистика посещений
   async getVisitsStats(period: '7d' | '30d' | 'all') {
