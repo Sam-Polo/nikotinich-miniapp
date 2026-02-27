@@ -410,7 +410,7 @@ export default function OrdersPage({
             <div className="toolbar toolbar--transparent" style={{ marginTop: '0.5rem' }}>
               <div className="toolbar-row-filters toolbar-row-filters--orders">
                 <div className="toolbar-filters">
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label>
                     Пользователь:
                     <UserSearchSelect users={users} value={filterUserId} onChange={setFilterUserId} />
                   </label>

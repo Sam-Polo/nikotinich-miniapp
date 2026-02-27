@@ -129,11 +129,11 @@ bot.callbackQuery('noop', async (ctx) => {
 
 // --- обработка смены статуса заказа из канала (os:orderId:status) ---
 const STATUS_NAMES: Record<string, string> = {
-  new: 'Новый',
-  confirmed: 'Подтверждён',
-  packed: 'Упаковывается',
-  completed: 'Выполнен',
-  cancelled: 'Отменён'
+  new: '🆕 Новый',
+  confirmed: '✅ Подтверждён',
+  packed: '📦 Упаковывается',
+  completed: '✔️ Выполнен',
+  cancelled: '❌ Отменён'
 }
 
 bot.callbackQuery(/^os:/, async (ctx) => {
@@ -174,7 +174,7 @@ bot.callbackQuery(/^os:/, async (ctx) => {
     logger.info({ orderId, newStatus }, 'статус заказа изменён через бот')
     await ctx.answerCallbackQuery({ text: `✅ Статус → ${STATUS_NAMES[newStatus] ?? newStatus}` })
 
-    // обновляем статусные кнопки в сообщении канала
+    // обновляем текст и кнопки сообщения в канале
     try {
       const STATUS_LABELS: Record<string, string> = {
         confirmed: '✅ Подтвердить',
@@ -188,10 +188,23 @@ bot.callbackQuery(/^os:/, async (ctx) => {
       const rows: { text: string; callback_data: string }[][] = []
       for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2))
 
-      await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: rows } })
+      const currentMsg = ctx.callbackQuery.message
+      if (currentMsg && 'text' in currentMsg && currentMsg.text) {
+        // заменяем строку со статусом в тексте сообщения
+        const updatedText = currentMsg.text.replace(
+          /^Статус: .+$/m,
+          `Статус: ${STATUS_NAMES[newStatus] ?? newStatus}`
+        )
+        await ctx.editMessageText(updatedText, {
+          parse_mode: 'Markdown',
+          reply_markup: { inline_keyboard: rows }
+        })
+      } else {
+        await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: rows } })
+      }
     } catch (editErr: any) {
-      // не критично если не удалось обновить клавиатуру
-      logger.warn({ error: editErr?.message }, 'не удалось обновить клавиатуру сообщения')
+      // не критично если не удалось обновить сообщение
+      logger.warn({ error: editErr?.message }, 'не удалось обновить сообщение')
     }
   } catch (e: any) {
     logger.error({ error: e?.message, orderId }, 'ошибка запроса к admin-backend')
