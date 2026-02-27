@@ -65,8 +65,8 @@ function SortableLineRow({
   const style = { transform: CSS.Transform.toString(transform), transition }
   return (
     <tr ref={setNodeRef} style={style} className={isDragging ? 'dragging' : ''}>
-      <td><span className="drag-handle" {...attributes} {...listeners}>⋮⋮</span></td>
-      <td>
+      <td data-label="Сортировка"><span className="drag-handle" {...attributes} {...listeners}>⋮⋮</span></td>
+      <td data-label="Фото">
         <div
           className="category-row-preview category-row-preview-square"
           style={{
@@ -76,7 +76,7 @@ function SortableLineRow({
           }}
         />
       </td>
-      <td>
+      <td data-label="Название">
         <span
           role="button"
           tabIndex={0}
@@ -87,8 +87,8 @@ function SortableLineRow({
           {line.title}
         </span>
       </td>
-      <td>{line.key}</td>
-      <td>
+      <td data-label="Ключ">{line.key}</td>
+      <td data-label="Действия">
         <button type="button" className="btn-icon btn-edit" onClick={onEdit} title="Редактировать"><EditIcon /></button>
         <button type="button" className="btn-icon btn-delete" onClick={onDelete} title="Удалить"><TrashIcon /></button>
       </td>
@@ -274,7 +274,11 @@ function LinesPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { c
   }
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 

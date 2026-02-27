@@ -64,8 +64,8 @@ function SortableBrandRow({
   const style = { transform: CSS.Transform.toString(transform), transition }
   return (
     <tr ref={setNodeRef} style={style} className={isDragging ? 'dragging' : ''}>
-      <td><span className="drag-handle" {...attributes} {...listeners}>⋮⋮</span></td>
-      <td>
+      <td data-label="Сортировка"><span className="drag-handle" {...attributes} {...listeners}>⋮⋮</span></td>
+      <td data-label="Фото">
         <div
           className="category-row-preview category-row-preview-square"
           style={{
@@ -75,7 +75,7 @@ function SortableBrandRow({
           }}
         />
       </td>
-      <td>
+      <td data-label="Название">
         <span
           role="button"
           tabIndex={0}
@@ -86,7 +86,8 @@ function SortableBrandRow({
           {brand.title}
         </span>
       </td>
-      <td>
+      <td data-label="Ключ">{brand.key}</td>
+      <td data-label="Действия">
         <button type="button" className="btn-icon btn-edit" onClick={onEdit} title="Редактировать"><EditIcon /></button>
         <button type="button" className="btn-icon btn-delete" onClick={onDelete} title="Удалить"><TrashIcon /></button>
       </td>
@@ -256,7 +257,11 @@ function BrandsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
   }
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 

@@ -76,11 +76,11 @@ function SortableContentRow({
 
   return (
     <tr ref={setNodeRef} style={style} className={isDragging ? 'dragging' : ''}>
-      <td>
+      <td data-label="Сортировка">
         <span className="drag-handle" {...attributes} {...listeners}>⋮⋮</span>
       </td>
-      <td className="content-type-cell">{item.type === 'news' ? 'Новость' : 'Подборка'}</td>
-      <td>
+      <td data-label="Тип" className="content-type-cell">{item.type === 'news' ? 'Новость' : 'Подборка'}</td>
+      <td data-label="Фото">
         <div
           className="content-row-preview"
           style={{
@@ -90,10 +90,10 @@ function SortableContentRow({
           }}
         />
       </td>
-      <td className="content-title-cell">{item.title || '—'}</td>
-      <td className="content-date-cell">{item.publishedAt || '—'}</td>
-      <td>{item.active ? 'Да' : 'Нет'}</td>
-      <td>
+      <td data-label="Заголовок" className="content-title-cell">{item.title || '—'}</td>
+      <td data-label="Дата" className="content-date-cell">{item.publishedAt || '—'}</td>
+      <td data-label="Активна">{item.active ? 'Да' : 'Нет'}</td>
+      <td data-label="Действия">
         <button type="button" className="btn-icon btn-edit" onClick={onEdit} title="Редактировать"><EditIcon /></button>
         <button type="button" className="btn-icon btn-delete" onClick={onDelete} title="Удалить"><TrashIcon /></button>
       </td>
@@ -340,7 +340,11 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
   }
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 

@@ -506,7 +506,7 @@ function ProductsList({
   const productsSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 0,
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -1049,7 +1049,7 @@ function ProductModal({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 0, // мгновенная активация без задержки
+        distance: 8, // изменено для возможности скролла на мобильных
       },
     }),
     useSensor(KeyboardSensor, {
