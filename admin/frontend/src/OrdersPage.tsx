@@ -597,6 +597,8 @@ export default function OrdersPage({
             </section>
           </div>
         )}
+      </div>
+
       {deleteConfirm && (
         <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
           <div className="modal-content confirm-modal" onClick={e => e.stopPropagation()}>
