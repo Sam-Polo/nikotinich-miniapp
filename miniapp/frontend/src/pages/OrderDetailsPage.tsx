@@ -73,15 +73,15 @@ export default function OrderDetailsPage() {
     <div className="min-h-full bg-bg-base px-4 pt-2 pb-8">
       {/* верхняя панель как в макете */}
       <div className="relative h-14 flex items-center">
-        <button onClick={() => navigate(-1)} className="text-accent text-[30px] leading-none flex items-center gap-1">
+        <button onClick={() => navigate(-1)} className="text-accent text-[16px] leading-none flex items-center gap-1">
           <svg width="10" height="17" viewBox="0 0 10 17" fill="none">
             <path d="M9 1L1 8.5L9 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Back
         </button>
         <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-          <p className="text-[37px] leading-none font-semibold text-text-primary">Никотиныч</p>
-          <p className="text-[26px] leading-none text-text-secondary mt-1">mini app</p>
+          <p className="text-[16px] leading-tight font-semibold text-text-primary">Никотиныч</p>
+          <p className="text-[12px] leading-tight text-text-secondary">mini app</p>
         </div>
         <div className="ml-auto">
           <button className="w-7 h-7 rounded-full border border-accent text-accent flex items-center justify-center">
@@ -105,8 +105,8 @@ export default function OrderDetailsPage() {
 
         <div className="mt-1 flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-[44px] leading-none font-bold text-[#35363A]">{title}</h1>
-            <p className="mt-2 text-[17px] text-[#5D6066]">{statusSubtitle}</p>
+            <h1 className="text-[40px] leading-none font-bold text-[#35363A]">{title}</h1>
+            <p className="mt-2 text-[14px] text-[#5D6066]">{statusSubtitle}</p>
           </div>
           {order.status === 'completed' && (
             <button className="h-9 px-4 rounded-full bg-accent text-white text-[14px] font-medium whitespace-nowrap">
@@ -118,22 +118,22 @@ export default function OrderDetailsPage() {
 
       <section className="mt-6 bg-[#F0F0F1] rounded-[16px] divide-y divide-[#E5E5E7]">
         <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <span className="text-[17px] text-[#45474D]">Адрес</span>
-          <span className="text-[17px] text-[#6B6E74] text-right">{order.address || '—'}</span>
+          <span className="text-[16px] text-[#45474D]">Адрес</span>
+          <span className="text-[16px] text-[#6B6E74] text-right">{order.address || '—'}</span>
         </div>
         <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <span className="text-[17px] text-[#45474D]">Получатель</span>
-          <span className="text-[17px] text-[#6B6E74] text-right">{order.customerName}{order.phone ? `, ${order.phone}` : ''}</span>
+          <span className="text-[16px] text-[#45474D]">Получатель</span>
+          <span className="text-[16px] text-[#6B6E74] text-right">{order.customerName}{order.phone ? `, ${order.phone}` : ''}</span>
         </div>
         <button className="w-full px-4 py-3 flex items-center justify-between text-left">
-          <span className="text-[17px] text-[#45474D]">Чек</span>
+          <span className="text-[16px] text-[#45474D]">Чек</span>
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none" className="text-[#1F2125]">
             <path d="M1 1L7 7L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </section>
 
-      <h2 className="mt-6 text-[39px] leading-none font-bold text-[#35363A]">Состав заказа</h2>
+      <h2 className="mt-6 text-[40px] leading-none font-bold text-[#35363A]">Состав заказа</h2>
 
       <section className="mt-3 bg-[#F0F0F1] rounded-[16px] p-4">
         <div className="space-y-3">
@@ -142,7 +142,7 @@ export default function OrderDetailsPage() {
               <div className="w-12 h-12 rounded-[8px] bg-[#E6E6E8] flex-shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] leading-tight text-[#606269] line-clamp-2">{item.title || item.slug}</p>
-                <p className="mt-1 text-[18px] font-semibold text-[#34353A]">
+                <p className="mt-1 text-[16px] font-semibold text-[#34353A]">
                   {((item.priceRub || 0) * item.qty).toLocaleString('ru-RU')} ₽
                 </p>
               </div>
@@ -151,8 +151,8 @@ export default function OrderDetailsPage() {
         </div>
 
         <div className="mt-4 pt-3 border-t border-[#E3E3E5] flex items-center justify-between">
-          <span className="text-[18px] font-semibold text-[#484A50]">Итого</span>
-          <span className="text-[36px] leading-none font-bold text-[#3C3E44]">{order.totalRub.toLocaleString('ru-RU')} ₽</span>
+          <span className="text-[16px] font-semibold text-[#484A50]">Итого</span>
+          <span className="text-[34px] leading-none font-bold text-[#3C3E44]">{order.totalRub.toLocaleString('ru-RU')} ₽</span>
         </div>
       </section>
 

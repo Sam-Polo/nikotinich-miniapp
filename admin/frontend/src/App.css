@@ -1893,10 +1893,25 @@
 
   .nav-btn {
     flex-shrink: 0;
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem;
     font-size: 0.85rem;
     white-space: nowrap;
     min-width: 0;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* на мобильных — только иконки, текст скрыт */
+  .nav-btn .nav-btn-text {
+    display: none;
+  }
+
+  .nav-btn .nav-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .logout-btn {
@@ -2669,6 +2684,15 @@
   width: 1px;
   height: 60%;
   background: #e5e7eb;
+}
+
+/* на ПК — текст, иконка скрыта */
+.nav-btn .nav-btn-icon {
+  display: none;
+}
+
+.nav-btn .nav-btn-text {
+  display: inline;
 }
 
 .nav-btn:hover {
@@ -3636,7 +3660,8 @@
   }
 
   .nav-btn {
-    padding: 0.35rem 0.5rem;
+    padding: 0.5rem;
+    min-height: 44px;
     font-size: 0.72rem;
   }
 

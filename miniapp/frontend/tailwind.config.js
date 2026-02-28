@@ -7,7 +7,7 @@ export default {
         // цвета из дизайна Figma (светлая тема, iOS-стиль)
         accent: '#007AFF',
         'accent-hover': '#0062CC',
-        'bg-base': '#F2F2F7',
+        'bg-base': '#FFFFFF',
         'card-bg': '#FFFFFF',
         'text-primary': '#000000',
         'text-secondary': '#8E8E93',

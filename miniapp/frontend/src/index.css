@@ -8,7 +8,7 @@
     /* используем системный шрифт iOS/Android */
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-    background-color: #F2F2F7;
+    background-color: #FFFFFF;
   }
 
   /* скролл без инерции Safari не нужен, убираем резиновый эффект */

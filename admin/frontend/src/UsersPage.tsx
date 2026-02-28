@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { api, removeToken } from './api'
+import AdminNav from './components/AdminNav'
 import './App.css'
 
 type User = {
@@ -210,17 +211,7 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
     <div className="admin-container">
       <header className="admin-header">
         <h1>Админ-панель - Никотиныч</h1>
-        <div className="header-nav">
-          <button className="nav-btn" onClick={() => onNavigate?.('products')}>Товары</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('categories')}>Категории</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('brands')}>Бренды</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('lines')}>Линейки</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('content')}>Контент</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('promocodes')}>Промокоды</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('orders')}>Заказы</button>
-          <button className="nav-btn active" onClick={() => onNavigate?.('users')}>Пользователи</button>
-          <button className="nav-btn" onClick={() => onNavigate?.('referral')}>Реферальная система</button>
-        </div>
+        <AdminNav currentPage="users" onNavigate={(p) => onNavigate?.(p)} />
         <button onClick={handleLogout} className="logout-btn">Выйти</button>
       </header>
 
