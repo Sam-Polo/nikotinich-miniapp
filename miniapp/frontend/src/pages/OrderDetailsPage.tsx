@@ -7,12 +7,6 @@ import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
 import toast from 'react-hot-toast'
 
-function formatDate(value?: string) {
-  if (!value) return ''
-  const date = new Date(value)
-  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
-}
-
 function formatDateTime(value?: string) {
   if (!value) return ''
   const date = new Date(value)
@@ -20,8 +14,8 @@ function formatDateTime(value?: string) {
     date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
 
-// username менеджера для кнопки «Поддержка» — env или fallback
-const SUPPORT_TG = import.meta.env.VITE_SUPPORT_TG_USERNAME || 'nikotinich_support'
+// username менеджера для кнопки «Поддержка» — опционально из .env
+const SUPPORT_TG = (import.meta.env.VITE_SUPPORT_TG_USERNAME as string | undefined)?.trim() || ''
 
 export default function OrderDetailsPage() {
   const navigate = useNavigate()
@@ -88,6 +82,7 @@ export default function OrderDetailsPage() {
   }
 
   function handleSupport() {
+    if (!SUPPORT_TG) return
     const url = SUPPORT_TG.startsWith('http') ? SUPPORT_TG : `https://t.me/${SUPPORT_TG.replace('@', '')}`
     window.open(url, '_blank')
   }
@@ -197,25 +192,29 @@ export default function OrderDetailsPage() {
           </div>
         </section>
 
-        <div className={`mt-6 grid gap-2 ${canCancel ? 'grid-cols-2' : ''}`}>
-          {canCancel && (
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={cancelling}
-              className="h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80 disabled:opacity-50"
-            >
-              {cancelling ? 'Отмена...' : 'Отменить заказ'}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleSupport}
-            className={`h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80 ${!canCancel ? 'w-full' : ''}`}
-          >
-            Поддержка
-          </button>
-        </div>
+        {(canCancel || SUPPORT_TG) && (
+          <div className={`mt-6 grid gap-2 ${canCancel && SUPPORT_TG ? 'grid-cols-2' : ''}`}>
+            {canCancel && (
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80 disabled:opacity-50"
+              >
+                {cancelling ? 'Отмена...' : 'Отменить заказ'}
+              </button>
+            )}
+            {SUPPORT_TG && (
+              <button
+                type="button"
+                onClick={handleSupport}
+                className={`h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80 ${!canCancel ? 'w-full' : ''}`}
+              >
+                Поддержка
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
