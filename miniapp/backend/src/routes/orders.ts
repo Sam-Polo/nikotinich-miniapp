@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { randomUUID } from 'node:crypto'
 import { SHEET_ID } from '../config.js'
-import { readSheet, ensureSheet, appendRow, getAuth, updateRange } from '../sheets-utils.js'
+import { readSheet, ensureSheet, appendRow, getAuth, updateRange, getSheetTitles } from '../sheets-utils.js'
 import { sendOrderNotification } from '../notify.js'
 import { google } from 'googleapis'
 import { logger } from '../logger.js'
@@ -15,6 +15,46 @@ const HEADERS = [
   'items_json', 'total_rub', 'promo_code', 'delivery_fee',
   'status', 'created_at', 'confirmed_at', 'note', 'referral_bonus_accrued', 'referral_bonus_used', 'tg_message_id'
 ]
+
+const SERVICE_SHEETS = new Set(['categories', 'brands', 'lines', 'content', 'orders', 'miniapp_users', 'settings', 'promocodes', 'visits'])
+
+// списание остатка по товарам заказа в листах каталога
+async function decrementStockForOrder(items: { slug: string; qty: number }[]): Promise<void> {
+  const all = await getSheetTitles(SHEET_ID)
+  const sheetNames = all.filter(n => !SERVICE_SHEETS.has(n.toLowerCase()))
+
+  for (const { slug, qty } of items) {
+    if (!slug || qty <= 0) continue
+    for (const sheetName of sheetNames) {
+      try {
+        const rows = await readSheet(SHEET_ID, `${sheetName}!A1:Q1000`)
+        if (rows.length < 2) continue
+        const header = rows[0].map((h: string) => String(h || '').trim().toLowerCase())
+        const slugIdx = header.indexOf('slug')
+        const stockIdx = header.indexOf('stock')
+        if (slugIdx === -1 || stockIdx === -1) continue
+
+        const rowIndex = rows.findIndex((r, i) => i > 0 && String(r[slugIdx] ?? '').trim() === slug)
+        if (rowIndex === -1) continue
+
+        const row = rows[rowIndex]
+        const stockRaw = row[stockIdx] !== undefined ? String(row[stockIdx] ?? '').trim() : ''
+        const current = stockRaw !== '' ? Number(stockRaw) : NaN
+        if (!Number.isFinite(current) || current < 0) continue
+
+        const newStock = Math.max(0, current - qty)
+        const fullRow = header.map((_, i) => String(row[i] ?? ''))
+        fullRow[stockIdx] = String(newStock)
+        const sheetRow = rowIndex + 1
+        await updateRange(SHEET_ID, `${sheetName}!A${sheetRow}:Q${sheetRow}`, [fullRow])
+        logger.info({ slug, sheetName, previousStock: current, qty, newStock }, 'остаток списан')
+        break
+      } catch (e: any) {
+        logger.warn({ sheetName, slug, error: e?.message }, 'не удалось списать остаток')
+      }
+    }
+  }
+}
 
 // списание реферального баланса пользователя
 async function deductUserReferralBalance(userId: string, amount: number): Promise<void> {
@@ -166,6 +206,13 @@ router.post('/', async (req, res) => {
     ]
 
     await appendRow(SHEET_ID, SHEET_NAME, row)
+
+    // списываем остаток по товарам в листах каталога
+    try {
+      await decrementStockForOrder(orderData.items.map((i: any) => ({ slug: i.slug, qty: i.qty })))
+    } catch (e: any) {
+      logger.warn({ orderId: id, error: e?.message }, 'ошибка списания остатков — заказ создан')
+    }
 
     logger.info({ orderId: id, userId, totalRub, bonusUsed }, 'заказ создан')
     res.status(201).json({ id, status: 'new', createdAt: now })
