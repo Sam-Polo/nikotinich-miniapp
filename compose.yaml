@@ -86,6 +86,8 @@ services:
       args:
         # URL API мини-апп бэкенда (для прода — публичный https URL)
         VITE_API_URL: ${MINIAPP_API_URL:-http://localhost:4002}
+        # username менеджера для кнопки «Поддержка» (без @)
+        VITE_SUPPORT_TG_USERNAME: ${VITE_SUPPORT_TG_USERNAME:-nikotinich_support}
     container_name: nikotinich-miniapp-frontend
     restart: unless-stopped
     ports:

@@ -175,4 +175,48 @@ router.post('/', async (req, res) => {
   }
 })
 
+// PUT /api/orders/:id/cancel — отмена заказа пользователем (только свой заказ, статусы new/confirmed)
+router.put('/:id/cancel', async (req, res) => {
+  const orderId = String(req.params.id || '').trim()
+  const userId = String(req.body?.userId || '').trim()
+  if (!userId) return res.status(400).json({ error: 'userId_required' })
+
+  try {
+    const rows = await readSheet(SHEET_ID, `${SHEET_NAME}!A1:N2000`)
+    if (rows.length < 2) return res.status(404).json({ error: 'order_not_found' })
+
+    const header = rows[0].map((h: string) => h.trim().toLowerCase())
+    const idx = (n: string) => header.indexOf(n)
+    const idIdx = idx('id')
+    const userIdIdx = idx('user_id')
+    const statusIdx = idx('status')
+    if (idIdx === -1 || userIdIdx === -1 || statusIdx === -1) {
+      return res.status(500).json({ error: 'sheet_format_error' })
+    }
+
+    const rowIndex = rows.findIndex((r, i) => i > 0 && String(r[idIdx] ?? '').trim() === orderId)
+    if (rowIndex === -1) return res.status(404).json({ error: 'order_not_found' })
+
+    const row = rows[rowIndex]
+    const orderUserId = String(row[userIdIdx] ?? '').trim()
+    if (orderUserId !== userId) return res.status(403).json({ error: 'forbidden' })
+
+    const status = String(row[statusIdx] ?? '').trim().toLowerCase()
+    if (status === 'completed' || status === 'cancelled') {
+      return res.status(400).json({ error: 'order_already_final' })
+    }
+
+    const fullRow = header.map((_, i) => String(row[i] ?? ''))
+    fullRow[statusIdx] = 'cancelled'
+    const sheetRow = rowIndex + 1
+    await updateRange(SHEET_ID, `${SHEET_NAME}!A${sheetRow}:N${sheetRow}`, [fullRow])
+
+    logger.info({ orderId, userId }, 'заказ отменён пользователем')
+    res.json({ success: true, status: 'cancelled' })
+  } catch (e: any) {
+    logger.error({ error: e?.message, orderId, userId }, 'ошибка отмены заказа')
+    res.status(500).json({ error: 'server_error' })
+  }
+})
+
 export default router

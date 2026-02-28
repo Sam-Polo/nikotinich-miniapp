@@ -122,6 +122,12 @@ export const getSettings = () => request<AppSettings>('/settings')
 export const getUserOrders = (userId: string) =>
   request<Order[]>(`/orders?userId=${encodeURIComponent(userId)}`)
 
+export const cancelOrder = (orderId: string, userId: string) =>
+  request<{ success: boolean; status: string }>(`/orders/${encodeURIComponent(orderId)}/cancel`, {
+    method: 'PUT',
+    body: JSON.stringify({ userId })
+  })
+
 export const createOrder = (data: {
   customerName: string
   items: OrderItem[]

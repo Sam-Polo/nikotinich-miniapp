@@ -127,8 +127,9 @@ export default function CheckoutPage() {
         {error && <p className="text-destructive text-[14px] mb-3">{error}</p>}
       </form>
 
-      {/* кнопка подтверждения */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 pb-safe">
+      {/* кнопка подтверждения — выше BottomNav */}
+      <div className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
+        style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
         <Button fullWidth loading={loading} onClick={handleSubmit as any}>
           Подтвердить заказ — ₽{total.toLocaleString('ru-RU')}
         </Button>

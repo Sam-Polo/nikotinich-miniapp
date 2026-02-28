@@ -43,6 +43,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false)
 
   const [refCopied, setRefCopied] = useState(false)
+  const [refModalOpen, setRefModalOpen] = useState(false)
   const [phoneLoading, setPhoneLoading] = useState(false)
   const [phoneError, setPhoneError] = useState('')
   // ссылка на обработчик для последующего удаления через offEvent
@@ -272,8 +273,17 @@ export default function ProfilePage() {
             <section className="space-y-3">
               <h2 className="text-[16px] font-semibold text-text-primary">Реферальная система</h2>
 
+              {/* счётчик бонусных рублей */}
+              {user.referral_balance_rub > 0 && (
+                <div className="bg-card-bg rounded-card p-4 border border-border-light">
+                  <p className="text-[14px] text-text-secondary">Бонусные рубли</p>
+                  <p className="text-[24px] font-bold text-accent">₽{user.referral_balance_rub.toLocaleString('ru-RU')}</p>
+                  <p className="text-[12px] text-text-secondary mt-1">Бонусы можно списать при оформлении заказа</p>
+                </div>
+              )}
+
               <div className="bg-accent rounded-[22px] p-4 border border-[#1A8FE7]">
-                <p className="text-white text-[36px] leading-none font-semibold">
+                <p className="text-white text-[20px] leading-tight font-semibold">
                   Ваша скидка {settings?.referralPercentBefore10 ?? 5}%
                 </p>
 
@@ -314,7 +324,11 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <button className="w-full text-center text-accent text-[15px] font-semibold active:opacity-70">
+              <button
+                type="button"
+                onClick={() => setRefModalOpen(true)}
+                className="w-full text-center text-accent text-[15px] font-semibold active:opacity-70"
+              >
                 Как это работает?
               </button>
             </section>
@@ -362,6 +376,33 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* модалка «Как это работает» — инфо о рефералке из админки */}
+      {refModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-end sm:items-center justify-center" onClick={() => setRefModalOpen(false)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl max-h-[80vh] overflow-y-auto w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-[18px] font-bold text-text-primary mb-4">Как работает реферальная система</h3>
+            <div className="text-[14px] text-text-secondary space-y-3 leading-relaxed">
+              <p>Делитесь реферальной ссылкой с друзьями. Новые пользователи, перешедшие по ссылке, привязываются к вам как рефералы.</p>
+              <p>За каждый подтверждённый заказ реферала вы получаете бонус на реф. баланс. Подтверждение заказа — смена статуса на «Подтверждён» в разделе заказов.</p>
+              <p>Процент бонуса зависит от количества уже подтверждённых заказов всех ваших рефералов:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>до 10 заказов — {settings?.referralPercentBefore10 ?? 5}%</li>
+                <li>с 11-го заказа — {settings?.referralPercentAfter10 ?? 10}%</li>
+              </ul>
+              <p>Бонус = сумма заказа × процент / 100.</p>
+              <p>Реф. баланс можно списать при оформлении заказа в корзине.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRefModalOpen(false)}
+              className="mt-6 w-full py-3 bg-accent text-white rounded-[12px] font-semibold text-[15px]"
+            >
+              Понятно
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

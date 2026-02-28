@@ -64,20 +64,18 @@ export default function App() {
       <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
       <div className="flex flex-col min-h-full">
         <Routes>
-          {/* основные экраны с нижней навигацией */}
+          {/* все экраны с нижней навигацией — навигация всегда видна */}
           <Route path="/" element={<WithNav><CatalogPage /></WithNav>} />
           <Route path="/news" element={<WithNav><NewsPage /></WithNav>} />
           <Route path="/favorites" element={<WithNav><FavoritesPage /></WithNav>} />
           <Route path="/cart" element={<WithNav><CartPage /></WithNav>} />
           <Route path="/profile" element={<WithNav><ProfilePage /></WithNav>} />
-
-          {/* подстраницы без нижнего меню */}
-          <Route path="/catalog/:categoryKey" element={<CategoryPage />} />
-          <Route path="/collection/:id" element={<CollectionDetailPage />} />
-          <Route path="/product/:slug" element={<ProductPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
-          <Route path="/order/:orderId" element={<OrderDetailsPage />} />
+          <Route path="/catalog/:categoryKey" element={<WithNav><CategoryPage /></WithNav>} />
+          <Route path="/collection/:id" element={<WithNav><CollectionDetailPage /></WithNav>} />
+          <Route path="/product/:slug" element={<WithNav><ProductPage /></WithNav>} />
+          <Route path="/checkout" element={<WithNav><CheckoutPage /></WithNav>} />
+          <Route path="/order-success/:orderId" element={<WithNav><OrderSuccessPage /></WithNav>} />
+          <Route path="/order/:orderId" element={<WithNav><OrderDetailsPage /></WithNav>} />
         </Routes>
       </div>
     </BrowserRouter>
