@@ -6,7 +6,7 @@ export default function OrderSuccessPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="flex flex-col min-h-full bg-bg-base items-center justify-center px-6 text-center pb-24">
+    <div className="flex flex-col min-h-full bg-bg-base items-center justify-center px-6 pt-16 text-center pb-24">
       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
           <path d="M20 6L9 17l-5-5" stroke="#34C759" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />

@@ -32,6 +32,7 @@ export default function CheckoutPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) { setError('Введите ваше имя'); return }
+    if (!address.trim()) { setError('Укажите адрес доставки'); return }
     setError('')
     setLoading(true)
     try {
@@ -81,7 +82,7 @@ export default function CheckoutPage() {
         {/* доставка */}
         <section className="bg-card-bg rounded-card p-4 mb-4 space-y-4">
           <h2 className="text-[16px] font-semibold text-text-primary">Доставка</h2>
-          <Field label="Адрес" value={address} onChange={setAddress} placeholder="Москва, ул. Примерная, д. 1" />
+          <Field label="Адрес *" value={address} onChange={setAddress} placeholder="Москва, ул. Примерная, д. 1" />
         </section>
 
         {/* комментарий */}

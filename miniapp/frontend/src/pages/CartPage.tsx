@@ -170,19 +170,19 @@ export default function CartPage() {
               </button>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <input
                 type="text"
                 value={promoInput}
                 onChange={e => setPromoInput(e.target.value.toUpperCase())}
                 placeholder="Введите промокод"
-                className="flex-1 px-3 py-2 bg-bg-base rounded-[10px] text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
+                className="flex-1 min-w-0 px-3 py-2 bg-bg-base rounded-[10px] text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
               />
               <Button
                 variant="secondary"
                 loading={promoLoading}
                 onClick={applyPromoCode}
-                className="px-4 py-2 text-[14px]"
+                className="flex-shrink-0 px-3 py-2 text-[12px]"
               >
                 {promoLoading ? null : 'Применить'}
               </Button>
