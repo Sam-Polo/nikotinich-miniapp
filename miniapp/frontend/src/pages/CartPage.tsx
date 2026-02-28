@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cart'
 import { useUserStore } from '../store/user'
@@ -6,104 +6,53 @@ import { validatePromo } from '../api'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
 
-function SwipeableCartItem({ item, onUpdateQty, onRemove }: any) {
+function CartItemRow({ item, onUpdateQty, onRemove }: { item: { product: import('../api').Product; qty: number }; onUpdateQty: (slug: string, qty: number) => void; onRemove: (slug: string) => void }) {
   const { product, qty } = item
-  const [offset, setOffset] = useState(0)
-  const [isSwiping, setIsSwiping] = useState(false)
-  const startX = useRef(0)
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX
-    setIsSwiping(true)
-  }
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isSwiping) return
-    const diff = e.touches[0].clientX - startX.current
-    if (diff < 0) {
-      setOffset(Math.max(diff, -80))
-    } else {
-      setOffset(0)
-    }
-  }
-
-  const onTouchEnd = () => {
-    setIsSwiping(false)
-    if (offset < -40) {
-      setOffset(-80)
-    } else {
-      setOffset(0)
-    }
-  }
+  const stock = product.stock
+  const canInc = stock == null || qty < stock
 
   return (
-    <div className="relative rounded-card overflow-hidden">
-      <div className="absolute inset-0 bg-[#FF3B30] flex justify-end items-center px-6">
-        <button 
-          onClick={() => onRemove(product.slug)}
-          className="text-white w-10 h-10 flex items-center justify-center active:opacity-70"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2m-6 5v6m4-6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+    <div className="bg-card-bg rounded-card p-3 flex border border-border-light">
+      <div className="w-[84px] h-[84px] bg-bg-base rounded-[10px] flex-shrink-0 overflow-hidden">
+        {product.images[0] ? (
+          <img src={product.images[0]} alt={product.title} className="w-full h-full object-contain p-1" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px]">Нет фото</div>
+        )}
       </div>
-
-      <div 
-        className="relative bg-card-bg p-3 flex z-10 border border-border-light transition-transform"
-        style={{ 
-          transform: `translateX(${offset}px)`,
-          transition: isSwiping ? 'none' : 'transform 0.2s ease-out',
-          borderRadius: 'inherit'
-        }}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        <div className="w-[84px] h-[84px] bg-bg-base rounded-[10px] flex-shrink-0 relative overflow-hidden">
-          {product.images[0] ? (
-            <img 
-              src={product.images[0]} 
-              alt={product.title} 
-              className="w-full h-full object-contain p-1 pointer-events-none"
-            />
-          ) : (
-             <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px]">
-               Нет фото
-             </div>
-          )}
+      <div className="ml-3 flex-1 flex flex-col justify-between py-0.5 min-w-0">
+        <div>
+          <p className="text-[12px] text-text-secondary leading-none mt-1 line-clamp-1">{product.category || product.brand || 'Товар'}</p>
+          <p className="text-[14px] font-medium text-text-primary line-clamp-2 mt-1 pr-10">{product.title}</p>
         </div>
-
-        <div className="ml-3 flex-1 flex flex-col justify-between py-0.5 min-w-0">
-          <div>
-             <p className="text-[12px] text-text-secondary leading-none mt-1 line-clamp-1">
-               {product.category || product.brand || 'Товар'}
-             </p>
-             <p className="text-[14px] font-medium text-text-primary line-clamp-2 mt-1 pr-4">
-               {product.title}
-             </p>
-          </div>
-
-          <div className="flex items-center justify-between mt-2">
-            <div className="font-bold text-[16px]">
-              {(product.display_price * qty).toLocaleString('ru-RU')} ₽
-            </div>
-            
-            <div className="flex items-center justify-between bg-bg-base rounded-btn px-2 py-1 min-w-[80px]" onClick={e => e.stopPropagation()}>
-              <button 
-                className="w-6 h-6 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
+        <div className="flex items-center justify-between mt-2">
+          <span className="font-bold text-[16px]">{(product.display_price * qty).toLocaleString('ru-RU')} ₽</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-bg-base rounded-btn px-1 py-0.5 min-w-[80px]">
+              <button
+                className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
                 onClick={() => onUpdateQty(product.slug, qty - 1)}
               >
                 −
               </button>
-              <span className="text-[14px] font-semibold text-text-primary px-2">{qty}</span>
-              <button 
-                className="w-6 h-6 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
-                onClick={() => onUpdateQty(product.slug, qty + 1)}
+              <span className="text-[14px] font-semibold text-text-primary px-2 min-w-[24px] text-center">{qty}</span>
+              <button
+                className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70 disabled:opacity-50"
+                onClick={() => canInc && onUpdateQty(product.slug, qty + 1)}
+                disabled={!canInc}
               >
                 +
               </button>
             </div>
+            <button
+              onClick={() => onRemove(product.slug)}
+              className="w-9 h-9 flex items-center justify-center rounded-full text-text-secondary hover:bg-red-50 hover:text-red-500 active:opacity-70"
+              aria-label="Удалить"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2m-6 5v6m4-6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -180,7 +129,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
-        <PageHeader title="Никотиныч" subtitle="mini app" />
+        <PageHeader title="Никотиныч" subtitle="shop" />
         <div className="flex-1 flex flex-col items-center justify-center px-4 text-center pt-10 pb-24">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" className="mb-4 opacity-30">
             <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#8E8E93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -198,22 +147,17 @@ export default function CartPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader title="Никотиныч" subtitle="mini app" />
+      <PageHeader title="Никотиныч" subtitle="shop" />
 
-      <div className="flex-1 px-4 pt-4 pb-40">
-        <h1 className="text-[28px] font-bold text-text-primary mb-4">Корзина</h1>
+      <div className="flex-1 flex flex-col min-h-0 px-4 pt-4 overflow-y-auto">
+        <h1 className="text-[28px] font-bold text-text-primary mb-4 flex-shrink-0">Корзина</h1>
 
-        {/* список товаров */}
-        <div className="flex flex-col gap-3 mb-4">
-          {items.map((item) => (
-            <SwipeableCartItem 
-              key={item.product.slug} 
-              item={item} 
-              onUpdateQty={updateQty} 
-              onRemove={removeItem} 
-            />
-          ))}
-        </div>
+        <div className="flex-1 min-h-0 pb-32">
+          <div className="flex flex-col gap-3 mb-4">
+            {items.map((item) => (
+              <CartItemRow key={item.product.slug} item={item} onUpdateQty={updateQty} onRemove={removeItem} />
+            ))}
+          </div>
 
         {/* промокод */}
         <div className="bg-card-bg rounded-card p-4 mb-3">
@@ -306,7 +250,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* кнопка оформить заказ — выше BottomNav, отступ снизу под safe area */}
+      {/* кнопка оформить заказ — выше BottomNav */}
       <div className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
         style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
         <Button fullWidth onClick={() => navigate('/checkout')}>

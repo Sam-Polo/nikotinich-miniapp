@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { getProduct } from '../api'
-import type { Product } from '../api'
+import { getProduct, getBrands, getLines } from '../api'
+import type { Product, Brand, Line } from '../api'
 import { useCartStore } from '../store/cart'
 import { useFavoritesStore } from '../store/favorites'
 import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
 import Button from '../components/Button'
+
+// крепость с большой буквы
+function formatStrength(s?: string) {
+  if (!s || !s.length) return ''
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+}
 
 export default function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
@@ -15,6 +21,8 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true)
   const [imgIdx, setImgIdx] = useState(0)
   const [expanded, setExpanded] = useState(false)
+  const [brandTitle, setBrandTitle] = useState<string | null>(null)
+  const [lineTitle, setLineTitle] = useState<string | null>(null)
 
   const { addItem, updateQty, getQty } = useCartStore()
   const isFav = useFavoritesStore(s => s.isFavorite(slug))
@@ -27,8 +35,28 @@ export default function ProductPage() {
       .finally(() => setLoading(false))
   }, [slug])
 
-  if (loading) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><Spinner /></div>
-  if (!product) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><p className="text-center text-text-secondary mt-20">Товар не найден</p></div>
+  useEffect(() => {
+    if (!product?.category || !product?.brand) return
+    getBrands(product.category)
+      .then((brands: Brand[]) => {
+        const b = brands.find(x => x.key === product.brand)
+        setBrandTitle(b?.title ?? product.brand)
+      })
+      .catch(() => setBrandTitle(product.brand))
+  }, [product?.category, product?.brand])
+
+  useEffect(() => {
+    if (!product?.brand) return
+    getLines(product.brand)
+      .then((lines: Line[]) => {
+        const l = lines.find(x => x.key === product.line)
+        setLineTitle(l?.title ?? product.line ?? null)
+      })
+      .catch(() => setLineTitle(product.line ?? null))
+  }, [product?.brand, product?.line])
+
+  if (loading) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="shop" showBack /><Spinner /></div>
+  if (!product) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="shop" showBack /><p className="text-center text-text-secondary mt-20">Товар не найден</p></div>
 
   // захватываем после null-проверки чтобы TypeScript не терял тип в замыканиях
   const p = product
@@ -36,8 +64,11 @@ export default function ProductPage() {
   const hasDiscount = !!p.discount_price_rub
   const images = p.images.length > 0 ? p.images : ['']
   const qty = getQty(p.slug)
+  const stock = p.stock
+  const canAddMore = stock == null || qty < stock
 
   function handleAdd() {
+    if (stock != null && stock <= 0) return
     addItem(p)
     toast.success('Добавлено в корзину', { id: `cart-${p.slug}` })
   }
@@ -46,7 +77,7 @@ export default function ProductPage() {
     <div className="flex flex-col min-h-full bg-white">
       <PageHeader
         title="Никотиныч"
-        subtitle="mini app"
+        subtitle="shop"
         showBack
         right={
           <button
@@ -125,18 +156,21 @@ export default function ProductPage() {
           </div>
         )}
 
-        {/* характеристики */}
+        {/* характеристики: бренд и линейка по названиям, крепость с большой буквы */}
         <div className="bg-bg-base rounded-card p-4 space-y-2">
-          {p.brand && <Row label="Бренд" value={p.brand} />}
-          {p.line && <Row label="Линейка" value={p.line} />}
-          {p.strength && <Row label="Крепость" value={p.strength} />}
+          {(brandTitle ?? p.brand) && <Row label="Бренд" value={brandTitle ?? p.brand ?? ''} />}
+          {(lineTitle ?? p.line) && <Row label="Линейка" value={lineTitle ?? p.line ?? ''} />}
+          {p.strength && <Row label="Крепость" value={formatStrength(p.strength)} />}
           {p.article && <Row label="Артикул" value={p.article} />}
         </div>
       </div>
 
-      {/* кнопка корзины (sticky снизу) — счётчик если уже добавлен */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 pb-safe">
-        {qty > 0 ? (
+      {/* кнопка корзины (sticky снизу) — счётчик если уже добавлен, учёт остатка */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
+        style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
+        {stock != null && stock <= 0 ? (
+          <p className="py-3 text-center text-text-secondary text-[14px]">Нет в наличии</p>
+        ) : qty > 0 ? (
           <div className="flex items-center justify-between bg-accent rounded-[14px] px-4 py-3">
             <button
               className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white text-[22px] font-light"
@@ -146,8 +180,9 @@ export default function ProductPage() {
             </button>
             <span className="text-white font-semibold text-[16px]">{qty} в корзине</span>
             <button
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white text-[22px] font-light"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white text-[22px] font-light disabled:opacity-50"
               onClick={handleAdd}
+              disabled={!canAddMore}
             >
               +
             </button>

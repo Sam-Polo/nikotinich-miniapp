@@ -80,7 +80,7 @@ export default function CategoryPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader title="Никотиныч" subtitle="mini app" showBack />
+      <PageHeader title="Никотиныч" subtitle="shop" showBack />
 
       <div className="flex-1 px-4 pt-4 pb-24">
         {/* хлебные крошки */}
@@ -104,29 +104,69 @@ export default function CategoryPage() {
           )}
         </div>
 
-        {/* заголовок */}
+        {/* бренды — одна колонка, стиль как у категорий (карточка с картинкой и названием) */}
         {step === 'brand' && !loading && brands.length > 0 && (
           <>
             <p className="text-accent text-[13px] font-medium">{categoryTitle}</p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
-            <SelectionList
-              items={brands.map(b => ({ key: b.key, title: b.title, image: b.image }))}
-              selected={selectedBrand}
-              onSelect={handleBrandSelect}
-            />
+            <div className="grid grid-cols-1 gap-3">
+              {brands.map(b => (
+                <button
+                  key={b.key}
+                  onClick={() => handleBrandSelect(b.key)}
+                  className={`bg-card-bg rounded-card overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform ${selectedBrand === b.key ? 'ring-2 ring-accent' : ''}`}
+                >
+                  <div className="flex items-center gap-4 p-4">
+                    <div className="w-16 h-16 rounded-[10px] bg-bg-base flex-shrink-0 overflow-hidden">
+                      {b.image ? (
+                        <img src={b.image} alt={b.title} className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-text-secondary text-xl">{b.title[0]}</div>
+                      )}
+                    </div>
+                    <p className="text-[16px] font-medium text-text-primary flex-1">{b.title}</p>
+                    {selectedBrand === b.key && (
+                      <svg className="w-5 h-5 text-accent flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
           </>
         )}
 
+        {/* линейки — одна колонка, тот же стиль карточек */}
         {step === 'line' && !loading && lines.length > 0 && (
           <>
             <p className="text-accent text-[13px] font-medium">{brandTitle}</p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите линейку</h1>
-            <SelectionList
-              items={lines.map(l => ({ key: l.key, title: l.title, image: l.image }))}
-              selected={selectedLine}
-              onSelect={handleLineSelect}
-              layout="grid"
-            />
+            <div className="grid grid-cols-1 gap-3">
+              {lines.map(l => (
+                <button
+                  key={l.key}
+                  onClick={() => handleLineSelect(l.key)}
+                  className={`bg-card-bg rounded-card overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform ${selectedLine === l.key ? 'ring-2 ring-accent' : ''}`}
+                >
+                  <div className="flex items-center gap-4 p-4">
+                    <div className="w-16 h-16 rounded-[10px] bg-bg-base flex-shrink-0 overflow-hidden">
+                      {l.image ? (
+                        <img src={l.image} alt={l.title} className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-text-secondary text-xl">{l.title[0]}</div>
+                      )}
+                    </div>
+                    <p className="text-[16px] font-medium text-text-primary flex-1">{l.title}</p>
+                    {selectedLine === l.key && (
+                      <svg className="w-5 h-5 text-accent flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
           </>
         )}
 

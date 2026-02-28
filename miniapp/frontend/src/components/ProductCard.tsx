@@ -18,9 +18,12 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
   const displayPrice = product.display_price
   const hasDiscount = !!product.discount_price_rub
   const qty = getQty(product.slug)
+  const stock = product.stock
+  const canAddMore = stock == null || qty < stock
 
   function handleAdd(e: React.MouseEvent) {
     e.stopPropagation()
+    if (stock != null && stock <= 0) return
     addItem(product)
     toast.success('Добавлено в корзину', { id: `cart-${product.slug}` })
   }
@@ -32,6 +35,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
 
   function handleInc(e: React.MouseEvent) {
     e.stopPropagation()
+    if (!canAddMore) return
     updateQty(product.slug, qty + 1)
   }
 
@@ -87,8 +91,9 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
         </div>
 
         {showAddButton && (
-          qty > 0 ? (
-            // счётчик когда товар уже в корзине
+          (stock != null && stock <= 0) ? (
+            <p className="mt-2 py-2 text-center text-[13px] text-text-secondary">Нет в наличии</p>
+          ) : qty > 0 ? (
             <div
               className="mt-2 flex items-center justify-between bg-bg-base rounded-[10px] px-1"
               onClick={e => e.stopPropagation()}
@@ -101,15 +106,16 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
               </button>
               <span className="text-[14px] font-semibold text-text-primary">{qty}</span>
               <button
-                className="w-8 h-8 flex items-center justify-center text-accent text-[20px] font-light"
+                className="w-8 h-8 flex items-center justify-center text-accent text-[20px] font-light disabled:opacity-50"
                 onClick={handleInc}
+                disabled={!canAddMore}
               >
                 +
               </button>
             </div>
           ) : (
             <button
-              className="mt-2 w-full py-2 bg-bg-base rounded-[10px] text-accent text-[13px] font-semibold active:bg-blue-50 transition-colors"
+              className="mt-2 w-full py-2.5 bg-accent/10 rounded-[10px] text-accent text-[14px] font-semibold active:opacity-80 transition-opacity border border-accent/30"
               onClick={handleAdd}
             >
               В корзину

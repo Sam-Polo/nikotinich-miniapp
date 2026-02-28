@@ -42,14 +42,18 @@ export const useCartStore = create<CartStore>()(
       addItem: (product, qty = 1) => {
         set(state => {
           const existing = state.items.find(i => i.product.slug === product.slug)
+          const currentQty = existing?.qty ?? 0
+          const maxQty = product.stock != null && product.stock >= 0 ? product.stock : undefined
+          const addQty = maxQty != null ? Math.min(qty, Math.max(0, maxQty - currentQty)) : qty
+          if (addQty <= 0) return state
           if (existing) {
             return {
               items: state.items.map(i =>
-                i.product.slug === product.slug ? { ...i, qty: i.qty + qty } : i
+                i.product.slug === product.slug ? { ...i, qty: i.qty + addQty } : i
               )
             }
           }
-          return { items: [...state.items, { product, qty }] }
+          return { items: [...state.items, { product, qty: addQty }] }
         })
       },
 
@@ -62,9 +66,14 @@ export const useCartStore = create<CartStore>()(
           get().removeItem(slug)
           return
         }
-        set(state => ({
-          items: state.items.map(i => i.product.slug === slug ? { ...i, qty } : i)
-        }))
+        set(state => {
+          const item = state.items.find(i => i.product.slug === slug)
+          const maxQty = item?.product.stock
+          const capped = maxQty != null && maxQty >= 0 ? Math.min(qty, maxQty) : qty
+          return {
+            items: state.items.map(i => i.product.slug === slug ? { ...i, qty: capped } : i)
+          }
+        })
       },
 
       clearCart: () => set({ items: [], promoApplied: null, referralBonusUsed: 0 }),

@@ -41,19 +41,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader
-        title="Никотиныч"
-        subtitle="mini app"
-        right={
-          <button className="w-7 h-7 rounded-full border border-accent text-accent flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="3" cy="7" r="1.25" fill="currentColor" />
-              <circle cx="7" cy="7" r="1.25" fill="currentColor" />
-              <circle cx="11" cy="7" r="1.25" fill="currentColor" />
-            </svg>
-          </button>
-        }
-      />
+      <PageHeader title="Никотиныч" subtitle="shop" />
 
       <div className="flex-1 px-4 pt-4 pb-[190px]">
         <h1 className="text-[28px] font-bold text-text-primary mb-4">Избранное</h1>

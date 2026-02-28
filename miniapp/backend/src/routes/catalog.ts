@@ -120,6 +120,11 @@ function parseProductRows(rows: string[][], categoryName: string) {
     const imagesRaw = get('images')
     const images = imagesRaw.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
 
+    const stockRaw = get('stock')
+    const stockNum = stockRaw !== '' ? Number(stockRaw) : undefined
+    const stock = typeof stockNum === 'number' && !Number.isNaN(stockNum) ? stockNum : undefined
+    if (stock !== undefined && stock <= 0) continue
+
     products.push({
       slug,
       title,
@@ -133,7 +138,7 @@ function parseProductRows(rows: string[][], categoryName: string) {
       line: get('line') || undefined,
       strength: get('strength') || undefined,
       article: get('article') || undefined,
-      stock: get('stock') ? Number(get('stock')) : undefined
+      stock
     })
   }
 
