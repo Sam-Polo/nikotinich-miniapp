@@ -17,6 +17,7 @@ export default function CheckoutPage() {
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [addressError, setAddressError] = useState('')
 
   const deliveryFee = settings?.deliveryFee ?? 300
   const freeFrom = settings?.freeDeliveryFrom ?? 3500
@@ -31,8 +32,9 @@ export default function CheckoutPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setAddressError('')
     if (!name.trim()) { setError('Введите ваше имя'); return }
-    if (!address.trim()) { setError('Укажите адрес доставки'); return }
+    if (!address.trim()) { setAddressError('Укажите адрес доставки'); return }
     setError('')
     setLoading(true)
     try {
@@ -82,7 +84,17 @@ export default function CheckoutPage() {
         {/* доставка */}
         <section className="bg-card-bg rounded-card p-4 mb-4 space-y-4">
           <h2 className="text-[16px] font-semibold text-text-primary">Доставка</h2>
-          <Field label="Адрес *" value={address} onChange={setAddress} placeholder="Москва, ул. Примерная, д. 1" />
+          <div>
+            <label className="block text-[13px] text-text-secondary mb-1">Адрес *</label>
+            <input
+              type="text"
+              value={address}
+              onChange={e => { setAddress(e.target.value); setAddressError('') }}
+              placeholder="Москва, ул. Примерная, д. 1"
+              className={`w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border ${addressError ? 'border-red-500' : 'border-border-light'} focus:border-accent`}
+            />
+            {addressError && <p className="text-destructive text-[13px] mt-1">{addressError}</p>}
+          </div>
         </section>
 
         {/* комментарий */}

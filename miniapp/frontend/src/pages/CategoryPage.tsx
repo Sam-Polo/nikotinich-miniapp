@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { getBrands, getLines, getProducts } from '../api'
+import { getCategories, getBrands, getLines, getProducts } from '../api'
 import type { Brand, Line, Product } from '../api'
 import PageHeader from '../components/PageHeader'
 import ProductCard from '../components/ProductCard'
@@ -26,8 +26,18 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true)
   const [brandsSheet, setBrandsSheet] = useState(false)
   const [linesSheet, setLinesSheet] = useState(false)
+  const [resolvedCategoryTitle, setResolvedCategoryTitle] = useState<string>(categoryKey.replace(/_/g, ' '))
 
-  const categoryTitle = categoryKey.replace(/_/g, ' ')
+  // название категории по ключу (с API)
+  useEffect(() => {
+    if (!categoryKey) return
+    getCategories()
+      .then(cats => {
+        const cat = cats.find(c => c.key === categoryKey)
+        if (cat?.title) setResolvedCategoryTitle(cat.title)
+      })
+      .catch(() => {})
+  }, [categoryKey])
 
   // загрузка брендов при открытии категории
   useEffect(() => {
@@ -107,7 +117,7 @@ export default function CategoryPage() {
         {/* бренды — одна колонка, стиль как у категорий (карточка с картинкой и названием) */}
         {step === 'brand' && !loading && brands.length > 0 && (
           <>
-            <p className="text-accent text-[13px] font-medium">{categoryTitle}</p>
+            <p className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
             <div className="grid grid-cols-1 gap-3">
               {brands.map(b => (
@@ -140,7 +150,6 @@ export default function CategoryPage() {
         {/* линейки — одна колонка, тот же стиль карточек */}
         {step === 'line' && !loading && lines.length > 0 && (
           <>
-            <p className="text-accent text-[13px] font-medium">{brandTitle}</p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите линейку</h1>
             <div className="grid grid-cols-1 gap-3">
               {lines.map(l => (
@@ -173,7 +182,7 @@ export default function CategoryPage() {
         {step === 'products' && (
           <>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">
-              {lineTitle || brandTitle || categoryTitle}
+              {lineTitle || brandTitle || resolvedCategoryTitle}
             </h1>
 
             {loading && <Spinner />}
