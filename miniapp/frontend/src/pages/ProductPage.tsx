@@ -40,9 +40,9 @@ export default function ProductPage() {
     getBrands(product.category)
       .then((brands: Brand[]) => {
         const b = brands.find(x => x.key === product.brand)
-        setBrandTitle(b?.title ?? product.brand)
+        setBrandTitle(b?.title ?? product.brand ?? null)
       })
-      .catch(() => setBrandTitle(product.brand))
+      .catch(() => setBrandTitle(product.brand ?? null))
   }, [product?.category, product?.brand])
 
   useEffect(() => {
