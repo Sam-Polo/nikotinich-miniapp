@@ -248,6 +248,7 @@ export default function CartPage() {
             <span>₽{finalTotal.toLocaleString('ru-RU')}</span>
           </div>
         </div>
+        </div>
       </div>
 
       {/* кнопка оформить заказ — выше BottomNav */}
