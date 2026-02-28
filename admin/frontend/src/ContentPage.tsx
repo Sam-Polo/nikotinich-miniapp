@@ -32,6 +32,7 @@ type ContentItem = {
   active: boolean
   sort: number
   productSlugs: string[]
+  showInStories?: boolean
 }
 
 type Product = { slug: string; title?: string; article?: string }
@@ -117,13 +118,15 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
     publishedAt: string
     active: boolean
     productSlugs: string[]
+    showInStories: boolean
   }>({
     title: '',
     body: '',
     imageUrl: '',
     publishedAt: '',
     active: true,
-    productSlugs: []
+    productSlugs: [],
+    showInStories: false
   })
   const [uploading, setUploading] = useState(false)
   const [productSearch, setProductSearch] = useState('')
@@ -162,7 +165,8 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
         imageUrl: item.imageUrl || '',
         publishedAt: item.publishedAt || '',
         active: item.active,
-        productSlugs: item.productSlugs || []
+        productSlugs: item.productSlugs || [],
+        showInStories: item.showInStories ?? false
       })
     } else {
       setEditingItem(null)
@@ -172,7 +176,8 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
         imageUrl: '',
         publishedAt: '',
         active: true,
-        productSlugs: type === 'collection' ? [] : []
+        productSlugs: type === 'collection' ? [] : [],
+        showInStories: false
       })
     }
     setProductSearch('')
@@ -220,7 +225,8 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
       imageUrl: item.imageUrl || '',
       publishedAt: item.publishedAt || '',
       active: item.active,
-      productSlugs: item.productSlugs || []
+      productSlugs: item.productSlugs || [],
+      showInStories: item.showInStories ?? false
     })
     setProductSearch('')
     setProductSearchResults([])
@@ -262,7 +268,8 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
       publishedAt: formData.publishedAt.trim() || undefined,
       active: formData.active,
       sort: editingItem?.sort ?? items.length,
-      productSlugs: type === 'collection' ? formData.productSlugs : []
+      productSlugs: type === 'collection' ? formData.productSlugs : [],
+      showInStories: formData.showInStories
     }
 
     let nextItems: ContentItem[]
@@ -550,6 +557,16 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                   onChange={(e) => setFormData((p) => ({ ...p, active: e.target.checked }))}
                 />
                 Активна
+              </label>
+            </div>
+            <div className="form-group form-group-checkbox">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.showInStories}
+                  onChange={(e) => setFormData((p) => ({ ...p, showInStories: e.target.checked }))}
+                />
+                Отображать в верхней ленте
               </label>
             </div>
             <div className="modal-actions">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { getContent, getProducts } from '../api'
 import type { ContentItem, Product } from '../api'
 import PageHeader from '../components/PageHeader'
@@ -38,8 +39,8 @@ export default function NewsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // промо-карточки (акции) — items типа collection с коротким body
-  const promos = items.filter(i => i.type === 'collection' && i.body)
+  // верхняя лента — только элементы с флагом showInStories (новости и подборки)
+  const topFeedItems = items.filter(i => i.showInStories)
   const newsItems = items.filter(i => i.type === 'news')
   const collections = items.filter(i => i.type === 'collection')
 
@@ -58,24 +59,24 @@ export default function NewsPage() {
           <p className="text-text-secondary text-center mt-10">Скоро здесь будет контент</p>
         )}
 
-        {/* горизонтальный скролл промо-акций */}
-        {promos.length > 0 && (
+        {/* верхняя лента — элементы с флагом showInStories */}
+        {topFeedItems.length > 0 && (
           <div className="mb-5">
             <div className="flex gap-3 px-4 overflow-x-auto scrollbar-hide pb-2">
-              {promos.map(promo => (
+              {topFeedItems.map(item => (
                 <div
-                  key={promo.id}
+                  key={item.id}
                   className="flex-shrink-0 w-[170px] bg-accent rounded-card p-4 text-white"
                 >
-                  <p className="font-bold text-[15px] leading-tight mb-2">{promo.title}</p>
-                  {promo.body && <p className="text-[13px] opacity-85 mb-3">{promo.body}</p>}
-                  <button className="text-[13px] font-semibold underline">Применить</button>
+                  <p className="font-bold text-[15px] leading-tight mb-2">{item.title}</p>
+                  {item.body && <p className="text-[13px] opacity-85 mb-3 line-clamp-2">{item.body}</p>}
+                  {item.type === 'collection' && item.productSlugs.length > 0 && (
+                    <Link to={`/collection/${item.id}`} className="text-[13px] font-semibold underline">
+                      Смотреть
+                    </Link>
+                  )}
                 </div>
               ))}
-              {/* заглушка-плейсхолдер */}
-              <div className="flex-shrink-0 w-[130px] border-2 border-dashed border-gray-300 rounded-card p-4 flex items-center justify-center">
-                <p className="text-[12px] text-text-secondary text-center">Скоро здесь будет ещё больше акций</p>
-              </div>
             </div>
           </div>
         )}
@@ -109,19 +110,46 @@ export default function NewsPage() {
             </article>
           ))}
 
-          {/* подборки товаров */}
+          {/* подборки — статья + первые 4 товара в сетке + кнопка «Смотреть все» */}
           {collections.map(col => {
             const colProducts = col.productSlugs.map(s => productCache[s]).filter(Boolean) as Product[]
             if (colProducts.length === 0) return null
+            const first4 = colProducts.slice(0, 4)
             return (
-              <section key={col.id}>
-                <h2 className="text-[18px] font-bold text-text-primary mb-3">{col.title}</h2>
-                <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-                  {colProducts.map(p => (
-                    <div key={p.slug} className="flex-shrink-0 w-44">
-                      <ProductCard product={p} />
-                    </div>
-                  ))}
+              <section key={col.id} className="bg-card-bg rounded-card overflow-hidden shadow-sm">
+                {/* статья (фото + текст) как у новостей */}
+                <Link to={`/collection/${col.id}`} className="block">
+                  {col.imageUrl && (
+                    <img
+                      src={col.imageUrl}
+                      alt={col.title}
+                      className="w-full aspect-video object-cover"
+                    />
+                  )}
+                  <div className="p-4">
+                    <h2 className="text-[16px] font-semibold text-text-primary mb-1 leading-snug">
+                      {col.title}
+                    </h2>
+                    {col.body && (
+                      <p className="text-[14px] text-text-secondary leading-relaxed line-clamp-3">
+                        {col.body}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+                {/* мини-каталог: сетка 2×2 как в CategoryPage */}
+                <div className="px-4 pb-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {first4.map(p => (
+                      <ProductCard key={p.slug} product={p} />
+                    ))}
+                  </div>
+                  <Link
+                    to={`/collection/${col.id}`}
+                    className="mt-3 block w-full py-2.5 text-center rounded-[10px] bg-bg-base text-accent text-[14px] font-semibold active:opacity-80"
+                  >
+                    Смотреть все товары
+                  </Link>
                 </div>
               </section>
             )

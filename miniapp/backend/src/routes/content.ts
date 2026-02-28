@@ -26,6 +26,9 @@ router.get('/', async (_req, res) => {
           ? productSlugsRaw.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
           : []
 
+        const showInStoriesVal = get('show_in_stories').toLowerCase()
+        const showInStories = showInStoriesVal === 'true' || showInStoriesVal === '1' || showInStoriesVal === 'yes'
+
         return {
           id: get('id'),
           type: get('type') as 'news' | 'collection',
@@ -35,7 +38,8 @@ router.get('/', async (_req, res) => {
           publishedAt: get('published_at') || undefined,
           active,
           sort: Number(get('sort')) || 0,
-          productSlugs
+          productSlugs,
+          showInStories
         }
       })
       .filter(item => item.id && item.title && item.active)

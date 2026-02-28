@@ -14,10 +14,11 @@ export type ContentItem = {
   active: boolean
   sort: number
   productSlugs: string[]
+  showInStories?: boolean
 }
 
 const SHEET_NAME = 'content'
-const HEADERS = ['id', 'type', 'title', 'body', 'image_url', 'published_at', 'active', 'sort', 'product_slugs']
+const HEADERS = ['id', 'type', 'title', 'body', 'image_url', 'published_at', 'active', 'sort', 'product_slugs', 'show_in_stories']
 
 async function ensureSheet(auth: any, sheetId: string): Promise<void> {
   const sheets = google.sheets({ version: 'v4', auth })
@@ -30,7 +31,7 @@ async function ensureSheet(auth: any, sheetId: string): Promise<void> {
     })
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A1:I1`,
+      range: `${SHEET_NAME}!A1:J1`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [HEADERS] }
     })
@@ -43,7 +44,7 @@ export async function fetchContentFromSheet(sheetId: string): Promise<ContentIte
   await ensureSheet(auth, sheetId)
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${SHEET_NAME}!A2:I1000`
+    range: `${SHEET_NAME}!A2:J1000`
   })
   const rows = res.data.values ?? []
   const out: ContentItem[] = rows.map((row, idx) => {
@@ -57,7 +58,8 @@ export async function fetchContentFromSheet(sheetId: string): Promise<ContentIte
       publishedAt: String(row[5] || '').trim() || undefined,
       active: ['1', 'true', 'yes'].includes(String(row[6] || '').trim().toLowerCase()),
       sort: Number(row[7] ?? idx),
-      productSlugs: type === 'collection' ? String(row[8] || '').split(/[, \n]/).map((x) => x.trim()).filter(Boolean) : []
+      productSlugs: type === 'collection' ? String(row[8] || '').split(/[, \n]/).map((x) => x.trim()).filter(Boolean) : [],
+      showInStories: ['1', 'true', 'yes'].includes(String(row[9] || '').trim().toLowerCase())
     }
   }).filter(item => item.title.length > 0)
 
@@ -80,19 +82,20 @@ export async function saveContentToSheet(sheetId: string, items: ContentItem[]):
       item.publishedAt || '',
       item.active ? '1' : '0',
       idx,
-      item.type === 'collection' ? item.productSlugs.join(',') : ''
+      item.type === 'collection' ? item.productSlugs.join(',') : '',
+      item.showInStories ? '1' : '0'
     ])
   ]
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
-    range: `${SHEET_NAME}!A1:I${values.length}`,
+    range: `${SHEET_NAME}!A1:J${values.length}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values }
   })
   if (values.length < 1000) {
     await sheets.spreadsheets.values.clear({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A${values.length + 1}:I1000`
+      range: `${SHEET_NAME}!A${values.length + 1}:J1000`
     })
   }
 }

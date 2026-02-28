@@ -140,12 +140,14 @@ function parseProductRows(rows: string[][], categoryName: string) {
   return products
 }
 
-// GET /api/catalog/products?category=&brand=&line=&search= — товары с фильтрами
+// GET /api/catalog/products?category=&brand=&line=&search=&slugs= — товары с фильтрами
 router.get('/products', async (req, res) => {
   const categoryParam = String(req.query.category || '').trim()
   const brandParam = String(req.query.brand || '').trim()
   const lineParam = String(req.query.line || '').trim()
   const searchParam = String(req.query.search || '').trim().toLowerCase()
+  const slugsParam = String(req.query.slugs || '').trim()
+  const slugsSet = slugsParam ? new Set(slugsParam.split(',').map(s => s.trim()).filter(Boolean)) : null
 
   try {
     // определяем, какие листы читать
@@ -186,6 +188,7 @@ router.get('/products', async (req, res) => {
         p.description?.toLowerCase().includes(searchParam)
       )
     }
+    if (slugsSet) products = products.filter(p => slugsSet.has(p.slug))
 
     res.json(products)
   } catch (e: any) {

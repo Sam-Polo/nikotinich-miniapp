@@ -39,7 +39,8 @@ router.put('/', async (req, res) => {
           sort: Number(item.sort ?? idx),
           productSlugs: type === 'collection' && Array.isArray(item.productSlugs)
             ? item.productSlugs.map((x: any) => String(x).trim()).filter((x: string) => x.length > 0)
-            : []
+            : [],
+          showInStories: Boolean(item.showInStories)
         }
       })
     await saveContentToSheet(sheetId, items)

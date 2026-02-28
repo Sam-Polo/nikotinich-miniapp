@@ -44,6 +44,7 @@ export type ContentItem = {
   publishedAt?: string
   sort: number
   productSlugs: string[]
+  showInStories?: boolean
 }
 
 export type AppSettings = {
@@ -97,12 +98,13 @@ export const getBrands = (category_key: string) =>
   request<Brand[]>(`/catalog/brands?category_key=${encodeURIComponent(category_key)}`)
 export const getLines = (brand_key: string) =>
   request<Line[]>(`/catalog/lines?brand_key=${encodeURIComponent(brand_key)}`)
-export const getProducts = (params: { category?: string; brand?: string; line?: string; search?: string } = {}) => {
+export const getProducts = (params: { category?: string; brand?: string; line?: string; search?: string; slugs?: string[] } = {}) => {
   const qs = new URLSearchParams()
   if (params.category) qs.set('category', params.category)
   if (params.brand) qs.set('brand', params.brand)
   if (params.line) qs.set('line', params.line)
   if (params.search) qs.set('search', params.search)
+  if (params.slugs && params.slugs.length > 0) qs.set('slugs', params.slugs.join(','))
   return request<Product[]>(`/catalog/products?${qs}`)
 }
 export const getProduct = (slug: string) => request<Product>(`/catalog/products/${encodeURIComponent(slug)}`)

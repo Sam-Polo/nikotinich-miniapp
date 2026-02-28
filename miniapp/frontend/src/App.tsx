@@ -15,6 +15,7 @@ import CheckoutPage from './pages/CheckoutPage'
 import OrderSuccessPage from './pages/OrderSuccessPage'
 import OrderDetailsPage from './pages/OrderDetailsPage'
 import ProfilePage from './pages/ProfilePage'
+import CollectionDetailPage from './pages/CollectionDetailPage'
 
 export default function App() {
   const { setUser, setSettings } = useUserStore()
@@ -72,6 +73,7 @@ export default function App() {
 
           {/* подстраницы без нижнего меню */}
           <Route path="/catalog/:categoryKey" element={<CategoryPage />} />
+          <Route path="/collection/:id" element={<CollectionDetailPage />} />
           <Route path="/product/:slug" element={<ProductPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
