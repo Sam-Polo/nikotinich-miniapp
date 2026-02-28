@@ -239,7 +239,7 @@ export default function ProfilePage() {
                     type="button"
                     onClick={requestPhoneFromTelegram}
                     disabled={phoneLoading}
-                    className="w-10 h-10 flex items-center justify-center bg-[#2AABEE] rounded-[10px] active:opacity-80 disabled:opacity-50 flex-shrink-0"
+                    className="w-10 h-10 flex items-center justify-center bg-accent rounded-[10px] active:opacity-80 disabled:opacity-50 flex-shrink-0"
                     title="Получить номер из Telegram"
                   >
                     {phoneLoading ? (
