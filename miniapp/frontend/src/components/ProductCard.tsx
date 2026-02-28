@@ -115,7 +115,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
             </div>
           ) : (
             <button
-              className="mt-2 w-full py-2.5 bg-accent/10 rounded-[10px] text-accent text-[14px] font-semibold active:opacity-80 transition-opacity border border-accent/30"
+              className="mt-2 w-full py-2 bg-bg-base rounded-[10px] text-accent text-[13px] font-semibold active:bg-blue-50 transition-colors"
               onClick={handleAdd}
             >
               В корзину
