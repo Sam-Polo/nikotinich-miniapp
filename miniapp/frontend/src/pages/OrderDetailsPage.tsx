@@ -173,7 +173,7 @@ export default function OrderDetailsPage() {
                       className="w-full h-full object-contain"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px]">—</div>
+                    <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px]">Нет фото</div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">

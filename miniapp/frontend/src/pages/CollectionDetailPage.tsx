@@ -56,12 +56,16 @@ export default function CollectionDetailPage() {
         {/* статья (фото + текст) как в каталоге/новостях */}
         {/* полное описание подборки: фото, дата, весь текст */}
         <article className="bg-card-bg rounded-card overflow-hidden shadow-sm mb-6">
-          {collection.imageUrl && (
+          {collection.imageUrl ? (
             <img
               src={collection.imageUrl}
               alt={collection.title}
               className="w-full aspect-video object-cover"
             />
+          ) : (
+            <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
+              Нет фото
+            </div>
           )}
           <div className="p-4">
             <h1 className="text-[20px] font-bold text-text-primary mb-2 leading-snug">

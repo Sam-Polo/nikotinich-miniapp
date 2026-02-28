@@ -32,8 +32,8 @@ export default function SelectionList({ items, selected, onSelect, layout = 'lis
               {item.image ? (
                 <img src={item.image} alt={item.title} className="w-full aspect-square object-contain rounded-xl" />
               ) : (
-                <div className="w-full aspect-square bg-gray-200 rounded-xl flex items-center justify-center text-xs text-text-secondary">
-                  {item.title[0]}
+                <div className="w-full aspect-square bg-bg-base rounded-xl flex items-center justify-center text-[11px] text-text-secondary">
+                  Нет фото
                 </div>
               )}
               <span className="text-[11px] font-medium text-text-primary text-center leading-tight">
@@ -68,7 +68,7 @@ export default function SelectionList({ items, selected, onSelect, layout = 'lis
               {item.image ? (
                 <img src={item.image} alt={item.title} className="w-10 h-10 object-contain" />
               ) : (
-                <span className="text-[11px] font-bold text-text-secondary">{item.title.slice(0, 3).toUpperCase()}</span>
+                <span className="text-[10px] text-text-secondary">Нет фото</span>
               )}
             </div>
             <span className="text-[16px] font-medium text-text-primary">{item.title}</span>

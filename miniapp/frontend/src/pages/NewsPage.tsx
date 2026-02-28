@@ -36,23 +36,20 @@ export default function NewsPage() {
           <p className="text-text-secondary text-center mt-10">Скоро здесь будет контент</p>
         )}
 
-        {/* верхняя лента — элементы с флагом showInStories */}
+        {/* верхняя лента — только в разделе новостей; по клику открывается полная страница */}
         {topFeedItems.length > 0 && (
           <div className="mb-5">
             <div className="flex gap-3 px-4 overflow-x-auto scrollbar-hide pb-2">
               {topFeedItems.map(item => (
-                <div
+                <Link
                   key={item.id}
-                  className="flex-shrink-0 w-[170px] bg-accent rounded-card p-4 text-white"
+                  to={item.type === 'collection' ? `/collection/${item.id}` : `/news/${item.id}`}
+                  className="flex-shrink-0 w-[170px] bg-accent rounded-card p-4 text-white block active:opacity-90"
                 >
                   <p className="font-bold text-[15px] leading-tight mb-2">{item.title}</p>
                   {item.body && <p className="text-[13px] opacity-85 mb-3 line-clamp-2">{item.body}</p>}
-                  {item.type === 'collection' && item.productSlugs.length > 0 && (
-                    <Link to={`/collection/${item.id}`} className="text-[13px] font-semibold underline">
-                      Смотреть
-                    </Link>
-                  )}
-                </div>
+                  <span className="text-[13px] font-semibold underline">Смотреть</span>
+                </Link>
               ))}
             </div>
           </div>
@@ -62,12 +59,16 @@ export default function NewsPage() {
         <div className="px-4 space-y-4">
           {newsItems.map(item => (
             <Link key={item.id} to={`/news/${item.id}`} className="block bg-card-bg rounded-card overflow-hidden shadow-sm">
-              {item.imageUrl && (
+              {item.imageUrl ? (
                 <img
                   src={item.imageUrl}
                   alt={item.title}
                   className="w-full aspect-video object-cover"
                 />
+              ) : (
+                <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
+                  Нет фото
+                </div>
               )}
               <div className="p-4">
                 <h2 className="text-[16px] font-semibold text-text-primary mb-1 leading-snug">
@@ -90,12 +91,16 @@ export default function NewsPage() {
           {/* подборки в ленте — только карточка, без мини-каталога; полный вид и товары внутри подборки */}
           {collections.map(col => (
             <Link key={col.id} to={`/collection/${col.id}`} className="block bg-card-bg rounded-card overflow-hidden shadow-sm">
-              {col.imageUrl && (
+              {col.imageUrl ? (
                 <img
                   src={col.imageUrl}
                   alt={col.title}
                   className="w-full aspect-video object-cover"
                 />
+              ) : (
+                <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
+                  Нет фото
+                </div>
               )}
               <div className="p-4">
                 <h2 className="text-[16px] font-semibold text-text-primary mb-1 leading-snug">

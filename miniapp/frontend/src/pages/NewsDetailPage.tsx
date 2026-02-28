@@ -48,12 +48,16 @@ export default function NewsDetailPage() {
 
       <div className="flex-1 px-4 pt-4 pb-24">
         <article className="bg-card-bg rounded-card overflow-hidden shadow-sm">
-          {item.imageUrl && (
+          {item.imageUrl ? (
             <img
               src={item.imageUrl}
               alt={item.title}
               className="w-full aspect-video object-cover"
             />
+          ) : (
+            <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
+              Нет фото
+            </div>
           )}
           <div className="p-4">
             <h1 className="text-[20px] font-bold text-text-primary mb-2 leading-snug">

@@ -81,6 +81,8 @@ export type User = {
   active: boolean
   referrer_id?: string
   referral_balance_rub: number
+  /** количество подтверждённых заказов всех рефералов (для шкалы 0–10) */
+  referral_confirmed_orders_count?: number
 }
 
 export type PromoValidation = {

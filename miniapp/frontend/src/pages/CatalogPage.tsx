@@ -1,25 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { getCategories, getContent } from '../api'
-import type { Category, ContentItem } from '../api'
+import { useNavigate } from 'react-router-dom'
+import { getCategories } from '../api'
+import type { Category } from '../api'
 import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
 
 export default function CatalogPage() {
   const [categories, setCategories] = useState<Category[]>([])
-  const [topFeedItems, setTopFeedItems] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
-    Promise.all([
-      getCategories(),
-      getContent().then(items => items.filter((i: ContentItem) => i.showInStories)).catch(() => [])
-    ])
-      .then(([cats, feed]) => {
-        setCategories(cats)
-        setTopFeedItems(feed)
-      })
+    getCategories()
+      .then(setCategories)
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -30,28 +23,6 @@ export default function CatalogPage() {
 
       <div className="flex-1 px-4 pt-4 pb-24">
         <h1 className="text-[28px] font-bold text-text-primary mb-4">Каталог</h1>
-
-        {/* верхняя лента — элементы с флагом showInStories */}
-        {topFeedItems.length > 0 && (
-          <div className="mb-5">
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-              {topFeedItems.map(item => (
-                <div
-                  key={item.id}
-                  className="flex-shrink-0 w-[170px] bg-accent rounded-card p-4 text-white"
-                >
-                  <p className="font-bold text-[15px] leading-tight mb-2">{item.title}</p>
-                  {item.body && <p className="text-[13px] opacity-85 mb-3 line-clamp-2">{item.body}</p>}
-                  {item.type === 'collection' && item.productSlugs.length > 0 && (
-                    <Link to={`/collection/${item.id}`} className="text-[13px] font-semibold underline">
-                      Смотреть
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {loading && <Spinner />}
 
@@ -76,8 +47,8 @@ export default function CatalogPage() {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-text-secondary text-4xl">
-                    🛒
+                  <div className="w-full h-full flex items-center justify-center text-text-secondary text-[13px] bg-bg-base">
+                    Нет фото
                   </div>
                 )}
               </div>

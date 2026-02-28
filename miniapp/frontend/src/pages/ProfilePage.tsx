@@ -245,9 +245,10 @@ export default function ProfilePage() {
                     {phoneLoading ? (
                       <span className="text-white text-[12px]">...</span>
                     ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2" />
+                        <circle cx="12" cy="8" r="3" />
+                        <path d="M6 18c0-3.5 2.5-5 6-5s6 1.5 6 5" />
                       </svg>
                     )}
                   </button>
@@ -273,9 +274,9 @@ export default function ProfilePage() {
             <section className="space-y-3">
               <h2 className="text-[16px] font-semibold text-text-primary">Реферальная система</h2>
 
-              {/* счётчик бонусных рублей */}
+              {/* счётчик бонусных рублей (без рамки) */}
               {user.referral_balance_rub > 0 && (
-                <div className="bg-card-bg rounded-card p-4 border border-border-light">
+                <div className="bg-card-bg rounded-card p-4">
                   <p className="text-[14px] text-text-secondary">Бонусные рубли</p>
                   <p className="text-[24px] font-bold text-accent">₽{user.referral_balance_rub.toLocaleString('ru-RU')}</p>
                   <p className="text-[12px] text-text-secondary mt-1">Бонусы можно списать при оформлении заказа</p>
@@ -284,7 +285,7 @@ export default function ProfilePage() {
 
               <div className="bg-accent rounded-[22px] p-4 border border-[#1A8FE7]">
                 <p className="text-white text-[20px] leading-tight font-semibold">
-                  Ваша скидка {settings?.referralPercentBefore10 ?? 5}%
+                  Ваша скидка {settings?.referralPercentBefore10 ?? 3}%
                 </p>
 
                 <div className="mt-3 h-11 rounded-[12px] bg-[#1082D5] px-3 flex items-center gap-2">
@@ -307,21 +308,38 @@ export default function ProfilePage() {
                   </button>
                 </div>
 
-                <div className="mt-4 bg-[#F3F3F3] rounded-[16px] p-3 border border-[#D8E9F9]">
-                  <p className="text-[14px] text-[#575B60]">ещё 4 успешных заказа ваших друзей</p>
+                {/* шкала 0–10 заказов: проценты из настроек, прогресс из referral_confirmed_orders_count */}
+                {(() => {
+                  const count = Math.min(10, user.referral_confirmed_orders_count ?? 0)
+                  const remaining = Math.max(0, 10 - count)
+                  const percentLeft = settings?.referralPercentBefore10 ?? 3
+                  const percentRight = settings?.referralPercentAfter10 ?? 5
+                  const progressPercent = (count / 10) * 100
+                  return (
+                    <div className="mt-4 bg-[#F3F3F3] rounded-[16px] p-3 border border-[#D8E9F9]">
+                      <p className="text-[14px] text-[#575B60]">
+                        {remaining > 0
+                          ? `ещё ${remaining} успешных заказов ваших друзей`
+                          : 'до 10 заказов достигнуто — ваша скидка выросла'}
+                      </p>
 
-                  <div className="relative mt-3 h-8">
-                    <div className="absolute left-1 right-1 top-1/2 -translate-y-1/2 h-5 rounded-full bg-[#E2E2E2]" />
-                    <div className="absolute left-1 top-1/2 -translate-y-1/2 h-5 rounded-full bg-gradient-to-r from-[#2E6EE8] to-[#6A9DF3] w-[58%]" />
+                      <div className="relative mt-3 h-8">
+                        <div className="absolute left-1 right-1 top-1/2 -translate-y-1/2 h-5 rounded-full bg-[#E2E2E2]" />
+                        <div
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 rounded-full bg-gradient-to-r from-[#2E6EE8] to-[#6A9DF3] transition-all duration-300"
+                          style={{ width: `${progressPercent}%` }}
+                        />
 
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#3C78EB] text-white text-[13px] font-semibold flex items-center justify-center">
-                      {settings?.referralPercentBefore10 ?? 5}%
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#3C78EB] text-white text-[13px] font-semibold flex items-center justify-center">
+                          {percentLeft}%
+                        </div>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#E8E8E8] text-[#3D82E7] text-[13px] font-semibold flex items-center justify-center">
+                          {percentRight}%
+                        </div>
+                      </div>
                     </div>
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#E8E8E8] text-[#3D82E7] text-[13px] font-semibold flex items-center justify-center">
-                      {settings?.referralPercentAfter10 ?? 10}%
-                    </div>
-                  </div>
-                </div>
+                  )
+                })()}
               </div>
 
               <button
@@ -387,8 +405,8 @@ export default function ProfilePage() {
               <p>За каждый подтверждённый заказ реферала вы получаете бонус на реф. баланс. Подтверждение заказа — смена статуса на «Подтверждён» в разделе заказов.</p>
               <p>Процент бонуса зависит от количества уже подтверждённых заказов всех ваших рефералов:</p>
               <ul className="list-disc pl-5 space-y-1">
-                <li>до 10 заказов — {settings?.referralPercentBefore10 ?? 5}%</li>
-                <li>с 11-го заказа — {settings?.referralPercentAfter10 ?? 10}%</li>
+                <li>до 10 заказов — {settings?.referralPercentBefore10 ?? 3}%</li>
+                <li>с 11-го заказа — {settings?.referralPercentAfter10 ?? 5}%</li>
               </ul>
               <p>Бонус = сумма заказа × процент / 100.</p>
               <p>Реф. баланс можно списать при оформлении заказа в корзине.</p>

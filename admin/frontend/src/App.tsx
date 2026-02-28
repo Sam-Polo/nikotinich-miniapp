@@ -1687,7 +1687,7 @@ function ProductFormModal({
 
   const [brandsForForm, setBrandsForForm] = useState<{ key: string; title: string }[]>([])
   const [linesForForm, setLinesForForm] = useState<{ key: string; title: string }[]>([])
-  const firstCategoryKey = formData.categories?.[0] || ''
+  const firstCategoryKey = formData.category || formData.categories?.[0] || ''
 
   useEffect(() => {
     if (!firstCategoryKey) {
@@ -1753,8 +1753,8 @@ function ProductFormModal({
       newErrors.title = 'Название обязательно'
     }
 
-    if (!formData.categories?.length) {
-      newErrors.categories = 'Выберите хотя бы одну категорию'
+    if (!formData.category?.trim()) {
+      newErrors.categories = 'Выберите категорию'
     }
 
     if (!formData.price_rub || formData.price_rub <= 0) {
@@ -1957,17 +1957,22 @@ function ProductFormModal({
             </div>
             
             <div className="form-group">
-              <label>Категории *</label>
-              <CategoryMultiSelect
-                options={categoryOptions}
-                selected={formData.categories || []}
-                onChange={(values) => {
-                  setFormData(prev => ({ ...prev, categories: values, category: values[0] || '' }))
+              <label>Категория *</label>
+              <select
+                value={formData.category || ''}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setFormData(prev => ({ ...prev, category: v, categories: v ? [v] : [] }))
                   if (errors.categories) setErrors(prev => ({ ...prev, categories: '' }))
                 }}
-                placeholder="Выберите категории"
-                error={errors.categories}
-              />
+                className={errors.categories ? 'has-error' : ''}
+              >
+                <option value="">— Выберите категорию —</option>
+                {categoryOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {errors.categories && <span className="form-error">{errors.categories}</span>}
             </div>
           </div>
 

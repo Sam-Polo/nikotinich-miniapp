@@ -639,7 +639,7 @@
 }
 
 .btn-confirm {
-  background: #dc3545;
+  background: var(--admin-accent);
   color: white;
   padding: 0.75rem 1.5rem;
   border: none;
@@ -651,7 +651,7 @@
 }
 
 .btn-confirm:hover {
-  background: #c82333;
+  background: var(--admin-accent-hover);
   transform: translateY(-1px);
 }
 
@@ -1914,10 +1914,12 @@
     justify-content: center;
   }
 
+  /* кнопка «Выйти» справа и в два раза меньше */
   .logout-btn {
-    align-self: center;
-    padding: 0.5rem 1.5rem;
-    font-size: 0.9rem;
+    align-self: flex-end;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    min-height: 28px;
     width: auto;
   }
 
@@ -3565,13 +3567,16 @@
     padding: 0.75rem 1rem;
   }
 
-  /* таблица категорий и пользователей — карточный вид */
+  /* таблица категорий и пользователей — карточный вид на всю ширину */
   .categories-table-wrapper {
     overflow-x: visible;
+    width: 100%;
+    max-width: 100%;
   }
 
   .categories-table {
     display: block;
+    width: 100%;
   }
 
   .categories-table thead {
@@ -3580,12 +3585,14 @@
 
   .categories-table tbody tr {
     display: block;
+    width: 100%;
     margin-bottom: 1rem;
     border: 1px solid var(--admin-border);
     border-radius: var(--radius-md);
     background: var(--admin-bg);
     box-shadow: var(--shadow-sm);
     padding: 0.75rem;
+    box-sizing: border-box;
   }
 
   .categories-table td {

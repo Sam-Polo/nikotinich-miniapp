@@ -53,7 +53,8 @@ export default function BottomSheet({ open, onClose, title, children, snapHeight
           </div>
         )}
 
-        <div className="overflow-y-auto flex-1 pb-safe">
+        {/* отступ снизу, чтобы кнопка «Продолжить» не перекрывалась нижней навигацией */}
+        <div className="overflow-y-auto flex-1 pb-safe pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]">
           {children}
         </div>
       </div>

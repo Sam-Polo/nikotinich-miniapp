@@ -7,7 +7,38 @@ import { logger } from '../logger.js'
 const router = Router()
 
 const SHEET_NAME = 'miniapp_users'
+const ORDERS_SHEET = 'orders'
 const HEADERS = ['telegram_id', 'username', 'email', 'phone', 'role', 'active', 'referrer_id', 'referral_balance_rub']
+
+const CONFIRMED_STATUSES = new Set(['confirmed', 'packed', 'completed'])
+
+// количество подтверждённых заказов всех рефералов данного пользователя (для шкалы 0–10)
+async function getReferralConfirmedOrdersCount(referrerTelegramId: string): Promise<number> {
+  try {
+    const { users } = await parseUsersFromSheet()
+    const refereeIds = new Set(users.filter(u => u.referrer_id === referrerTelegramId).map(u => u.telegram_id))
+    if (refereeIds.size === 0) return 0
+
+    const rows = await readSheet(SHEET_ID, `${ORDERS_SHEET}!A1:N2000`)
+    if (rows.length < 2) return 0
+    const header = rows[0].map((h: string) => String(h || '').trim().toLowerCase())
+    const userIdx = header.indexOf('user_id')
+    const statusIdx = header.indexOf('status')
+    if (userIdx === -1 || statusIdx === -1) return 0
+
+    let count = 0
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i]
+      if (!r || r.length === 0) continue
+      const userId = String(r[userIdx] ?? '').trim()
+      const status = String(r[statusIdx] ?? '').trim().toLowerCase()
+      if (refereeIds.has(userId) && CONFIRMED_STATUSES.has(status)) count++
+    }
+    return count
+  } catch {
+    return 0
+  }
+}
 
 type User = {
   telegram_id: string
@@ -68,7 +99,8 @@ router.get('/:telegram_id', async (req, res) => {
     const user = users.find(u => u.telegram_id === telegram_id)
 
     if (!user) return res.status(404).json({ error: 'not_found' })
-    res.json(user)
+    const referralConfirmedOrdersCount = await getReferralConfirmedOrdersCount(telegram_id)
+    res.json({ ...user, referral_confirmed_orders_count: referralConfirmedOrdersCount })
   } catch (e: any) {
     logger.error({ error: e?.message, telegram_id }, 'ошибка получения пользователя')
     res.status(500).json({ error: 'server_error' })
@@ -123,7 +155,8 @@ router.post('/', async (req, res) => {
       }
 
       logger.info({ telegram_id }, 'пользователь обновлён')
-      return res.json(updated)
+      const count = await getReferralConfirmedOrdersCount(telegram_id)
+      return res.json({ ...updated, referral_confirmed_orders_count: count })
     }
 
     // создаём нового пользователя
@@ -150,7 +183,7 @@ router.post('/', async (req, res) => {
     ])
 
     logger.info({ telegram_id, referrer_id: newUser.referrer_id }, 'пользователь создан')
-    res.status(201).json(newUser)
+    res.status(201).json({ ...newUser, referral_confirmed_orders_count: 0 })
   } catch (e: any) {
     logger.error({ error: e?.message, telegram_id }, 'ошибка создания/обновления пользователя')
     res.status(500).json({ error: 'server_error' })
@@ -198,7 +231,8 @@ router.put('/:telegram_id', async (req, res) => {
     }
 
     logger.info({ telegram_id }, 'профиль обновлён')
-    res.json(updated)
+    const count = await getReferralConfirmedOrdersCount(telegram_id)
+    res.json({ ...updated, referral_confirmed_orders_count: count })
   } catch (e: any) {
     logger.error({ error: e?.message, telegram_id }, 'ошибка обновления профиля')
     res.status(500).json({ error: 'server_error' })
