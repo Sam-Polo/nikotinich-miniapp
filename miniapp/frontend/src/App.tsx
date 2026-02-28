@@ -16,6 +16,7 @@ import OrderSuccessPage from './pages/OrderSuccessPage'
 import OrderDetailsPage from './pages/OrderDetailsPage'
 import ProfilePage from './pages/ProfilePage'
 import CollectionDetailPage from './pages/CollectionDetailPage'
+import NewsDetailPage from './pages/NewsDetailPage'
 
 export default function App() {
   const { setUser, setSettings } = useUserStore()
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="/profile" element={<WithNav><ProfilePage /></WithNav>} />
           <Route path="/catalog/:categoryKey" element={<WithNav><CategoryPage /></WithNav>} />
           <Route path="/collection/:id" element={<WithNav><CollectionDetailPage /></WithNav>} />
+          <Route path="/news/:id" element={<WithNav><NewsDetailPage /></WithNav>} />
           <Route path="/product/:slug" element={<WithNav><ProductPage /></WithNav>} />
           <Route path="/checkout" element={<WithNav><CheckoutPage /></WithNav>} />
           <Route path="/order-success/:orderId" element={<WithNav><OrderSuccessPage /></WithNav>} />

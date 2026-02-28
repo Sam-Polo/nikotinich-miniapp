@@ -112,10 +112,6 @@ export default function OrderDetailsPage() {
     )
   }
 
-  const statusSubtitle = order.status === 'completed'
-    ? formatDateTime(order.createdAt)
-    : `ожидается к ${formatDate(order.createdAt)}`
-
   const canCancel = order.status !== 'completed' && order.status !== 'cancelled'
 
   return (
@@ -123,9 +119,9 @@ export default function OrderDetailsPage() {
       <PageHeader title="Никотиныч" subtitle="mini app" showBack />
 
       <div className="flex-1 px-4 pt-4 pb-32">
-        {/* номер заказа с кнопкой копирования */}
+        {/* номер заказа с кнопкой копирования (без дефиса — только первые 8 символов uuid) */}
         <div className="flex items-center gap-2 text-text-secondary text-[14px] mb-2">
-          <span>№{order.id.slice(0, 10)}</span>
+          <span>№{order.id.replace(/-/g, '').slice(0, 8)}</span>
           <button
             type="button"
             onClick={handleCopyOrderId}
@@ -142,7 +138,9 @@ export default function OrderDetailsPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-[24px] leading-tight font-bold text-text-primary">{title}</h1>
-            <p className="mt-2 text-[14px] text-text-secondary">{statusSubtitle}</p>
+            {order.status === 'completed' && order.createdAt && (
+              <p className="mt-2 text-[14px] text-text-secondary">{formatDateTime(order.createdAt)}</p>
+            )}
           </div>
           {order.status === 'completed' && (
             <button

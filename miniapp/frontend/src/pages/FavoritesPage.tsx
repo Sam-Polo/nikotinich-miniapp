@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getCategories } from '../api'
+import type { Category } from '../api'
 import { useFavoritesStore } from '../store/favorites'
 import { useCartStore } from '../store/cart'
 import PageHeader from '../components/PageHeader'
@@ -12,12 +14,19 @@ export default function FavoritesPage() {
   const totalItems = useCartStore(s => s.totalItems)
   const subtotal = useCartStore(s => s.subtotal)
   const navigate = useNavigate()
-  const [activeFilter, setActiveFilter] = useState<'all' | 'Электронные сигареты' | 'Жидкости' | 'POD'>('Электронные сигареты')
+  const [categories, setCategories] = useState<Category[]>([])
+  const [activeFilter, setActiveFilter] = useState<string | null>(null)
   const [showAddedToast, setShowAddedToast] = useState(false)
   const [toastImage, setToastImage] = useState<string | undefined>(undefined)
 
   const cartQty = totalItems()
   const cartSum = subtotal()
+
+  useEffect(() => {
+    getCategories()
+      .then(setCategories)
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!showAddedToast) return
@@ -26,20 +35,8 @@ export default function FavoritesPage() {
   }, [showAddedToast])
 
   const filteredItems = useMemo(() => {
-    if (activeFilter === 'all') return items
-    if (activeFilter === 'Электронные сигареты') {
-      return items.filter(p => {
-        const value = `${p.category || ''} ${p.brand || ''} ${p.line || ''}`.toLowerCase()
-        return value.includes('электрон') || value.includes('однораз') || value.includes('vape') || value.includes('duft') || value.includes('lost')
-      })
-    }
-    if (activeFilter === 'Жидкости') {
-      return items.filter(p => `${p.category || ''}`.toLowerCase().includes('жидк'))
-    }
-    return items.filter(p => {
-      const value = `${p.category || ''} ${p.brand || ''} ${p.line || ''}`.toLowerCase()
-      return value.includes('pod')
-    })
+    if (!activeFilter) return items
+    return items.filter(p => (p.category || '').toLowerCase() === activeFilter.toLowerCase())
   }, [activeFilter, items])
 
   return (
@@ -59,27 +56,26 @@ export default function FavoritesPage() {
       />
 
       <div className="flex-1 px-4 pt-4 pb-[190px]">
-        <h1 className="text-[50px] leading-[1.02] font-bold text-text-primary mb-4">Избранное</h1>
+        <h1 className="text-[28px] font-bold text-text-primary mb-4">Избранное</h1>
 
+        {/* фильтры по категориям с API */}
         <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar">
           <button
-            className="w-10 h-10 rounded-full bg-[#ECECEF] flex items-center justify-center text-[#6A6A6D] flex-shrink-0"
-            onClick={() => setActiveFilter('all')}
+            className="h-8 px-3 rounded-full bg-bg-base border border-border-light flex items-center justify-center text-text-secondary flex-shrink-0 text-[13px]"
+            onClick={() => setActiveFilter(null)}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M4 6H20M7 12H17M10 18H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            Все
           </button>
-          {(['Электронные сигареты', 'Жидкости', 'POD'] as const).map(filter => (
+          {categories.map(cat => (
             <button
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
+              key={cat.key}
+              onClick={() => setActiveFilter(activeFilter === cat.key ? null : cat.key)}
               className={[
-                'px-4 h-10 rounded-full text-[16px] whitespace-nowrap transition-colors',
-                activeFilter === filter ? 'bg-accent text-white' : 'bg-[#ECECEF] text-[#55565A]'
+                'h-8 px-3 rounded-full text-[13px] whitespace-nowrap transition-colors flex-shrink-0',
+                activeFilter === cat.key ? 'bg-accent text-white' : 'bg-[#ECECEF] text-[#55565A]'
               ].join(' ')}
             >
-              {filter}
+              {cat.title}
             </button>
           ))}
         </div>

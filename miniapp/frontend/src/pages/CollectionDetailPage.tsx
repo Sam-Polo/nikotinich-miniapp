@@ -54,7 +54,8 @@ export default function CollectionDetailPage() {
 
       <div className="flex-1 px-4 pt-4 pb-24">
         {/* статья (фото + текст) как в каталоге/новостях */}
-        <article className="bg-card-bg rounded-card overflow-hidden shadow-sm mb-4">
+        {/* полное описание подборки: фото, дата, весь текст */}
+        <article className="bg-card-bg rounded-card overflow-hidden shadow-sm mb-6">
           {collection.imageUrl && (
             <img
               src={collection.imageUrl}
@@ -66,6 +67,11 @@ export default function CollectionDetailPage() {
             <h1 className="text-[20px] font-bold text-text-primary mb-2 leading-snug">
               {collection.title}
             </h1>
+            {collection.publishedAt && (
+              <p className="text-[13px] text-text-secondary mb-3">
+                {new Date(collection.publishedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            )}
             {collection.body && (
               <p className="text-[14px] text-text-secondary leading-relaxed whitespace-pre-wrap">
                 {collection.body}
@@ -74,7 +80,8 @@ export default function CollectionDetailPage() {
           </div>
         </article>
 
-        {/* сетка товаров как в CategoryPage */}
+        {/* товары подборки */}
+        <h2 className="text-[18px] font-bold text-text-primary mb-3">Товары в подборке</h2>
         <div className="grid grid-cols-2 gap-3">
           {products.map(p => (
             <ProductCard key={p.slug} product={p} />
