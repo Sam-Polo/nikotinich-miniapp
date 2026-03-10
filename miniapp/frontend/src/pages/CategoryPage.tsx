@@ -107,7 +107,7 @@ export default function CategoryPage() {
   const brandTitle = brands.find(b => b.key === selectedBrand)?.title
   const lineTitle = lines.find(l => l.key === selectedLine)?.title
 
-  const showHeader = step === 'products'
+  const showHeader = step === 'products' && !loading
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
@@ -293,7 +293,7 @@ export default function CategoryPage() {
       {/* фиксированные кнопки выбора снизу */}
       {step === 'brand' && !loading && brands.length > 0 && (
         <div
-          className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
+          className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
           style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
         >
           {!selectedBrand ? (
@@ -331,7 +331,7 @@ export default function CategoryPage() {
 
       {step === 'line' && !loading && lines.length > 0 && (
         <div
-          className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
+          className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
           style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
         >
           {!selectedLine ? (

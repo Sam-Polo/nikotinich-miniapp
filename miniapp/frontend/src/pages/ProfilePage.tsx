@@ -48,6 +48,22 @@ export default function ProfilePage() {
   const [phoneError, setPhoneError] = useState('')
   // ссылка на обработчик для последующего удаления через offEvent
   const contactHandlerRef = useRef<((data: any) => void) | null>(null)
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
+  const [editName, setEditName] = useState(user?.username || '')
+
+  const formattedPhone = (() => {
+    const raw = editPhone || user?.phone || ''
+    const digits = raw.replace(/\D/g, '')
+    if (!digits) return ''
+    // ожидаем 11 цифр, где первая 7 или 8
+    const d = digits.length === 11 ? digits : digits.padStart(11, '7')
+    const country = '+7'
+    const p1 = d.slice(1, 4)
+    const p2 = d.slice(4, 7)
+    const p3 = d.slice(7, 9)
+    const p4 = d.slice(9, 11)
+    return `${country} ${p1} ${p2}-${p3}-${p4}`
+  })()
 
   useEffect(() => {
     if (tab === 'orders' && user?.telegram_id) {
@@ -63,7 +79,11 @@ export default function ProfilePage() {
     if (!user) return
     setSaving(true)
     try {
-      const updated = await updateUser(user.telegram_id, { phone: editPhone.trim(), email: editEmail.trim() })
+      const payload: { phone?: string; email?: string; username?: string } = {}
+      if (editPhone.trim()) payload.phone = editPhone.trim()
+      if (editEmail.trim()) payload.email = editEmail.trim()
+      if (editName.trim()) payload.username = editName.trim()
+      const updated = await updateUser(user.telegram_id, payload)
       setUser(updated)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -193,19 +213,42 @@ export default function ProfilePage() {
           <h1 className="text-[28px] font-bold text-text-primary">Профиль</h1>
         </div>
 
-        {/* аватар и имя */}
-        <div className="flex items-center gap-4 px-4 mb-5">
-          <div className="w-16 h-16 rounded-[18px] bg-[#F8F8F8] flex items-center justify-center flex-shrink-0">
-            {/* progile pic.svg — аватар-заглушка из макета */}
+        {/* блок профиля как на макете */}
+        <button
+          type="button"
+          onClick={() => setProfileModalOpen(true)}
+          className="mx-4 mb-5 w-[calc(100%-2rem)] flex items-center gap-4 bg-card-bg rounded-[18px] px-4 py-3 active:opacity-80 shadow-sm"
+        >
+          <div className="w-16 h-16 rounded-[18px] bg-[#F8F8F8] flex items-center justify-center flex-shrink-0 overflow-hidden">
             <svg width="40" height="40" viewBox="0 0 64 64" fill="none">
               <path d="M32 64C49.5464 64 64 49.5533 64 32.0153C64 14.4773 49.5158 0 32 0C14.4536 0 0 14.4773 0 32.0153C0 49.5533 14.4536 64 32 64ZM32 42.6973C23.7627 42.6973 17.3627 45.605 14.0249 49.1248C9.79904 44.6868 7.22679 38.6571 7.22679 32.0153C7.22679 18.2726 18.2201 7.19273 32 7.19273C45.7493 7.19273 56.8038 18.2726 56.8345 32.0153C56.8345 38.6571 54.2316 44.6868 50.0057 49.1248C46.6679 45.605 40.2679 42.6973 32 42.6973ZM32 37.8307C37.9713 37.8613 42.5952 32.7805 42.5952 26.2305C42.5952 20.0478 37.91 14.8446 32 14.8446C26.09 14.8446 21.3742 20.0478 21.4354 26.2305C21.4354 32.7805 26.0593 37.8001 32 37.8307Z" fill="#D4D4D4" />
             </svg>
           </div>
-          <div>
-            <p className="text-[18px] font-semibold text-text-primary">{user.username || 'Пользователь'}</p>
-            <p className="text-[13px] text-text-secondary">ID: {user.telegram_id}</p>
+          <div className="flex-1 text-left">
+            <p className="text-[16px] font-semibold text-text-primary">
+              {editName || user.username || 'Пользователь'}
+            </p>
+            {formattedPhone ? (
+              <p className="text-[13px] text-text-secondary mt-0.5">{formattedPhone}</p>
+            ) : (
+              <p className="text-[13px] text-text-secondary mt-0.5 opacity-70">Добавьте телефон</p>
+            )}
+            {editEmail || user.email ? (
+              <p className="text-[13px] text-text-secondary mt-0.5 truncate">
+                {editEmail || user.email}
+              </p>
+            ) : (
+              <p className="text-[13px] text-text-secondary mt-0.5 opacity-70">Добавьте email</p>
+            )}
           </div>
-        </div>
+          <svg
+            className="w-5 h-5 text-border-light flex-shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
 
         {/* вкладки */}
         <div className="flex px-4 gap-2 mb-4">
@@ -226,53 +269,7 @@ export default function ProfilePage() {
         {/* вкладка профиль */}
         {tab === 'profile' && (
           <div className="px-4 space-y-4">
-            <section className="bg-card-bg rounded-card p-4 space-y-4">
-              <h2 className="text-[16px] font-semibold text-text-primary">Контактные данные</h2>
-              <div>
-                <label className="block text-[13px] text-text-secondary mb-1">Телефон</label>
-                <div className="flex gap-2">
-                  <input
-                    type="tel"
-                    value={editPhone}
-                    onChange={e => setEditPhone(e.target.value)}
-                    placeholder="+7 (___) ___-__-__"
-                    className="flex-1 bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
-                  />
-                  <button
-                    type="button"
-                    onClick={requestPhoneFromTelegram}
-                    disabled={phoneLoading}
-                    className="w-10 h-10 flex items-center justify-center bg-accent rounded-[10px] active:opacity-80 disabled:opacity-50 flex-shrink-0"
-                    title="Получить номер из Telegram"
-                  >
-                    {phoneLoading ? (
-                      <span className="text-white text-[12px]">...</span>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="4" y="2" width="16" height="20" rx="2" />
-                        <circle cx="12" cy="8" r="3" />
-                        <path d="M6 18c0-3.5 2.5-5 6-5s6 1.5 6 5" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-                {phoneError && <p className="text-destructive text-[12px] mt-1">{phoneError}</p>}
-              </div>
-              <div>
-                <label className="block text-[13px] text-text-secondary mb-1">Email</label>
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={e => setEditEmail(e.target.value)}
-                    placeholder="email@mail.ru"
-                  className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
-                />
-              </div>
-              <Button fullWidth variant={saved ? 'secondary' : 'primary'} loading={saving} onClick={handleSave}>
-                {saved ? '✓ Сохранено' : 'Сохранить'}
-              </Button>
-            </section>
-
+            {/* реферальная система */}
             {/* реферальная система */}
             <section className="space-y-3">
               <h2 className="text-[16px] font-semibold text-text-primary">Реферальная система</h2>
@@ -421,6 +418,93 @@ export default function ProfilePage() {
             >
               Понятно
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* модалка редактирования профиля */}
+      {profileModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-[180] flex items-end sm:items-center justify-center"
+          onClick={() => setProfileModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md p-5 pb-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-[18px] font-bold text-text-primary mb-4">Контактные данные</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[13px] text-text-secondary mb-1">Имя</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  placeholder="Имя и фамилия"
+                  className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] text-text-secondary mb-1">Телефон</label>
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={e => setEditPhone(e.target.value)}
+                    placeholder="+7 905 129-72-33"
+                    className="flex-1 bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
+                  />
+                  <button
+                    type="button"
+                    onClick={requestPhoneFromTelegram}
+                    disabled={phoneLoading}
+                    className="w-10 h-10 flex items-center justify-center bg-accent rounded-[10px] active:opacity-80 disabled:opacity-50 flex-shrink-0"
+                    title="получить номер из telegram"
+                  >
+                    {phoneLoading ? (
+                      <span className="text-white text-[12px]">...</span>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2" />
+                        <circle cx="12" cy="8" r="3" />
+                        <path d="M6 18c0-3.5 2.5-5 6-5s6 1.5 6 5" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {phoneError && <p className="text-destructive text-[12px] mt-1">{phoneError}</p>}
+              </div>
+              <div>
+                <label className="block text-[13px] text-text-secondary mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={e => setEditEmail(e.target.value)}
+                  placeholder="email@mail.ru"
+                  className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
+                />
+              </div>
+            </div>
+            <div className="mt-5 space-y-2">
+              <Button
+                fullWidth
+                variant={saved ? 'secondary' : 'primary'}
+                loading={saving}
+                onClick={async () => {
+                  await handleSave()
+                  setProfileModalOpen(false)
+                }}
+              >
+                {saved ? '✓ сохранено' : 'Сохранить'}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setProfileModalOpen(false)}
+                className="w-full text-center text-[14px] text-text-secondary mt-1"
+              >
+                Отмена
+              </button>
+            </div>
           </div>
         </div>
       )}

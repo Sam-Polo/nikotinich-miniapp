@@ -49,19 +49,24 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
   return (
     <div className="relative">
       {/* красная зона удаления по свайпу */}
-      <div className="absolute inset-0 flex justify-end items-center pr-4">
+      <div className="absolute inset-0 flex justify-end items-stretch pr-0">
         <button
           type="button"
-          className="h-10 px-3 rounded-[12px] bg-[#FF3B30] text-white text-[13px] font-semibold flex items-center justify-center"
+          className="w-[82px] rounded-[16px] bg-[#FF3B30] text-white text-[13px] font-semibold flex flex-col items-center justify-center mr-3"
           onClick={() => onRemove(product.slug)}
         >
-          Удалить
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <span className="mt-1">Удалить</span>
         </button>
       </div>
 
       {/* основная карточка, сдвигаем по X */}
       <div
-        className="bg-card-bg rounded-[16px] p-3 flex items-center border border-border-light relative"
+        className="bg-card-bg rounded-[16px] px-3 py-3 flex items-center relative shadow-sm"
         style={{
           transform: `translateX(${offsetX}px)`,
           transition: dragging ? 'none' : 'transform 0.18s ease-out'
@@ -74,14 +79,14 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
         {/* чекбокс выбора товара */}
         <button
           type="button"
-          className="w-6 h-6 mr-2 rounded-[8px] border border-accent bg-accent flex items-center justify-center flex-shrink-0"
+          className="w-6 h-6 mr-3 rounded-full border border-accent bg-accent flex items-center justify-center flex-shrink-0"
           aria-label="Товар выбран"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
             <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <div className="w-[84px] h-[84px] bg-bg-base rounded-[10px] flex-shrink-0 overflow-hidden">
+        <div className="w-[72px] h-[72px] bg-[#F4F5F7] rounded-[12px] flex-shrink-0 overflow-hidden">
           {product.images[0] ? (
             <img src={product.images[0]} alt={product.title} className="w-full h-full object-contain p-1" />
           ) : (
@@ -90,13 +95,13 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
         </div>
         <div className="ml-3 flex-1 flex flex-col justify-between py-0.5 min-w-0">
           <div>
-            <p className="text-[12px] text-text-secondary leading-none mt-1 line-clamp-1">{product.category || product.brand || 'Товар'}</p>
-            <p className="text-[14px] font-medium text-text-primary line-clamp-2 mt-1 pr-10">{product.title}</p>
+            <p className="text-[12px] text-text-secondary leading-tight line-clamp-1">{product.category || product.brand || 'Товар'}</p>
+            <p className="text-[15px] font-semibold text-text-primary line-clamp-2 mt-1 pr-10">{product.title}</p>
           </div>
           <div className="flex items-center justify-between mt-2">
-            <span className="font-bold text-[16px]">{(product.display_price * qty).toLocaleString('ru-RU')} ₽</span>
+            <span className="font-bold text-[17px]">{(product.display_price * qty).toLocaleString('ru-RU')} ₽</span>
             <div className="flex items-center gap-2">
-              <div className="flex items-center bg-[#F8F8F8] rounded-[10px] px-1 py-0.5 min-w-[96px]">
+              <div className="flex items-center bg-[#F4F5F7] rounded-[12px] px-1.5 py-1 min-w-[96px]">
                 <button
                   className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
                   onClick={() => onUpdateQty(product.slug, qty - 1)}

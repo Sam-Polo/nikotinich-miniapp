@@ -40,8 +40,11 @@ export default function App() {
       const tgUser = WebApp.initDataUnsafe?.user
       if (tgUser?.id) {
         telegramId = String(tgUser.id)
-        // в качестве имени по умолчанию используем first_name, а не @username
-        username = tgUser.first_name || tgUser.username || undefined
+        // в качестве имени по умолчанию используем first_name + last_name, а не @username
+        const firstName = tgUser.first_name || ''
+        const lastName = tgUser.last_name || ''
+        const fullName = `${firstName} ${lastName}`.trim()
+        username = fullName || tgUser.username || undefined
       }
       // start_param может содержать ref_<telegram_id> реферера
       const startParam = WebApp.initDataUnsafe?.start_param
