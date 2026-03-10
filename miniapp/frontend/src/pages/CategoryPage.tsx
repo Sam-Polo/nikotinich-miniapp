@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { getCategories, getBrands, getLines, getProducts } from '../api'
 import type { Brand, Line, Product } from '../api'
 import PageHeader from '../components/PageHeader'
@@ -14,6 +14,7 @@ type Step = 'brand' | 'line' | 'products'
 
 export default function CategoryPage() {
   const { categoryKey = '' } = useParams<{ categoryKey: string }>()
+  const navigate = useNavigate()
 
   const [brands, setBrands] = useState<Brand[]>([])
   const [lines, setLines] = useState<Line[]>([])
@@ -26,6 +27,7 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true)
   const [brandsSheet, setBrandsSheet] = useState(false)
   const [linesSheet, setLinesSheet] = useState(false)
+  const [linesLoading, setLinesLoading] = useState(false)
   const [resolvedCategoryTitle, setResolvedCategoryTitle] = useState<string>(categoryKey.replace(/_/g, ' '))
 
   // название категории по ключу (с API)
@@ -56,13 +58,12 @@ export default function CategoryPage() {
   // загрузка линеек при выборе бренда
   useEffect(() => {
     if (!selectedBrand) return
-    getLines(selectedBrand).then(l => {
-      setLines(l)
-      if (l.length === 0) {
-        // нет линеек — сразу грузим товары бренда
-        loadProducts(selectedBrand, undefined)
-      }
-    })
+    setLinesLoading(true)
+    getLines(selectedBrand)
+      .then(l => {
+        setLines(l)
+      })
+      .finally(() => setLinesLoading(false))
   }, [selectedBrand])
 
   function loadProducts(brand?: string, line?: string) {
@@ -75,14 +76,26 @@ export default function CategoryPage() {
 
   function handleBrandSelect(key: string) {
     setSelectedBrand(key)
-    setBrandsSheet(false)
-    setStep('line')
+    setSelectedLine(null)
+    setLines([])
   }
 
   function handleLineSelect(key: string) {
     setSelectedLine(key)
-    setLinesSheet(false)
-    loadProducts(selectedBrand!, key)
+  }
+
+  function handleBrandProceed() {
+    if (!selectedBrand || linesLoading) return
+    if (lines.length === 0) {
+      loadProducts(selectedBrand, undefined)
+      return
+    }
+    setStep('line')
+  }
+
+  function handleLineProceed() {
+    if (!selectedBrand || !selectedLine) return
+    loadProducts(selectedBrand, selectedLine)
   }
 
   const brandTitle = brands.find(b => b.key === selectedBrand)?.title
@@ -144,6 +157,38 @@ export default function CategoryPage() {
                 </button>
               ))}
             </div>
+            <div className="mt-6">
+              {!selectedBrand ? (
+                <div className="flex flex-col items-center">
+                  <button
+                    type="button"
+                    className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[16px] font-semibold text-[#B0B5C0]"
+                  >
+                    Выберите бренд
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className="mt-3 text-[13px] font-medium text-accent"
+                  >
+                    Вернуться в каталог
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <Button fullWidth onClick={handleBrandProceed} disabled={linesLoading}>
+                    Продолжить
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className="mt-3 text-[13px] font-medium text-accent"
+                  >
+                    Вернуться в каталог
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -175,6 +220,38 @@ export default function CategoryPage() {
                   </div>
                 </button>
               ))}
+            </div>
+            <div className="mt-6">
+              {!selectedLine ? (
+                <div className="flex flex-col items-center">
+                  <button
+                    type="button"
+                    className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[16px] font-semibold text-[#B0B5C0]"
+                  >
+                    Выберите линейку
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className="mt-3 text-[13px] font-medium text-accent"
+                  >
+                    Вернуться в каталог
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <Button fullWidth onClick={handleLineProceed}>
+                    Продолжить
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className="mt-3 text-[13px] font-medium text-accent"
+                  >
+                    Вернуться в каталог
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -237,10 +314,14 @@ export default function CategoryPage() {
         <SelectionList
           items={brands.map(b => ({ key: b.key, title: b.title, image: b.image }))}
           selected={selectedBrand}
-          onSelect={(key) => { setSelectedBrand(key); setBrandsSheet(false); if (selectedLine) loadProducts(key, selectedLine) }}
+          onSelect={(key) => { setSelectedBrand(key); setSelectedLine(null); setLines([]) }}
         />
         <div className="p-4 border-t border-border-light">
-          <Button fullWidth onClick={() => setBrandsSheet(false)} disabled={!selectedBrand}>
+          <Button
+            fullWidth
+            onClick={() => { handleBrandProceed(); setBrandsSheet(false) }}
+            disabled={!selectedBrand || linesLoading}
+          >
             Продолжить
           </Button>
         </div>
@@ -251,11 +332,15 @@ export default function CategoryPage() {
         <SelectionList
           items={lines.map(l => ({ key: l.key, title: l.title, image: l.image }))}
           selected={selectedLine}
-          onSelect={(key) => { setSelectedLine(key); setLinesSheet(false); loadProducts(selectedBrand!, key) }}
+          onSelect={(key) => { setSelectedLine(key) }}
           layout="grid"
         />
         <div className="p-4 border-t border-border-light">
-          <Button fullWidth onClick={() => setLinesSheet(false)} disabled={!selectedLine}>
+          <Button
+            fullWidth
+            onClick={() => { handleLineProceed(); setLinesSheet(false) }}
+            disabled={!selectedLine}
+          >
             Продолжить
           </Button>
         </div>
