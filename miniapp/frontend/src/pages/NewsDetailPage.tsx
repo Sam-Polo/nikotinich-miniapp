@@ -72,7 +72,7 @@ export default function NewsDetailPage() {
   }
 
   const nextItems = allItems
-    .filter((i) => i.id !== item.id && i.active !== false)
+    .filter((i) => i.id !== item.id)
     .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
     .slice(0, 4)
 

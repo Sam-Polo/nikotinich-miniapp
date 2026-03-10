@@ -47,6 +47,8 @@ export type ContentItem = {
   sort: number
   productSlugs: string[]
   showInStories?: boolean
+  /** с бэкенда приходят только активные; опционально для фильтрации */
+  active?: boolean
   readMinutes?: number
   likes?: number
   claps?: number

@@ -34,7 +34,7 @@ const DislikeIcon = ({ active }: { active?: boolean }) => (
 )
 
 export default function ContentReactions({
-  contentId,
+  contentId: _contentId,
   userId,
   likes,
   claps,
