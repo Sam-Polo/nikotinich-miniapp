@@ -61,7 +61,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
         )}
         {/* кнопка избранного */}
         <button
-          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-sm active:scale-90 transition-transform"
+          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center active:scale-90 transition-transform"
           onClick={(e) => { e.stopPropagation(); toggleFav(product) }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">

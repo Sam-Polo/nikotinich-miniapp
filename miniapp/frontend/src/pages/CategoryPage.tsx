@@ -114,26 +114,28 @@ export default function CategoryPage() {
       {showHeader && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
 
       <div className="flex-1 flex flex-col min-h-0 px-4 pt-4 pb-36">
-        {/* хлебные крошки */}
-        <div className="flex items-center gap-1 mb-3">
-          {brandTitle && (
-            <button
-              onClick={() => { setSelectedBrand(null); setSelectedLine(null); setStep('brand'); setBrandsSheet(true); setBrandConfirmed(false) }}
-              className="text-accent text-[13px]"
-            >
-              {brandTitle}
-            </button>
-          )}
-          {brandTitle && lineTitle && <span className="text-text-secondary text-[13px]">/</span>}
-          {lineTitle && (
-            <button
-              onClick={() => { setSelectedLine(null); setLinesSheet(true) }}
-              className="text-accent text-[13px]"
-            >
-              {lineTitle}
-            </button>
-          )}
-        </div>
+        {/* хлебные крошки — только на экране товаров */}
+        {step === 'products' && (brandTitle || lineTitle) && (
+          <div className="flex items-center gap-1 mb-3">
+            {brandTitle && (
+              <button
+                onClick={() => { setSelectedBrand(null); setSelectedLine(null); setStep('brand'); setBrandsSheet(true); setBrandConfirmed(false) }}
+                className="text-accent text-[13px]"
+              >
+                {brandTitle}
+              </button>
+            )}
+            {brandTitle && lineTitle && <span className="text-text-secondary text-[13px]">/</span>}
+            {lineTitle && (
+              <button
+                onClick={() => { setSelectedLine(null); setLinesSheet(true) }}
+                className="text-accent text-[13px]"
+              >
+                {lineTitle}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* бренды — одна колонка, стиль как у категорий (карточка с картинкой и названием) */}
         {step === 'brand' && !loading && brands.length > 0 && (
@@ -145,10 +147,14 @@ export default function CategoryPage() {
                 <button
                   key={b.key}
                   onClick={() => handleBrandSelect(b.key)}
-                  className={`bg-card-bg rounded-card overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform ${selectedBrand === b.key ? 'ring-2 ring-accent' : ''}`}
+                  className="bg-card-bg rounded-card overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform"
                 >
                   <div className="flex items-center gap-4 p-4">
-                    <div className="w-16 h-16 rounded-[10px] bg-bg-base flex-shrink-0 overflow-hidden">
+                    <div
+                      className={`w-16 h-16 rounded-[10px] bg-bg-base flex-shrink-0 overflow-hidden ${
+                        selectedBrand === b.key ? 'ring-2 ring-accent' : ''
+                      }`}
+                    >
                       {b.image ? (
                         <img src={b.image} alt={b.title} className="w-full h-full object-contain p-1" />
                       ) : (
@@ -177,10 +183,14 @@ export default function CategoryPage() {
                 <button
                   key={l.key}
                   onClick={() => handleLineSelect(l.key)}
-                  className={`bg-card-bg rounded-card overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform ${selectedLine === l.key ? 'ring-2 ring-accent' : ''}`}
+                  className="bg-card-bg rounded-card overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform"
                 >
                   <div className="flex items-center gap-4 p-4">
-                    <div className="w-16 h-16 rounded-[10px] bg-bg-base flex-shrink-0 overflow-hidden">
+                    <div
+                      className={`w-16 h-16 rounded-[10px] bg-bg-base flex-shrink-0 overflow-hidden ${
+                        selectedLine === l.key ? 'ring-2 ring-accent' : ''
+                      }`}
+                    >
                       {l.image ? (
                         <img src={l.image} alt={l.title} className="w-full h-full object-contain p-1" />
                       ) : (

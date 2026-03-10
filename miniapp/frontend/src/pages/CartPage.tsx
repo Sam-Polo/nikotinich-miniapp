@@ -41,8 +41,13 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
 
   const handleTouchEnd = () => {
     if (!dragging) return
-    const shouldOpen = offsetX <= -maxOffset / 2
-    setOffsetX(shouldOpen ? -maxOffset : 0)
+    const shouldDelete = offsetX <= -maxOffset / 2
+    if (shouldDelete) {
+      onRemove(product.slug)
+      setOffsetX(0)
+    } else {
+      setOffsetX(0)
+    }
     setDragging(false)
     startXRef.current = null
   }
@@ -87,11 +92,13 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
             <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <div className="w-[72px] h-[72px] bg-[#F4F5F7] rounded-[12px] flex-shrink-0 overflow-hidden">
+        <div className="w-[72px] h-[72px] rounded-[12px] flex-shrink-0 overflow-hidden bg-bg-base">
           {product.images[0] ? (
-            <img src={product.images[0]} alt={product.title} className="w-full h-full object-contain p-1" />
+            <img src={product.images[0]} alt={product.title} className="w-full h-full object-contain" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px]">Нет фото</div>
+            <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px] bg-[#F4F5F7]">
+              Нет фото
+            </div>
           )}
         </div>
         <div className="ml-3 flex-1 flex flex-col justify-between py-0.5 min-w-0">
@@ -174,7 +181,7 @@ export default function CartPage() {
           Отменить
         </button>
       </div>
-    ), { duration: 4000 })
+    ), { duration: 4000, position: 'bottom-center' })
   }
 
   async function applyPromoCode() {
