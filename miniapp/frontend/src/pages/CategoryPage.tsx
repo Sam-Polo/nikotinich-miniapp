@@ -107,7 +107,7 @@ export default function CategoryPage() {
   const brandTitle = brands.find(b => b.key === selectedBrand)?.title
   const lineTitle = lines.find(l => l.key === selectedLine)?.title
 
-  const showHeader = step === 'products' && !loading
+  const showHeader = step === 'products' && !loading && !brandsSheet && !linesSheet
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">

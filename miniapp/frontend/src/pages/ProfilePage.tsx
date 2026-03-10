@@ -217,7 +217,7 @@ export default function ProfilePage() {
         <button
           type="button"
           onClick={() => setProfileModalOpen(true)}
-          className="mx-4 mb-5 w-[calc(100%-2rem)] flex items-center gap-4 bg-card-bg rounded-[18px] px-4 py-3 active:opacity-80 shadow-sm"
+          className="mx-4 mb-5 w-[calc(100%-2rem)] flex items-center gap-4 bg-[#F4F5F7] rounded-[18px] px-4 py-3 active:opacity-80"
         >
           <div className="w-16 h-16 rounded-[18px] bg-[#F8F8F8] flex items-center justify-center flex-shrink-0 overflow-hidden">
             <svg width="40" height="40" viewBox="0 0 64 64" fill="none">
@@ -232,13 +232,6 @@ export default function ProfilePage() {
               <p className="text-[13px] text-text-secondary mt-0.5">{formattedPhone}</p>
             ) : (
               <p className="text-[13px] text-text-secondary mt-0.5 opacity-70">Добавьте телефон</p>
-            )}
-            {editEmail || user.email ? (
-              <p className="text-[13px] text-text-secondary mt-0.5 truncate">
-                {editEmail || user.email}
-              </p>
-            ) : (
-              <p className="text-[13px] text-text-secondary mt-0.5 opacity-70">Добавьте email</p>
             )}
           </div>
           <svg
@@ -278,7 +271,9 @@ export default function ProfilePage() {
               {user.referral_balance_rub > 0 && (
                 <div className="bg-card-bg rounded-card p-4">
                   <p className="text-[14px] text-text-secondary">Бонусные рубли</p>
-                  <p className="text-[24px] font-bold text-accent">₽{user.referral_balance_rub.toLocaleString('ru-RU')}</p>
+                  <p className="text-[24px] font-bold text-accent">
+                    {user.referral_balance_rub.toLocaleString('ru-RU')} ₽
+                  </p>
                   <p className="text-[12px] text-text-secondary mt-1">Бонусы можно списать при оформлении заказа</p>
                 </div>
               )}

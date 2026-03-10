@@ -234,7 +234,9 @@ router.post('/', async (req, res) => {
         ? productData.images.filter((img: string) => img.trim())
         : [],
       active: productData.active !== undefined ? Boolean(productData.active) : true,
-      stock: productData.stock !== undefined ? Number(productData.stock) : undefined,
+      stock: (productData.stock !== undefined && productData.stock !== null && String(productData.stock).trim() !== '')
+        ? Number(productData.stock)
+        : undefined,
       article: newArticleNorm || productData.article?.trim() || undefined,
       brand: sanitizeOptionalString(productData.brand, 80),
       line: sanitizeOptionalString(productData.line, 80),
@@ -400,7 +402,9 @@ router.put('/:slug', async (req, res) => {
         ? productData.images.filter((img: string) => img.trim())
         : [],
       active: productData.active !== undefined ? Boolean(productData.active) : true,
-      stock: productData.stock !== undefined ? Number(productData.stock) : undefined,
+      stock: (productData.stock !== undefined && productData.stock !== null && String(productData.stock).trim() !== '')
+        ? Number(productData.stock)
+        : undefined,
       article: oldProduct.article,
       brand: sanitizeOptionalString(productData.brand, 80),
       line: sanitizeOptionalString(productData.line, 80),

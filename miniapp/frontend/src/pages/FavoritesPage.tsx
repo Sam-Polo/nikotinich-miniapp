@@ -6,6 +6,7 @@ import type { Category } from '../api'
 import { useFavoritesStore } from '../store/favorites'
 import { useCartStore } from '../store/cart'
 import PageHeader from '../components/PageHeader'
+import { formatPriceRub } from '../utils/formatPrice'
 
 export default function FavoritesPage() {
   const { items, toggle } = useFavoritesStore()
@@ -170,7 +171,7 @@ export default function FavoritesPage() {
 
                   <div className="p-3">
                     <p className="text-[18px] font-bold text-text-primary leading-tight">
-                      {product.display_price.toLocaleString('ru-RU')} ₽
+                      {formatPriceRub(product.display_price)}
                     </p>
                     <p className="text-[14px] text-text-secondary line-clamp-2 mt-1 leading-snug">
                       {product.title}
@@ -242,7 +243,7 @@ export default function FavoritesPage() {
         >
           <span>{cartQty} товар{cartQty > 1 && cartQty < 5 ? 'а' : cartQty >= 5 ? 'ов' : ''}</span>
           <span>Перейти в корзину</span>
-          <span>{cartSum.toLocaleString('ru-RU')} ₽</span>
+          <span>{formatPriceRub(cartSum)}</span>
         </button>
       )}
     </div>

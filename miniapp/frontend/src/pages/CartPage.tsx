@@ -6,6 +6,7 @@ import { useUserStore } from '../store/user'
 import { validatePromo } from '../api'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
+import { formatPriceRub } from '../utils/formatPrice'
 
 type CartItemRowProps = {
   item: CartItem
@@ -99,7 +100,7 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
             <p className="text-[15px] font-semibold text-text-primary line-clamp-2 mt-1 pr-10">{product.title}</p>
           </div>
           <div className="flex items-center justify-between mt-2">
-            <span className="font-bold text-[17px]">{(product.display_price * qty).toLocaleString('ru-RU')} ₽</span>
+            <span className="font-bold text-[17px]">{formatPriceRub(product.display_price * qty)}</span>
             <div className="flex items-center gap-2">
               <div className="flex items-center bg-[#F4F5F7] rounded-[12px] px-1.5 py-1 min-w-[96px]">
                 <button
@@ -260,7 +261,7 @@ export default function CartPage() {
           <p className="text-[14px] font-semibold text-text-primary mb-2">Промокод</p>
           {promoApplied ? (
             <div className="flex items-center justify-between">
-              <p className="text-accent text-[14px]">🎉 {promoApplied.code} — −₽{promoApplied.discount.toLocaleString('ru-RU')}</p>
+                <p className="text-accent text-[14px]">🎉 {promoApplied.code} — −{formatPriceRub(promoApplied.discount)}</p>
               <button onClick={() => { clearPromo(); setPromoInput('') }} className="text-destructive text-[13px]">
                 Убрать
               </button>
@@ -294,7 +295,7 @@ export default function CartPage() {
               <div>
                 <p className="text-[14px] font-semibold text-text-primary">Реферальные баллы</p>
                 <p className="text-[13px] text-text-secondary mt-0.5">
-                  Доступно: ₽{referralBalance.toLocaleString('ru-RU')}
+                  Доступно: {formatPriceRub(referralBalance)}
                 </p>
               </div>
               <button
@@ -305,7 +306,7 @@ export default function CartPage() {
               </button>
             </div>
             {effectiveReferralBonus > 0 && (
-              <p className="text-accent text-[13px] mt-2">−₽{effectiveReferralBonus.toLocaleString('ru-RU')} баллами</p>
+              <p className="text-accent text-[13px] mt-2">−{formatPriceRub(effectiveReferralBonus)} баллами</p>
             )}
           </div>
         )}
@@ -314,34 +315,34 @@ export default function CartPage() {
         <div className="bg-card-bg rounded-card p-4 space-y-2">
           <div className="flex justify-between text-[14px] text-text-secondary">
             <span>Товары</span>
-            <span>₽{sub.toLocaleString('ru-RU')}</span>
+            <span>{formatPriceRub(sub)}</span>
           </div>
           <div className="flex justify-between text-[14px] text-text-secondary">
             <span>Доставка</span>
             <span className={isFreeDelivery ? 'text-green-500 font-medium' : ''}>
-              {isFreeDelivery ? 'Бесплатно' : `₽${delivery}`}
+              {isFreeDelivery ? 'Бесплатно' : formatPriceRub(delivery)}
             </span>
           </div>
           {!isFreeDelivery && (
             <p className="text-[12px] text-text-secondary opacity-60">
-              Бесплатная доставка от ₽{freeFrom.toLocaleString('ru-RU')}
+              Бесплатная доставка от {formatPriceRub(freeFrom)}
             </p>
           )}
-          {promoDiscount > 0 && (
-            <div className="flex justify-between text-[14px] text-green-500">
-              <span>Промокод</span>
-              <span>−₽{promoDiscount.toLocaleString('ru-RU')}</span>
-            </div>
-          )}
+            {promoDiscount > 0 && (
+              <div className="flex justify-between text-[14px] text-green-500">
+                <span>Промокод</span>
+                <span>−{formatPriceRub(promoDiscount)}</span>
+              </div>
+            )}
           {effectiveReferralBonus > 0 && (
             <div className="flex justify-between text-[14px] text-green-500">
               <span>Реферальные баллы</span>
-              <span>−₽{effectiveReferralBonus.toLocaleString('ru-RU')}</span>
+              <span>−{formatPriceRub(effectiveReferralBonus)}</span>
             </div>
           )}
           <div className="flex justify-between text-[17px] font-bold text-text-primary border-t border-border-light pt-2 mt-1">
             <span>Итого</span>
-            <span>₽{finalTotal.toLocaleString('ru-RU')}</span>
+            <span>{formatPriceRub(finalTotal)}</span>
           </div>
         </div>
         </div>
@@ -351,7 +352,7 @@ export default function CartPage() {
       <div className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
         style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
         <Button fullWidth onClick={() => navigate('/checkout')}>
-          Оформить заказ — ₽{finalTotal.toLocaleString('ru-RU')}
+          Оформить заказ — {formatPriceRub(finalTotal)}
         </Button>
       </div>
     </div>

@@ -6,6 +6,7 @@ import type { Product, Brand, Line } from '../api'
 import { useCartStore } from '../store/cart'
 import { useFavoritesStore } from '../store/favorites'
 import PageHeader from '../components/PageHeader'
+import { formatPriceRub } from '../utils/formatPrice'
 import Spinner from '../components/Spinner'
 import Button from '../components/Button'
 
@@ -130,11 +131,11 @@ export default function ProductPage() {
 
         <div className="flex items-center gap-3 mb-4">
           <span className="text-[28px] font-bold text-text-primary">
-            ₽{displayPrice.toLocaleString('ru-RU')}
+            {formatPriceRub(displayPrice)}
           </span>
           {hasDiscount && (
             <span className="text-[18px] text-text-secondary line-through">
-              ₽{p.price_rub.toLocaleString('ru-RU')}
+              {formatPriceRub(p.price_rub)}
             </span>
           )}
         </div>
@@ -190,7 +191,7 @@ export default function ProductPage() {
         ) : (
           <Button fullWidth onClick={handleAdd} className="justify-between">
             <span>Добавить в корзину</span>
-            <span className="opacity-80">₽{displayPrice.toLocaleString('ru-RU')}</span>
+            <span className="opacity-80">{formatPriceRub(displayPrice)}</span>
           </Button>
         )}
       </div>

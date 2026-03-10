@@ -5,6 +5,7 @@ import { useUserStore } from '../store/user'
 import { createOrder } from '../api'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
+import { formatPriceRub } from '../utils/formatPrice'
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
@@ -113,27 +114,27 @@ export default function CheckoutPage() {
         <section className="bg-card-bg rounded-card p-4 space-y-2 mb-4">
           <div className="flex justify-between text-[14px] text-text-secondary">
             <span>Товары ({items.reduce((s, i) => s + i.qty, 0)} шт.)</span>
-            <span>₽{sub.toLocaleString('ru-RU')}</span>
+            <span>{formatPriceRub(sub)}</span>
           </div>
           <div className="flex justify-between text-[14px] text-text-secondary">
             <span>Доставка</span>
-            <span className={isFree ? 'text-green-500' : ''}>{isFree ? 'Бесплатно' : `₽${delivery}`}</span>
+            <span className={isFree ? 'text-green-500' : ''}>{isFree ? 'Бесплатно' : formatPriceRub(delivery)}</span>
           </div>
           {promoDiscount > 0 && (
             <div className="flex justify-between text-[14px] text-green-500">
               <span>Промокод {promoApplied?.code}</span>
-              <span>−₽{promoDiscount.toLocaleString('ru-RU')}</span>
+              <span>−{formatPriceRub(promoDiscount)}</span>
             </div>
           )}
           {effectiveBonus > 0 && (
             <div className="flex justify-between text-[14px] text-green-500">
               <span>Реферальные баллы</span>
-              <span>−₽{effectiveBonus.toLocaleString('ru-RU')}</span>
+              <span>−{formatPriceRub(effectiveBonus)}</span>
             </div>
           )}
           <div className="flex justify-between text-[17px] font-bold text-text-primary border-t border-border-light pt-2 mt-1">
             <span>Итого</span>
-            <span>₽{total.toLocaleString('ru-RU')}</span>
+            <span>{formatPriceRub(total)}</span>
           </div>
         </section>
 
@@ -144,7 +145,7 @@ export default function CheckoutPage() {
       <div className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
         style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
         <Button fullWidth loading={loading} onClick={handleSubmit as any}>
-          Подтвердить заказ — ₽{total.toLocaleString('ru-RU')}
+          Подтвердить заказ — {formatPriceRub(total)}
         </Button>
       </div>
     </div>

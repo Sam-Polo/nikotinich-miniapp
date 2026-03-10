@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast'
 import type { Product } from '../api'
+import { formatPriceRub } from '../utils/formatPrice'
 import { useCartStore } from '../store/cart'
 import { useFavoritesStore } from '../store/favorites'
 import { useNavigate } from 'react-router-dom'
@@ -81,11 +82,11 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
         </p>
         <div className="flex items-center gap-1.5">
           <span className="text-[15px] font-bold text-text-primary">
-            ₽{displayPrice.toLocaleString('ru-RU')}
+            {formatPriceRub(displayPrice)}
           </span>
           {hasDiscount && (
             <span className="text-[12px] text-text-secondary line-through">
-              ₽{product.price_rub.toLocaleString('ru-RU')}
+              {formatPriceRub(product.price_rub)}
             </span>
           )}
         </div>
