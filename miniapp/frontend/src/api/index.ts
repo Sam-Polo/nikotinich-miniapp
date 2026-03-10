@@ -41,10 +41,16 @@ export type ContentItem = {
   title: string
   body?: string
   imageUrl?: string
+  /** фото для вставки в текст по маркерам {{img1}}, {{img2}} */
+  images?: string[]
   publishedAt?: string
   sort: number
   productSlugs: string[]
   showInStories?: boolean
+  readMinutes?: number
+  likes?: number
+  claps?: number
+  dislikes?: number
 }
 
 export type AppSettings = {
@@ -114,6 +120,20 @@ export const getProduct = (slug: string) => request<Product>(`/catalog/products/
 // --- контент ---
 
 export const getContent = () => request<ContentItem[]>('/content')
+
+export type ContentReaction = 'like' | 'clap' | 'dislike'
+export type ContentReactionResponse = {
+  likes: number
+  claps: number
+  dislikes: number
+  userReaction: { like: number; clap: number; dislike: number }
+}
+
+export const setContentReaction = (contentId: string, userId: string, reaction: ContentReaction) =>
+  request<ContentReactionResponse>(`/content/${encodeURIComponent(contentId)}/react`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, reaction })
+  })
 
 // --- настройки ---
 

@@ -28,11 +28,16 @@ type ContentItem = {
   title: string
   body?: string
   imageUrl?: string
+  images?: string[]
   publishedAt?: string
   active: boolean
   sort: number
   productSlugs: string[]
   showInStories?: boolean
+  readMinutes?: number
+  likes?: number
+  claps?: number
+  dislikes?: number
 }
 
 type Product = { slug: string; title?: string; article?: string }
@@ -94,6 +99,9 @@ function SortableContentRow({
       </td>
       <td data-label="Заголовок" className="content-title-cell">{item.title || '—'}</td>
       <td data-label="Дата" className="content-date-cell">{item.publishedAt || '—'}</td>
+      <td data-label="Лайки">{item.likes ?? 0}</td>
+      <td data-label="Классы">{item.claps ?? 0}</td>
+      <td data-label="Дизлайки">{item.dislikes ?? 0}</td>
       <td data-label="Активна">{item.active ? 'Да' : 'Нет'}</td>
       <td data-label="Действия">
         <button type="button" className="btn-icon btn-edit" onClick={onEdit} title="Редактировать"><EditIcon /></button>
@@ -115,6 +123,8 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
     title: string
     body: string
     imageUrl: string
+    images: string[]
+    readMinutes: number | ''
     publishedAt: string
     active: boolean
     productSlugs: string[]
@@ -123,16 +133,21 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
     title: '',
     body: '',
     imageUrl: '',
+    images: [],
+    readMinutes: '',
     publishedAt: '',
     active: true,
     productSlugs: [],
     showInStories: false
   })
+  const [deleteConfirm, setDeleteConfirm] = useState<ContentItem | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadingExtra, setUploadingExtra] = useState(false)
   const [productSearch, setProductSearch] = useState('')
   const [productSearchResults, setProductSearchResults] = useState<Product[]>([])
   const [productSearching, setProductSearching] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const extraImagesInputRef = useRef<HTMLInputElement>(null)
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const load = useCallback(async () => {
@@ -163,6 +178,8 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
         title: item.title,
         body: item.body || '',
         imageUrl: item.imageUrl || '',
+        images: item.images || [],
+        readMinutes: item.readMinutes ?? '',
         publishedAt: item.publishedAt || '',
         active: item.active,
         productSlugs: item.productSlugs || [],
@@ -174,6 +191,8 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
         title: '',
         body: '',
         imageUrl: '',
+        images: [],
+        readMinutes: '',
         publishedAt: '',
         active: true,
         productSlugs: type === 'collection' ? [] : [],
@@ -223,6 +242,8 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
       title: item.title,
       body: item.body || '',
       imageUrl: item.imageUrl || '',
+      images: item.images || [],
+      readMinutes: item.readMinutes ?? '',
       publishedAt: item.publishedAt || '',
       active: item.active,
       productSlugs: item.productSlugs || [],
@@ -233,7 +254,14 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
     setIsModalOpen(true)
   }
 
-  const handleDelete = async (item: ContentItem) => {
+  const handleDeleteClick = (item: ContentItem) => {
+    setDeleteConfirm(item)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm) return
+    const item = deleteConfirm
+    setDeleteConfirm(null)
     const next = items.filter((x) => x.id !== item.id).map((it, i) => ({ ...it, sort: i }))
     setItems(next)
     setSaving(true)
@@ -265,11 +293,16 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
       title: formData.title.trim(),
       body: formData.body.trim() || undefined,
       imageUrl: formData.imageUrl.trim() || undefined,
+      images: formData.images.length > 0 ? formData.images : undefined,
+      readMinutes: formData.readMinutes !== '' ? Number(formData.readMinutes) : undefined,
       publishedAt: formData.publishedAt.trim() || undefined,
       active: formData.active,
       sort: editingItem?.sort ?? items.length,
       productSlugs: type === 'collection' ? formData.productSlugs : [],
-      showInStories: formData.showInStories
+      showInStories: formData.showInStories,
+      likes: editingItem?.likes ?? 0,
+      claps: editingItem?.claps ?? 0,
+      dislikes: editingItem?.dislikes ?? 0
     }
 
     let nextItems: ContentItem[]
@@ -315,6 +348,35 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
       showToast('Поддерживаются JPG, PNG, WebP', 'error')
     }
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleExtraImageUpload = async (file: File) => {
+    setUploadingExtra(true)
+    try {
+      const uploaded = await api.uploadImage(file)
+      setFormData((prev) => ({ ...prev, images: [...prev.images, uploaded.url] }))
+    } catch (err: any) {
+      showToast(err.message || 'Ошибка загрузки фото', 'error')
+    } finally {
+      setUploadingExtra(false)
+    }
+  }
+
+  const handleExtraFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files?.length) return
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const file = files[0]
+    if (allowed.includes(file.type.toLowerCase())) {
+      handleExtraImageUpload(file)
+    } else {
+      showToast('Поддерживаются JPG, PNG, WebP', 'error')
+    }
+    if (extraImagesInputRef.current) extraImagesInputRef.current.value = ''
+  }
+
+  const removeExtraImage = (index: number) => {
+    setFormData((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }))
   }
 
   // поиск товаров для подборки
@@ -425,6 +487,9 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                   <th>Фото</th>
                   <th>Заголовок</th>
                   <th>Дата</th>
+                  <th>Лайки</th>
+                  <th>Классы</th>
+                  <th>Дизлайки</th>
                   <th>Активна</th>
                   <th>Действия</th>
                 </tr>
@@ -437,7 +502,7 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                         key={item.id}
                         item={item}
                         onEdit={() => handleEdit(item)}
-                        onDelete={() => handleDelete(item)}
+                        onDelete={() => handleDeleteClick(item)}
                       />
                     ))}
                   </SortableContext>
@@ -466,17 +531,47 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
               />
             </div>
             <div className="form-group">
-              <label>{isNews ? 'Кратко (текст)' : 'Описание (опционально)'}</label>
+              <label>{isNews ? 'Текст статьи' : 'Описание (опционально)'}</label>
               <textarea
                 className="admin-input"
                 value={formData.body}
                 onChange={(e) => setFormData((p) => ({ ...p, body: e.target.value }))}
-                placeholder={isNews ? 'Краткое описание' : 'Текст подборки'}
-                rows={3}
+                placeholder={isNews ? 'Текст с форматированием' : 'Текст подборки'}
+                rows={5}
               />
+              <small className="form-hint">
+                Для вставки фото по месту используйте <strong>{'{{img1}}'}</strong>, <strong>{'{{img2}}'}</strong> и т.д. по порядку загруженных фото ниже. Форматирование: заголовки (# Заголовок), списки (- пункт), жирный (**текст**).
+              </small>
             </div>
             <div className="form-group">
-              <label>Фото {isNews ? '*' : '(опционально)'}</label>
+              <label>Доп. фото для текста</label>
+              <div className="image-upload-area">
+                <input
+                  type="file"
+                  ref={extraImagesInputRef}
+                  id="content-extra-images-input"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleExtraFileSelect}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="content-extra-images-input" className="image-upload-button">
+                  {uploadingExtra ? 'Загрузка...' : 'Добавить фото в текст'}
+                </label>
+                {formData.images.length > 0 && (
+                  <ul className="content-extra-images-list" style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {formData.images.map((url, i) => (
+                      <li key={url} style={{ position: 'relative' }}>
+                        <div className="category-form-preview" style={{ width: 80, height: 80, backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                        <span style={{ fontSize: 11, display: 'block', marginTop: 2 }}>{'{{img' + (i + 1) + '}}'}</span>
+                        <button type="button" className="btn-icon btn-delete" style={{ position: 'absolute', top: 0, right: 0 }} onClick={() => removeExtraImage(i)} title="Удалить"><TrashIcon /></button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Фото {isNews ? '*' : '(обложка, опционально)'}</label>
               <div className="image-upload-area">
                 <input
                   type="file"
@@ -500,6 +595,17 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                   />
                 )}
               </div>
+            </div>
+            <div className="form-group">
+              <label>Время на прочтение (мин)</label>
+              <input
+                type="number"
+                min={1}
+                className="admin-input"
+                value={formData.readMinutes}
+                onChange={(e) => setFormData((p) => ({ ...p, readMinutes: e.target.value === '' ? '' : Number(e.target.value) }))}
+                placeholder="авто по тексту"
+              />
             </div>
             <div className="form-group">
               <label>Дата (опционально)</label>
@@ -572,6 +678,20 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
             <div className="modal-actions">
               <button type="button" className="btn btn-cancel" onClick={() => setIsModalOpen(false)}>Отмена</button>
               <button type="button" className="btn btn-confirm" onClick={handleModalSave}>Сохранить</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setDeleteConfirm(null)}>×</button>
+            <h2>Удалить {deleteConfirm.type === 'news' ? 'новость' : 'подборку'}?</h2>
+            <p>«{deleteConfirm.title}» будет удалён из ленты. Это действие нельзя отменить.</p>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-cancel" onClick={() => setDeleteConfirm(null)}>Отмена</button>
+              <button type="button" className="btn btn-delete" onClick={handleDeleteConfirm}>Удалить</button>
             </div>
           </div>
         </div>

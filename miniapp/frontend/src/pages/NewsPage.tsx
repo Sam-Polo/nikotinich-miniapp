@@ -74,11 +74,23 @@ export default function NewsPage() {
                 <h2 className="text-[16px] font-semibold text-text-primary mb-1 leading-snug">
                   {item.title}
                 </h2>
-                {item.publishedAt && (
-                  <p className="text-[12px] text-text-secondary mb-2">
-                    {new Date(item.publishedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </p>
-                )}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-text-secondary mb-2">
+                  {item.publishedAt && (
+                    <span>{new Date(item.publishedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  )}
+                  {item.readMinutes != null && item.readMinutes > 0 && (
+                    <>
+                      {item.publishedAt && <span>·</span>}
+                      <span>{item.readMinutes} мин</span>
+                    </>
+                  )}
+                  {((item.likes ?? 0) > 0 || (item.claps ?? 0) > 0) && (
+                    <>
+                      <span>·</span>
+                      <span>❤ {(item.likes ?? 0)} · 👏 {(item.claps ?? 0)}</span>
+                    </>
+                  )}
+                </div>
                 {item.body && (
                   <p className="text-[14px] text-text-secondary leading-relaxed line-clamp-3">
                     {item.body}
@@ -106,6 +118,23 @@ export default function NewsPage() {
                 <h2 className="text-[16px] font-semibold text-text-primary mb-1 leading-snug">
                   {col.title}
                 </h2>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-text-secondary mb-2">
+                  {col.publishedAt && (
+                    <span>{new Date(col.publishedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  )}
+                  {col.readMinutes != null && col.readMinutes > 0 && (
+                    <>
+                      {col.publishedAt && <span>·</span>}
+                      <span>{col.readMinutes} мин</span>
+                    </>
+                  )}
+                  {((col.likes ?? 0) > 0 || (col.claps ?? 0) > 0) && (
+                    <>
+                      <span>·</span>
+                      <span>❤ {(col.likes ?? 0)} · 👏 {(col.claps ?? 0)}</span>
+                    </>
+                  )}
+                </div>
                 {col.body && (
                   <p className="text-[14px] text-text-secondary leading-relaxed line-clamp-3">
                     {col.body}
