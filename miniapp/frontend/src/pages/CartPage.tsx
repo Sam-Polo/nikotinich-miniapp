@@ -129,7 +129,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
-        <PageHeader title="Никотиныч" subtitle="shop" />
+        <PageHeader title="Никотиныч" subtitle="mini app" />
         <div className="flex-1 flex flex-col items-center justify-center px-4 text-center pt-10 pb-24">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" className="mb-4 opacity-30">
             <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#8E8E93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -147,7 +147,7 @@ export default function CartPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader title="Никотиныч" subtitle="shop" />
+      <PageHeader title="Никотиныч" subtitle="mini app" />
 
       <div className="flex-1 flex flex-col min-h-0 px-4 pt-4 overflow-y-auto">
         <h1 className="text-[28px] font-bold text-text-primary mb-4 flex-shrink-0">Корзина</h1>

@@ -23,7 +23,7 @@ export default function NewsPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader title="Никотиныч" subtitle="shop" />
+      <PageHeader title="Никотиныч" subtitle="mini app" />
 
       <div className="flex-1 pb-24">
         <div className="px-4 pt-4">

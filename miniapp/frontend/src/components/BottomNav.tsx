@@ -1,38 +1,40 @@
 import { NavLink } from 'react-router-dom'
 import { useCartStore } from '../store/cart'
 
-// иконки нижней навигации (SVG inline)
+// иконки нижней навигации по эталону toolbar.png: контурные, акцент #007AFF
+const color = (active: boolean) => (active ? '#007AFF' : '#8E8E93')
+
 const CatalogIcon = ({ active }: { active: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="3" width="7" height="7" rx="2" fill={active ? '#007AFF' : '#8E8E93'} />
-    <rect x="14" y="3" width="7" height="7" rx="2" fill={active ? '#007AFF' : '#8E8E93'} />
-    <rect x="3" y="14" width="7" height="7" rx="2" fill={active ? '#007AFF' : '#8E8E93'} />
-    <rect x="14" y="14" width="7" height="7" rx="2" fill={active ? '#007AFF' : '#8E8E93'} />
+    <rect x="4" y="4" width="6" height="6" rx="1.5" stroke={color(active)} strokeWidth="2" fill="none" />
+    <rect x="14" y="4" width="6" height="6" rx="1.5" stroke={color(active)} strokeWidth="2" fill="none" />
+    <rect x="4" y="14" width="6" height="6" rx="1.5" stroke={color(active)} strokeWidth="2" fill="none" />
+    <rect x="14" y="14" width="6" height="6" rx="1.5" stroke={color(active)} strokeWidth="2" fill="none" />
   </svg>
 )
 
 const NewsIcon = ({ active }: { active: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M4 6h16M4 10h10M4 14h12M4 18h8" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="2" strokeLinecap="round" />
-    <path d="M18 14l-2 2 2 2 4-4-4-4-2 2 2 2z" fill={active ? '#007AFF' : '#8E8E93'} />
+    <path d="M5 8v8l10 4V4L5 8z" stroke={color(active)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M15 8l5-2v12l-5-2" stroke={color(active)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M20 10l2.5-.5M20 14l2 .5" stroke={color(active)} strokeWidth="2" strokeLinecap="round" />
   </svg>
 )
 
 const FavoritesIcon = ({ active }: { active: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M12 21.593c-.525-.327-4.25-2.83-6.393-5.125C3.43 14.085 3 12.41 3 11a5 5 0 0 1 9-3A5 5 0 0 1 21 11c0 1.41-.43 3.085-2.607 5.468C16.25 18.763 12.525 21.266 12 21.593z"
-      fill={active ? '#FF3B30' : 'none'} stroke={active ? '#FF3B30' : '#8E8E93'} strokeWidth="2" />
+    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke={color(active)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill={active ? '#007AFF' : 'none'} />
   </svg>
 )
 
 const CartIcon = ({ active, count }: { active: boolean; count: number }) => (
   <div className="relative">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M3 6h18M16 10a4 4 0 01-8 0" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke={color(active)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 6h18M16 10a4 4 0 01-8 0" stroke={color(active)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
     {count > 0 && (
-      <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+      <span className="absolute -top-1 -right-1 bg-[#FF3B30] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
         {count > 9 ? '9+' : count}
       </span>
     )}
@@ -41,8 +43,8 @@ const CartIcon = ({ active, count }: { active: boolean; count: number }) => (
 
 const ProfileIcon = ({ active }: { active: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="2" strokeLinecap="round" />
-    <circle cx="12" cy="7" r="4" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="2" />
+    <circle cx="12" cy="8" r="4" stroke={color(active)} strokeWidth="2" />
+    <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke={color(active)} strokeWidth="2" strokeLinecap="round" />
   </svg>
 )
 

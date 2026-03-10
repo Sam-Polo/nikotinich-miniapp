@@ -829,7 +829,7 @@ function ProductsList({
                     {categoryProducts.map(product => (
                       <div
                         key={product.slug}
-                        className={`product-card ${!product.active ? 'inactive' : ''} ${selectedProductSlugs.has(product.slug) ? 'selected' : ''}`}
+                        className={`product-card ${!product.active ? 'inactive' : ''} ${selectedProductSlugs.has(product.slug) ? 'selected' : ''} ${product.stock !== undefined && product.stock <= 0 ? 'out-of-stock' : ''}`}
                       >
                         <div className="product-card-checkbox">
                           <input
@@ -857,6 +857,11 @@ function ProductsList({
                           <h3>{product.title}</h3>
                           <div className="product-meta">
                             {product.article && <span>Артикул: {product.article}</span>}
+                            {product.stock !== undefined && (
+                              <span className={product.stock <= 0 ? 'out-of-stock' : ''}>
+                                Остаток: {product.stock}
+                              </span>
+                            )}
                             <span>
                               Цена: {product.discount_price_rub !== undefined && product.discount_price_rub > 0 ? (
                                 <>
@@ -1389,7 +1394,7 @@ function SortableProductCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`product-card draggable ${isDragging ? 'dragging' : ''} ${!product.active ? 'inactive' : ''} ${selectedProductSlugs.has(product.slug) ? 'selected' : ''}`}
+      className={`product-card draggable ${isDragging ? 'dragging' : ''} ${!product.active ? 'inactive' : ''} ${selectedProductSlugs.has(product.slug) ? 'selected' : ''} ${product.stock !== undefined && product.stock <= 0 ? 'out-of-stock' : ''}`}
       {...attributes}
       {...listeners}
     >
@@ -1419,6 +1424,11 @@ function SortableProductCard({
           <h3>{product.title}</h3>
           <div className="product-meta">
             {product.article && <span>Артикул: {product.article}</span>}
+            {product.stock !== undefined && (
+              <span className={product.stock <= 0 ? 'out-of-stock' : ''}>
+                Остаток: {product.stock}
+              </span>
+            )}
             <span>
               Цена: {product.discount_price_rub !== undefined && product.discount_price_rub > 0 ? (
                 <>

@@ -69,7 +69,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader title="Никотиныч" subtitle="shop" showBack />
+      <PageHeader title="Никотиныч" subtitle="mini app" showBack />
 
       <form onSubmit={handleSubmit} className="flex-1 px-4 pt-4 pb-36">
         <h1 className="text-[28px] font-bold text-text-primary mb-6">Оформить заказ</h1>

@@ -25,7 +25,7 @@ export default function NewsDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
-        <PageHeader title="Никотиныч" subtitle="shop" showBack />
+        <PageHeader title="Никотиныч" subtitle="mini app" showBack />
         <div className="flex-1 flex items-center justify-center">
           <Spinner />
         </div>
@@ -36,7 +36,7 @@ export default function NewsDetailPage() {
   if (!item) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
-        <PageHeader title="Никотиныч" subtitle="shop" showBack />
+        <PageHeader title="Никотиныч" subtitle="mini app" showBack />
         <p className="text-text-secondary text-center mt-10 px-4">Новость не найдена</p>
       </div>
     )
@@ -44,7 +44,7 @@ export default function NewsDetailPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader title="Никотиныч" subtitle="shop" showBack />
+      <PageHeader title="Никотиныч" subtitle="mini app" showBack />
 
       <div className="flex-1 px-4 pt-4 pb-24">
         <article className="bg-card-bg rounded-card overflow-hidden shadow-sm">

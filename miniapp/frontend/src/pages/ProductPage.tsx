@@ -55,8 +55,8 @@ export default function ProductPage() {
       .catch(() => setLineTitle(product.line ?? null))
   }, [product?.brand, product?.line])
 
-  if (loading) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="shop" showBack /><Spinner /></div>
-  if (!product) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="shop" showBack /><p className="text-center text-text-secondary mt-20">Товар не найден</p></div>
+  if (loading) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><Spinner /></div>
+  if (!product) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><p className="text-center text-text-secondary mt-20">Товар не найден</p></div>
 
   // захватываем после null-проверки чтобы TypeScript не терял тип в замыканиях
   const p = product
@@ -77,7 +77,7 @@ export default function ProductPage() {
     <div className="flex flex-col min-h-full bg-white">
       <PageHeader
         title="Никотиныч"
-        subtitle="shop"
+        subtitle="mini app"
         showBack
         right={
           <button

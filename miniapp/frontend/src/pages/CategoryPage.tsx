@@ -90,7 +90,7 @@ export default function CategoryPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader title="Никотиныч" subtitle="shop" showBack />
+      <PageHeader title="Никотиныч" subtitle="mini app" showBack />
 
       <div className="flex-1 px-4 pt-4 pb-24">
         {/* хлебные крошки */}

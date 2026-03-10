@@ -169,7 +169,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
-        <PageHeader title="Никотиныч" subtitle="shop" />
+        <PageHeader title="Никотиныч" subtitle="mini app" />
         <div className="flex-1 flex flex-col items-center justify-center px-4 text-center pt-10 pb-24">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" className="mb-4 opacity-30">
             <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#8E8E93" strokeWidth="2" strokeLinecap="round" />
@@ -186,7 +186,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader title="Никотиныч" subtitle="shop" />
+      <PageHeader title="Никотиныч" subtitle="mini app" />
 
       <div className="flex-1 pb-24">
         <div className="px-4 pt-4 mb-4">
