@@ -1,58 +1,118 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import { useCartStore } from '../store/cart'
+import { useCartStore, type CartItem } from '../store/cart'
 import { useUserStore } from '../store/user'
 import { validatePromo } from '../api'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
 
-function CartItemRow({ item, onUpdateQty, onRemove }: { item: { product: import('../api').Product; qty: number }; onUpdateQty: (slug: string, qty: number) => void; onRemove: (slug: string) => void }) {
+type CartItemRowProps = {
+  item: CartItem
+  onUpdateQty: (slug: string, qty: number) => void
+  onRemove: (slug: string) => void
+}
+
+function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
   const { product, qty } = item
   const stock = product.stock
   const canInc = stock == null || qty < stock
+  const [offsetX, setOffsetX] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const startXRef = useRef<number | null>(null)
+  const maxOffset = 96
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length !== 1) return
+    const touchX = e.touches[0].clientX
+    startXRef.current = touchX - offsetX
+    setDragging(true)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!dragging || startXRef.current == null) return
+    const touchX = e.touches[0].clientX
+    let next = touchX - startXRef.current
+    if (next > 0) next = 0
+    if (next < -maxOffset) next = -maxOffset
+    setOffsetX(next)
+  }
+
+  const handleTouchEnd = () => {
+    if (!dragging) return
+    const shouldOpen = offsetX <= -maxOffset / 2
+    setOffsetX(shouldOpen ? -maxOffset : 0)
+    setDragging(false)
+    startXRef.current = null
+  }
 
   return (
-    <div className="bg-card-bg rounded-card p-3 flex border border-border-light">
-      <div className="w-[84px] h-[84px] bg-bg-base rounded-[10px] flex-shrink-0 overflow-hidden">
-        {product.images[0] ? (
-          <img src={product.images[0]} alt={product.title} className="w-full h-full object-contain p-1" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px]">Нет фото</div>
-        )}
+    <div className="relative">
+      {/* красная зона удаления по свайпу */}
+      <div className="absolute inset-0 flex justify-end items-center pr-4">
+        <button
+          type="button"
+          className="h-10 px-3 rounded-[12px] bg-[#FF3B30] text-white text-[13px] font-semibold flex items-center justify-center"
+          onClick={() => onRemove(product.slug)}
+        >
+          Удалить
+        </button>
       </div>
-      <div className="ml-3 flex-1 flex flex-col justify-between py-0.5 min-w-0">
-        <div>
-          <p className="text-[12px] text-text-secondary leading-none mt-1 line-clamp-1">{product.category || product.brand || 'Товар'}</p>
-          <p className="text-[14px] font-medium text-text-primary line-clamp-2 mt-1 pr-10">{product.title}</p>
+
+      {/* основная карточка, сдвигаем по X */}
+      <div
+        className="bg-card-bg rounded-[16px] p-3 flex items-center border border-border-light relative"
+        style={{
+          transform: `translateX(${offsetX}px)`,
+          transition: dragging ? 'none' : 'transform 0.18s ease-out'
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
+        {/* чекбокс выбора товара */}
+        <button
+          type="button"
+          className="w-6 h-6 mr-2 rounded-[8px] border border-accent bg-accent flex items-center justify-center flex-shrink-0"
+          aria-label="Товар выбран"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <div className="w-[84px] h-[84px] bg-bg-base rounded-[10px] flex-shrink-0 overflow-hidden">
+          {product.images[0] ? (
+            <img src={product.images[0]} alt={product.title} className="w-full h-full object-contain p-1" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px]">Нет фото</div>
+          )}
         </div>
-        <div className="flex items-center justify-between mt-2">
-          <span className="font-bold text-[16px]">{(product.display_price * qty).toLocaleString('ru-RU')} ₽</span>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-bg-base rounded-btn px-1 py-0.5 min-w-[80px]">
-              <button
-                className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
-                onClick={() => onUpdateQty(product.slug, qty - 1)}
-              >
-                −
-              </button>
-              <span className="text-[14px] font-semibold text-text-primary px-2 min-w-[24px] text-center">{qty}</span>
-              <button
-                className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70 disabled:opacity-50"
-                onClick={() => canInc && onUpdateQty(product.slug, qty + 1)}
-                disabled={!canInc}
-              >
-                +
-              </button>
+        <div className="ml-3 flex-1 flex flex-col justify-between py-0.5 min-w-0">
+          <div>
+            <p className="text-[12px] text-text-secondary leading-none mt-1 line-clamp-1">{product.category || product.brand || 'Товар'}</p>
+            <p className="text-[14px] font-medium text-text-primary line-clamp-2 mt-1 pr-10">{product.title}</p>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <span className="font-bold text-[16px]">{(product.display_price * qty).toLocaleString('ru-RU')} ₽</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-[#F8F8F8] rounded-[10px] px-1 py-0.5 min-w-[96px]">
+                <button
+                  className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
+                  onClick={() => onUpdateQty(product.slug, qty - 1)}
+                >
+                  −
+                </button>
+                <span className="text-[14px] font-semibold text-text-primary px-2 min-w-[24px] text-center">{qty}</span>
+                <button
+                  className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70 disabled:opacity-50"
+                  onClick={() => canInc && onUpdateQty(product.slug, qty + 1)}
+                  disabled={!canInc}
+                >
+                  +
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => onRemove(product.slug)}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-text-secondary hover:bg-red-50 hover:text-red-500 active:opacity-70"
-              aria-label="Удалить"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2m-6 5v6m4-6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
           </div>
         </div>
       </div>
@@ -62,7 +122,7 @@ function CartItemRow({ item, onUpdateQty, onRemove }: { item: { product: import(
 
 export default function CartPage() {
   const navigate = useNavigate()
-  const { items, removeItem, updateQty, subtotal, promoApplied, applyPromo, clearPromo, referralBonusUsed, applyReferralBonus, clearReferralBonus } = useCartStore()
+  const { items, addItem, removeItem, updateQty, subtotal, promoApplied, applyPromo, clearPromo, referralBonusUsed, applyReferralBonus, clearReferralBonus } = useCartStore()
   const { user, settings } = useUserStore()
 
   const deliveryFee = settings?.deliveryFee ?? 300
@@ -84,6 +144,32 @@ export default function CartPage() {
   // применённый реферальный бонус не может превышать итог после промокода
   const effectiveReferralBonus = Math.min(referralBonusUsed, afterPromo)
   const finalTotal = Math.max(0, afterPromo - effectiveReferralBonus)
+
+  const [recentlyRemoved, setRecentlyRemoved] = useState<CartItem | null>(null)
+
+  function handleRemoveWithUndo(slug: string) {
+    const item = items.find(i => i.product.slug === slug)
+    if (!item) return
+    setRecentlyRemoved(item)
+    removeItem(slug)
+
+    toast.custom((t) => (
+      <div className="bg-white rounded-[14px] shadow-md px-3 py-2 flex items-center gap-3 border border-border-light">
+        <span className="text-[14px] text-text-primary">Товар удалён</span>
+        <button
+          type="button"
+          className="text-[14px] text-accent font-semibold"
+          onClick={() => {
+            addItem(item.product, item.qty)
+            setRecentlyRemoved(null)
+            toast.dismiss(t.id)
+          }}
+        >
+          Отменить
+        </button>
+      </div>
+    ), { duration: 4000 })
+  }
 
   async function applyPromoCode() {
     if (!promoInput.trim()) return
@@ -155,7 +241,12 @@ export default function CartPage() {
         <div className="flex-1 min-h-0 pb-32">
           <div className="flex flex-col gap-3 mb-4">
             {items.map((item) => (
-              <CartItemRow key={item.product.slug} item={item} onUpdateQty={updateQty} onRemove={removeItem} />
+              <CartItemRow
+                key={item.product.slug}
+                item={item}
+                onUpdateQty={updateQty}
+                onRemove={handleRemoveWithUndo}
+              />
             ))}
           </div>
 

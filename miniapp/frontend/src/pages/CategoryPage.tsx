@@ -23,11 +23,11 @@ export default function CategoryPage() {
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [selectedLine, setSelectedLine] = useState<string | null>(null)
   const [step, setStep] = useState<Step>('brand')
+  const [brandConfirmed, setBrandConfirmed] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [brandsSheet, setBrandsSheet] = useState(false)
   const [linesSheet, setLinesSheet] = useState(false)
-  const [linesLoading, setLinesLoading] = useState(false)
   const [resolvedCategoryTitle, setResolvedCategoryTitle] = useState<string>(categoryKey.replace(/_/g, ' '))
 
   // название категории по ключу (с API)
@@ -55,16 +55,19 @@ export default function CategoryPage() {
       .catch(() => setLoading(false))
   }, [categoryKey])
 
-  // загрузка линеек при выборе бренда
+  // загрузка линеек после подтверждения бренда
   useEffect(() => {
-    if (!selectedBrand) return
-    setLinesLoading(true)
+    if (!selectedBrand || !brandConfirmed) return
     getLines(selectedBrand)
       .then(l => {
         setLines(l)
+        if (l.length === 0) {
+          // если линеек нет, сразу переходим к товарам
+          loadProducts(selectedBrand, undefined)
+        }
       })
-      .finally(() => setLinesLoading(false))
-  }, [selectedBrand])
+      .catch(() => {})
+  }, [selectedBrand, brandConfirmed])
 
   function loadProducts(brand?: string, line?: string) {
     setLoading(true)
@@ -78,6 +81,7 @@ export default function CategoryPage() {
     setSelectedBrand(key)
     setSelectedLine(null)
     setLines([])
+    setBrandConfirmed(false)
   }
 
   function handleLineSelect(key: string) {
@@ -85,12 +89,14 @@ export default function CategoryPage() {
   }
 
   function handleBrandProceed() {
-    if (!selectedBrand || linesLoading) return
-    if (lines.length === 0) {
-      loadProducts(selectedBrand, undefined)
-      return
+    if (!selectedBrand) return
+    setBrandConfirmed(true)
+    if (lines.length > 0) {
+      setStep('line')
+    } else {
+      // если линеек ещё нет в стейте, ждём загрузку в эффекте
+      setStep('line')
     }
-    setStep('line')
   }
 
   function handleLineProceed() {
@@ -101,16 +107,18 @@ export default function CategoryPage() {
   const brandTitle = brands.find(b => b.key === selectedBrand)?.title
   const lineTitle = lines.find(l => l.key === selectedLine)?.title
 
+  const showHeader = step === 'products'
+
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      <PageHeader title="Никотиныч" subtitle="mini app" showBack />
+      {showHeader && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
 
-      <div className="flex-1 px-4 pt-4 pb-24">
+      <div className="flex-1 flex flex-col min-h-0 px-4 pt-4 pb-36">
         {/* хлебные крошки */}
         <div className="flex items-center gap-1 mb-3">
           {brandTitle && (
             <button
-              onClick={() => { setSelectedBrand(null); setSelectedLine(null); setStep('brand'); setBrandsSheet(true) }}
+              onClick={() => { setSelectedBrand(null); setSelectedLine(null); setStep('brand'); setBrandsSheet(true); setBrandConfirmed(false) }}
               className="text-accent text-[13px]"
             >
               {brandTitle}
@@ -157,38 +165,6 @@ export default function CategoryPage() {
                 </button>
               ))}
             </div>
-            <div className="mt-6">
-              {!selectedBrand ? (
-                <div className="flex flex-col items-center">
-                  <button
-                    type="button"
-                    className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[16px] font-semibold text-[#B0B5C0]"
-                  >
-                    Выберите бренд
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/')}
-                    className="mt-3 text-[13px] font-medium text-accent"
-                  >
-                    Вернуться в каталог
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <Button fullWidth onClick={handleBrandProceed} disabled={linesLoading}>
-                    Продолжить
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/')}
-                    className="mt-3 text-[13px] font-medium text-accent"
-                  >
-                    Вернуться в каталог
-                  </button>
-                </div>
-              )}
-            </div>
           </>
         )}
 
@@ -220,38 +196,6 @@ export default function CategoryPage() {
                   </div>
                 </button>
               ))}
-            </div>
-            <div className="mt-6">
-              {!selectedLine ? (
-                <div className="flex flex-col items-center">
-                  <button
-                    type="button"
-                    className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[16px] font-semibold text-[#B0B5C0]"
-                  >
-                    Выберите линейку
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/')}
-                    className="mt-3 text-[13px] font-medium text-accent"
-                  >
-                    Вернуться в каталог
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <Button fullWidth onClick={handleLineProceed}>
-                    Продолжить
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/')}
-                    className="mt-3 text-[13px] font-medium text-accent"
-                  >
-                    Вернуться в каталог
-                  </button>
-                </div>
-              )}
             </div>
           </>
         )}
@@ -314,13 +258,13 @@ export default function CategoryPage() {
         <SelectionList
           items={brands.map(b => ({ key: b.key, title: b.title, image: b.image }))}
           selected={selectedBrand}
-          onSelect={(key) => { setSelectedBrand(key); setSelectedLine(null); setLines([]) }}
+          onSelect={(key) => { setSelectedBrand(key); setSelectedLine(null); setLines([]); setBrandConfirmed(false) }}
         />
         <div className="p-4 border-t border-border-light">
           <Button
             fullWidth
             onClick={() => { handleBrandProceed(); setBrandsSheet(false) }}
-            disabled={!selectedBrand || linesLoading}
+            disabled={!selectedBrand}
           >
             Продолжить
           </Button>
@@ -345,6 +289,83 @@ export default function CategoryPage() {
           </Button>
         </div>
       </BottomSheet>
+
+      {/* фиксированные кнопки выбора снизу */}
+      {step === 'brand' && !loading && brands.length > 0 && (
+        <div
+          className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
+          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          {!selectedBrand ? (
+            <div className="flex flex-col items-center">
+              <button
+                type="button"
+                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[16px] font-semibold text-[#B0B5C0]"
+              >
+                Выберите бренд
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="mt-2 text-[16px] font-semibold text-accent"
+              >
+                Вернуться в каталог
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <Button fullWidth onClick={handleBrandProceed}>
+                Продолжить
+              </Button>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="mt-2 text-[16px] font-semibold text-accent"
+              >
+                Вернуться в каталог
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {step === 'line' && !loading && lines.length > 0 && (
+        <div
+          className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
+          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          {!selectedLine ? (
+            <div className="flex flex-col items-center">
+              <button
+                type="button"
+                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[16px] font-semibold text-[#B0B5C0]"
+              >
+                Выберите линейку
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="mt-2 text-[16px] font-semibold text-accent"
+              >
+                Вернуться в каталог
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <Button fullWidth onClick={handleLineProceed}>
+                Продолжить
+              </Button>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="mt-2 text-[16px] font-semibold text-accent"
+              >
+                Вернуться в каталог
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

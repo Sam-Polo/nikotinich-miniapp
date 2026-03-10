@@ -857,11 +857,9 @@ function ProductsList({
                           <h3>{product.title}</h3>
                           <div className="product-meta">
                             {product.article && <span>Артикул: {product.article}</span>}
-                            {product.stock !== undefined && (
-                              <span className={product.stock <= 0 ? 'out-of-stock' : ''}>
-                                Остаток: {product.stock}
-                              </span>
-                            )}
+                            <span className={product.stock !== undefined && product.stock <= 0 ? 'out-of-stock' : ''}>
+                              Остаток: {product.stock !== undefined ? product.stock : 'не учитывается'}
+                            </span>
                             <span>
                               Цена: {product.discount_price_rub !== undefined && product.discount_price_rub > 0 ? (
                                 <>
@@ -1424,11 +1422,9 @@ function SortableProductCard({
           <h3>{product.title}</h3>
           <div className="product-meta">
             {product.article && <span>Артикул: {product.article}</span>}
-            {product.stock !== undefined && (
-              <span className={product.stock <= 0 ? 'out-of-stock' : ''}>
-                Остаток: {product.stock}
-              </span>
-            )}
+            <span className={product.stock !== undefined && product.stock <= 0 ? 'out-of-stock' : ''}>
+              Остаток: {product.stock !== undefined ? product.stock : 'не учитывается'}
+            </span>
             <span>
               Цена: {product.discount_price_rub !== undefined && product.discount_price_rub > 0 ? (
                 <>
