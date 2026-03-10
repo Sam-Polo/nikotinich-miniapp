@@ -145,7 +145,7 @@ export default function CartPage() {
   const effectiveReferralBonus = Math.min(referralBonusUsed, afterPromo)
   const finalTotal = Math.max(0, afterPromo - effectiveReferralBonus)
 
-  const [recentlyRemoved, setRecentlyRemoved] = useState<CartItem | null>(null)
+  const [, setRecentlyRemoved] = useState<CartItem | null>(null)
 
   function handleRemoveWithUndo(slug: string) {
     const item = items.find(i => i.product.slug === slug)
