@@ -195,8 +195,11 @@ export default function ProfilePage() {
 
         {/* аватар и имя */}
         <div className="flex items-center gap-4 px-4 mb-5">
-          <div className="w-14 h-14 rounded-full bg-accent flex items-center justify-center text-white text-[22px] font-bold flex-shrink-0">
-            {(user.username || 'U')[0].toUpperCase()}
+          <div className="w-16 h-16 rounded-[18px] bg-[#F8F8F8] flex items-center justify-center flex-shrink-0">
+            {/* progile pic.svg — аватар-заглушка из макета */}
+            <svg width="40" height="40" viewBox="0 0 64 64" fill="none">
+              <path d="M32 64C49.5464 64 64 49.5533 64 32.0153C64 14.4773 49.5158 0 32 0C14.4536 0 0 14.4773 0 32.0153C0 49.5533 14.4536 64 32 64ZM32 42.6973C23.7627 42.6973 17.3627 45.605 14.0249 49.1248C9.79904 44.6868 7.22679 38.6571 7.22679 32.0153C7.22679 18.2726 18.2201 7.19273 32 7.19273C45.7493 7.19273 56.8038 18.2726 56.8345 32.0153C56.8345 38.6571 54.2316 44.6868 50.0057 49.1248C46.6679 45.605 40.2679 42.6973 32 42.6973ZM32 37.8307C37.9713 37.8613 42.5952 32.7805 42.5952 26.2305C42.5952 20.0478 37.91 14.8446 32 14.8446C26.09 14.8446 21.3742 20.0478 21.4354 26.2305C21.4354 32.7805 26.0593 37.8001 32 37.8307Z" fill="#D4D4D4" />
+            </svg>
           </div>
           <div>
             <p className="text-[18px] font-semibold text-text-primary">{user.username || 'Пользователь'}</p>

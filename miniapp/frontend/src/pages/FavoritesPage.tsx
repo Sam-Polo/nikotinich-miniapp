@@ -1,3 +1,4 @@
+import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCategories } from '../api'
@@ -39,6 +40,8 @@ export default function FavoritesPage() {
     return items.filter(p => (p.category || '').toLowerCase() === activeFilter.toLowerCase())
   }, [activeFilter, items])
 
+  const hasActiveFilter = !!activeFilter
+
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
       <PageHeader title="Никотиныч" subtitle="mini app" />
@@ -51,13 +54,15 @@ export default function FavoritesPage() {
           <button
             type="button"
             aria-label="Сбросить фильтр"
-            className="h-9 w-9 rounded-full bg-[#ECECEF] flex items-center justify-center flex-shrink-0 text-[#55565A]"
+            className={[
+              'h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors',
+              hasActiveFilter ? 'bg-accent text-white' : 'bg-[#F8F8F8] text-[#55565A]'
+            ].join(' ')}
             onClick={() => setActiveFilter(null)}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="4" y1="6" x2="20" y2="6" />
-              <line x1="4" y1="12" x2="16" y2="12" />
-              <line x1="4" y1="18" x2="12" y2="18" />
+            {/* filter.svg — цвет иконки меняем в зависимости от активности */}
+            <svg width="20" height="20" viewBox="0 0 20 20" fill={hasActiveFilter ? 'white' : '#595959'} xmlns="http://www.w3.org/2000/svg">
+              <path d="M18.4375 6.5625H1.5625C1.31386 6.5625 1.0754 6.46373 0.899587 6.28791C0.723772 6.1121 0.625 5.87364 0.625 5.625C0.625 5.37636 0.723772 5.1379 0.899587 4.96209C1.0754 4.78627 1.31386 4.6875 1.5625 4.6875H18.4375C18.6861 4.6875 18.9246 4.78627 19.1004 4.96209C19.2762 5.1379 19.375 5.37636 19.375 5.625C19.375 5.87364 19.2762 6.1121 19.1004 6.28791C18.9246 6.46373 18.6861 6.5625 18.4375 6.5625ZM15.3125 10.9375H4.6875C4.43886 10.9375 4.2004 10.8387 4.02459 10.6629C3.84877 10.4871 3.75 10.2486 3.75 10C3.75 9.75136 3.84877 9.5129 4.02459 9.33709C4.2004 9.16127 4.43886 9.0625 4.6875 9.0625H15.3125C15.5611 9.0625 15.7996 9.16127 15.9754 9.33709C16.1512 9.5129 16.25 9.75136 16.25 10C16.25 10.2486 16.1512 10.4871 15.9754 10.6629C15.7996 10.8387 15.5611 10.9375 15.3125 10.9375ZM11.5625 15.3125H8.4375C8.18886 15.3125 7.9504 15.2137 7.77459 15.0379C7.59877 14.8621 7.5 14.6236 7.5 14.375C7.5 14.1264 7.59877 13.8879 7.77459 13.7121C7.9504 13.5363 8.18886 13.4375 8.4375 13.4375H11.5625C11.8111 13.4375 12.0496 13.5363 12.2254 13.7121C12.4012 13.8879 12.5 14.1264 12.5 14.375C12.5 14.6236 12.4012 14.8621 12.2254 15.0379C12.0496 15.2137 11.8111 15.3125 11.5625 15.3125Z" />
             </svg>
           </button>
           {categories.map(cat => (
@@ -67,7 +72,7 @@ export default function FavoritesPage() {
               onClick={() => setActiveFilter(activeFilter === cat.key ? null : cat.key)}
               className={[
                 'h-9 px-4 rounded-full text-[14px] whitespace-nowrap transition-colors flex-shrink-0 font-medium',
-                activeFilter === cat.key ? 'bg-accent text-white' : 'bg-[#ECECEF] text-[#55565A]'
+                activeFilter === cat.key ? 'bg-accent text-white' : 'bg-[#F8F8F8] text-[#55565A]'
               ].join(' ')}
             >
               {cat.title}
@@ -116,10 +121,10 @@ export default function FavoritesPage() {
               return (
                 <div
                   key={product.slug}
-                  className="min-w-0 bg-white rounded-[12px] overflow-hidden shadow-sm border border-border-light"
+                  className="min-w-0 bg-white rounded-[16px] overflow-hidden shadow-sm"
                 >
                   <div
-                    className="w-full aspect-square bg-[#F2F2F7] relative overflow-hidden"
+                    className="w-full aspect-square bg-[#F8F8F8] relative overflow-hidden"
                     onClick={() => navigate(`/product/${product.slug}`)}
                     role="button"
                     tabIndex={0}
@@ -171,7 +176,7 @@ export default function FavoritesPage() {
                       <div className="flex items-center gap-1.5 mt-2">
                         <button
                           type="button"
-                          className="h-9 w-9 rounded-lg bg-[#ECECEF] text-[#6A6B70] text-lg leading-none flex items-center justify-center active:opacity-70"
+                          className="h-9 w-9 rounded-lg bg-[#F8F8F8] text-[#6A6B70] text-lg leading-none flex items-center justify-center active:opacity-70"
                           onClick={handleDec}
                         >
                           −
@@ -181,7 +186,7 @@ export default function FavoritesPage() {
                         </span>
                         <button
                           type="button"
-                          className="h-9 w-9 rounded-lg bg-[#ECECEF] text-accent text-lg leading-none flex items-center justify-center disabled:opacity-50 active:opacity-70"
+                          className="h-9 w-9 rounded-lg bg-[#F8F8F8] text-accent text-lg leading-none flex items-center justify-center disabled:opacity-50 active:opacity-70"
                           onClick={handleInc}
                           disabled={!canAddMore}
                         >
@@ -191,7 +196,7 @@ export default function FavoritesPage() {
                     ) : (
                       <button
                         type="button"
-                        className="mt-2 h-9 rounded-lg bg-[#ECECEF] text-[15px] text-text-primary font-medium w-full active:opacity-70"
+                        className="mt-2 h-9 rounded-lg bg-[#F8F8F8] text-[15px] text-text-primary font-medium w-full active:opacity-70"
                         onClick={handleAdd}
                       >
                         В корзину
