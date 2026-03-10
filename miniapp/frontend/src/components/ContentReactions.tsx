@@ -11,27 +11,11 @@ type Props = {
   userReaction: UserReactionState
   onReaction: (reaction: ContentReaction) => void
   loading?: boolean
-  /** компактный вид (только счётчики под датой); иначе полный блок "Как вам статья?" */
   compact?: boolean
-  /** показывать кнопку дизлайка только в полном блоке */
   showDislike?: boolean
 }
 
-const LikeIcon = ({ active }: { active?: boolean }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </svg>
-)
-const ClapIcon = ({ active }: { active?: boolean }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-  </svg>
-)
-const DislikeIcon = ({ active }: { active?: boolean }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2zm7-13h2.72a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2l-2 4v-4l-2-4h4V2z" />
-  </svg>
-)
+const EMOJI = { like: '❤️', clap: '👍', dislike: '👎' } as const
 
 export default function ContentReactions({
   contentId: _contentId,
@@ -50,24 +34,26 @@ export default function ContentReactions({
     onReaction(reaction)
   }
 
-  const btn = (reaction: ContentReaction, count: number, userActive: number, Icon: React.FC<{ active?: boolean }>, label: string) => (
+  const pill = (reaction: ContentReaction, count: number, userActive: number, label: string, showCount: boolean) => (
     <button
       type="button"
       disabled={!userId || loading}
       onClick={() => handleClick(reaction)}
-      className="flex items-center gap-1.5 text-text-secondary hover:text-accent disabled:opacity-50 disabled:pointer-events-none transition-colors"
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] transition-colors duration-200 disabled:opacity-50 disabled:pointer-events-none ${
+        userActive > 0 ? 'bg-accent text-white' : 'bg-[#E5E5EA] text-text-secondary'
+      }`}
       aria-label={label}
     >
-      <Icon active={userActive > 0} />
-      <span className="text-[14px]">{count}</span>
+      <span className="text-base leading-none">{EMOJI[reaction]}</span>
+      {showCount && <span>{count}</span>}
     </button>
   )
 
   if (compact) {
     return (
-      <div className="flex items-center gap-4 text-text-secondary">
-        {btn('like', likes, userReaction.like, LikeIcon, 'Нравится')}
-        {btn('clap', claps, userReaction.clap, ClapIcon, 'Класс')}
+      <div className="flex items-center gap-2 flex-wrap">
+        {pill('like', likes, userReaction.like, 'Нравится', true)}
+        {pill('clap', claps, userReaction.clap, 'Класс', true)}
       </div>
     )
   }
@@ -75,10 +61,10 @@ export default function ContentReactions({
   return (
     <div className="border-t border-border-light pt-4 mt-4">
       <p className="text-[14px] text-text-secondary mb-3">Как вам статья?</p>
-      <div className="flex items-center gap-6">
-        {btn('like', likes, userReaction.like, LikeIcon, 'Нравится')}
-        {btn('clap', claps, userReaction.clap, ClapIcon, 'Класс')}
-        {showDislike && btn('dislike', dislikes, userReaction.dislike, DislikeIcon, 'Не нравится')}
+      <div className="flex items-center gap-2 flex-wrap">
+        {pill('like', likes, userReaction.like, 'Нравится', true)}
+        {pill('clap', claps, userReaction.clap, 'Класс', true)}
+        {showDislike && pill('dislike', dislikes, userReaction.dislike, 'Не нравится', false)}
       </div>
     </div>
   )

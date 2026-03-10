@@ -141,7 +141,6 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
     showInStories: false
   })
   const [deleteConfirm, setDeleteConfirm] = useState<ContentItem | null>(null)
-  const [uploading, setUploading] = useState(false)
   const [uploadingExtra, setUploadingExtra] = useState(false)
   const [productSearch, setProductSearch] = useState('')
   const [productSearchResults, setProductSearchResults] = useState<Product[]>([])
@@ -283,7 +282,7 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
       return
     }
     if (type === 'news' && !formData.imageUrl.trim()) {
-      showToast('Загрузите фото для новости', 'error')
+      showToast('Выберите обложку из загруженных фото (или добавьте фото в текст)', 'error')
       return
     }
 
@@ -325,31 +324,6 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
     }
   }
 
-  const handleFileUpload = async (file: File) => {
-    setUploading(true)
-    try {
-      const uploaded = await api.uploadImage(file)
-      setFormData((prev) => ({ ...prev, imageUrl: uploaded.url }))
-    } catch (err: any) {
-      showToast(err.message || 'Ошибка загрузки фото', 'error')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files?.length) return
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-    const file = files[0]
-    if (allowed.includes(file.type.toLowerCase())) {
-      handleFileUpload(file)
-    } else {
-      showToast('Поддерживаются JPG, PNG, WebP', 'error')
-    }
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
   const handleExtraImageUpload = async (file: File) => {
     setUploadingExtra(true)
     try {
@@ -376,7 +350,12 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
   }
 
   const removeExtraImage = (index: number) => {
-    setFormData((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }))
+    const removedUrl = formData.images[index]
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+      imageUrl: prev.imageUrl === removedUrl ? '' : prev.imageUrl
+    }))
   }
 
   // поиск товаров для подборки
@@ -530,7 +509,7 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                 placeholder="Заголовок"
               />
             </div>
-            <div className="form-group">
+            <div className="form-group" style={{ marginTop: 10 }}>
               <label>{isNews ? 'Текст статьи' : 'Описание (опционально)'}</label>
               <textarea
                 className="admin-input"
@@ -539,8 +518,8 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                 placeholder={isNews ? 'Текст с форматированием' : 'Текст подборки'}
                 rows={5}
               />
-              <small className="form-hint">
-                Для вставки фото по месту используйте <strong>{'{{img1}}'}</strong>, <strong>{'{{img2}}'}</strong> и т.д. по порядку загруженных фото ниже. Форматирование: заголовки (# Заголовок), списки (- пункт), жирный (**текст**).
+              <small className="form-hint" style={{ display: 'block', marginTop: 6 }}>
+                Для вставки фото по месту используйте <strong>{'{{img1}}'}</strong>, <strong>{'{{img2}}'}</strong> и т.д. по порядку загруженных фото ниже. Форматирование: заголовки (# Заголовок), списки (- пункт или 1. пункт), жирный (**текст**), наклонный (*текст*).
               </small>
             </div>
             <div className="form-group">
@@ -558,43 +537,83 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                   {uploadingExtra ? 'Загрузка...' : 'Добавить фото в текст'}
                 </label>
                 {formData.images.length > 0 && (
-                  <ul className="content-extra-images-list" style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {formData.images.map((url, i) => (
-                      <li key={url} style={{ position: 'relative' }}>
-                        <div className="category-form-preview" style={{ width: 80, height: 80, backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                        <span style={{ fontSize: 11, display: 'block', marginTop: 2 }}>{'{{img' + (i + 1) + '}}'}</span>
-                        <button type="button" className="btn-icon btn-delete" style={{ position: 'absolute', top: 0, right: 0 }} onClick={() => removeExtraImage(i)} title="Удалить"><TrashIcon /></button>
-                      </li>
-                    ))}
+                  <ul className="content-extra-images-list" style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, listStyle: 'none', paddingLeft: 0 }}>
+                    {formData.images.map((url, i) => {
+                      const marker = `{{img${i + 1}}}`
+                      return (
+                        <li key={url} style={{ position: 'relative' }}>
+                          <div className="category-form-preview" style={{ width: 80, height: 80, backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 8 }} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                            <span style={{ fontSize: 11 }}>{marker}</span>
+                            <button
+                              type="button"
+                              className="btn-icon btn-edit"
+                              style={{ width: 24, height: 24, minWidth: 24 }}
+                              onClick={() => { navigator.clipboard.writeText(marker); showToast('Скопировано', 'success') }}
+                              title="Копировать в буфер"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-icon btn-delete"
+                            style={{ position: 'absolute', top: 4, right: 4, width: 28, height: 28, borderRadius: '50%', backgroundColor: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+                            onClick={() => removeExtraImage(i)}
+                            title="Удалить"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </li>
+                      )
+                    })}
                   </ul>
                 )}
               </div>
             </div>
             <div className="form-group">
-              <label>Фото {isNews ? '*' : '(обложка, опционально)'}</label>
-              <div className="image-upload-area">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  id="content-image-input"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={handleFileSelect}
-                  style={{ display: 'none' }}
-                />
-                <label htmlFor="content-image-input" className="image-upload-button">
-                  {uploading ? 'Загрузка...' : 'Загрузить фото'}
-                </label>
-                {formData.imageUrl && (
-                  <div
-                    className="category-form-preview"
-                    style={{
-                      backgroundImage: `url(${formData.imageUrl})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
-                    }}
-                  />
-                )}
-              </div>
+              <label>Обложка {isNews ? '*' : '(опционально)'}</label>
+              {formData.images.length === 0 ? (
+                <p className="form-hint" style={{ marginTop: 4 }}>Сначала добавьте фото в текст выше — затем выберите обложку из списка.</p>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+                  <label className="content-cover-option" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="cover"
+                      checked={!formData.imageUrl}
+                      onChange={() => setFormData((p) => ({ ...p, imageUrl: '' }))}
+                    />
+                    <span>Без обложки</span>
+                  </label>
+                  {formData.images.map((url, i) => (
+                    <label
+                      key={url}
+                      className="content-cover-option"
+                      style={{
+                        cursor: 'pointer',
+                        border: formData.imageUrl === url ? '2px solid var(--admin-accent)' : '1px solid #ddd',
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        width: 100,
+                        height: 56
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="cover"
+                        checked={formData.imageUrl === url}
+                        onChange={() => setFormData((p) => ({ ...p, imageUrl: url }))}
+                        style={{ position: 'absolute', opacity: 0 }}
+                      />
+                      <div
+                        className="category-form-preview"
+                        style={{ width: '100%', height: '100%', backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                      />
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="form-group">
               <label>Время на прочтение (мин)</label>
@@ -665,6 +684,38 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                 Активна
               </label>
             </div>
+            {formData.body.trim() || formData.images.length > 0 ? (
+              <div className="form-group">
+                <label>Предпросмотр (как в мини-приложении)</label>
+                <div className="content-preview-box" style={{ maxHeight: 280, overflow: 'auto', border: '1px solid #ddd', borderRadius: 8, padding: 12, fontSize: 14, lineHeight: 1.5 }}>
+                  {(() => {
+                    const body = formData.body || ''
+                    const images = formData.images || []
+                    const parts = body.split(/(\{\{img\d+\}\})/gi)
+                    return parts.map((segment, i) => {
+                      const m = segment.match(/\{\{img(\d+)\}\}/i)
+                      if (m) {
+                        const num = parseInt(m[1], 10)
+                        const src = images[num - 1]
+                        return src ? <img key={i} src={src} alt="" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', margin: '8px 0', borderRadius: 4 }} /> : <span key={i} style={{ color: '#999' }}>[Фото {num}]</span>
+                      }
+                      return (
+                        <div key={i} style={{ whiteSpace: 'pre-wrap', marginBottom: 8 }}>
+                          {segment.split(/\n/).map((line, j) => {
+                            const t = line.trim()
+                            if (t.startsWith('## ')) return <div key={j} style={{ fontWeight: 700, fontSize: 16, marginTop: 8 }}>{t.slice(3)}</div>
+                            if (t.startsWith('# ')) return <div key={j} style={{ fontWeight: 700, fontSize: 18, marginTop: 8 }}>{t.slice(2)}</div>
+                            if (t.startsWith('- ') || /^\d+\.\s/.test(t)) return <div key={j} style={{ marginLeft: 8 }}>— {t.replace(/^- \s*|\d+\.\s*/, '')}</div>
+                            if (t) return <div key={j} dangerouslySetInnerHTML={{ __html: t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>') }} />
+                            return <br key={j} />
+                          })}
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+              </div>
+            ) : null}
             <div className="form-group form-group-checkbox">
               <label className="checkbox-label">
                 <input

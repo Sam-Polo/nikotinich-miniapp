@@ -47,17 +47,50 @@ export default function CollectionDetailPage() {
 
   const handleReaction = useCallback(async (reaction: ContentReaction) => {
     if (!id || !userId) return
+    const prev = userReaction
+    let nextUser: UserReactionState
+    let deltaLike = 0, deltaClap = 0, deltaDislike = 0
+    if (reaction === 'dislike') {
+      const newDislike = prev.dislike ? 0 : 1
+      deltaLike = -prev.like
+      deltaClap = -prev.clap
+      deltaDislike = newDislike - prev.dislike
+      nextUser = { like: 0, clap: 0, dislike: newDislike }
+    } else if (reaction === 'like') {
+      const newLike = prev.like ? 0 : 1
+      deltaLike = newLike - prev.like
+      deltaDislike = -prev.dislike
+      nextUser = { like: newLike, clap: prev.clap, dislike: 0 }
+    } else {
+      const newClap = prev.clap ? 0 : 1
+      deltaClap = newClap - prev.clap
+      deltaDislike = -prev.dislike
+      nextUser = { like: prev.like, clap: newClap, dislike: 0 }
+    }
+    setUserReaction(nextUser)
+    setCollection((prevCol) => prevCol ? {
+      ...prevCol,
+      likes: Math.max(0, (prevCol.likes ?? 0) + deltaLike),
+      claps: Math.max(0, (prevCol.claps ?? 0) + deltaClap),
+      dislikes: Math.max(0, (prevCol.dislikes ?? 0) + deltaDislike)
+    } : null)
     setReactionLoading(true)
     try {
       const res = await setContentReaction(id, userId, reaction)
-      setCollection((prev) => prev ? { ...prev, likes: res.likes, claps: res.claps, dislikes: res.dislikes } : null)
+      setCollection((prevCol) => prevCol ? { ...prevCol, likes: res.likes, claps: res.claps, dislikes: res.dislikes } : null)
       setUserReaction(res.userReaction)
     } catch {
-      //
+      setUserReaction(prev)
+      setCollection((prevCol) => prevCol ? {
+        ...prevCol,
+        likes: (prevCol.likes ?? 0) - deltaLike,
+        claps: (prevCol.claps ?? 0) - deltaClap,
+        dislikes: (prevCol.dislikes ?? 0) - deltaDislike
+      } : null)
     } finally {
       setReactionLoading(false)
     }
-  }, [id, userId])
+  }, [id, userId, userReaction])
 
   if (loading) {
     return (
