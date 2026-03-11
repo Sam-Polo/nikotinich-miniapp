@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getContent, getProducts, setContentReaction } from '../api'
+import { getContent, getContentReaction, getProducts, setContentReaction } from '../api'
 import type { ContentItem, ContentReaction, Product } from '../api'
 import PageHeader from '../components/PageHeader'
 import ProductCard from '../components/ProductCard'
@@ -18,7 +18,6 @@ export default function CollectionDetailPage() {
   const [allItems, setAllItems] = useState<ContentItem[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [reactionLoading, setReactionLoading] = useState(false)
   const [userReaction, setUserReaction] = useState<UserReactionState>({ like: 0, clap: 0, dislike: 0 })
 
   const load = useCallback(async () => {
@@ -45,7 +44,15 @@ export default function CollectionDetailPage() {
     load()
   }, [load])
 
-  const handleReaction = useCallback(async (reaction: ContentReaction) => {
+  // загрузка своей реакции при открытии подборки (чтобы подсветка сохранялась после возврата)
+  useEffect(() => {
+    if (!collection?.id || !userId) return
+    getContentReaction(collection.id, userId)
+      .then((data) => setUserReaction(data.userReaction))
+      .catch(() => {})
+  }, [collection?.id, userId])
+
+  const handleReaction = useCallback((reaction: ContentReaction) => {
     if (!id || !userId) return
     const prev = userReaction
     let nextUser: UserReactionState
@@ -74,22 +81,20 @@ export default function CollectionDetailPage() {
       claps: Math.max(0, (prevCol.claps ?? 0) + deltaClap),
       dislikes: Math.max(0, (prevCol.dislikes ?? 0) + deltaDislike)
     } : null)
-    setReactionLoading(true)
-    try {
-      const res = await setContentReaction(id, userId, reaction)
-      setCollection((prevCol) => prevCol ? { ...prevCol, likes: res.likes, claps: res.claps, dislikes: res.dislikes } : null)
-      setUserReaction(res.userReaction)
-    } catch {
-      setUserReaction(prev)
-      setCollection((prevCol) => prevCol ? {
-        ...prevCol,
-        likes: (prevCol.likes ?? 0) - deltaLike,
-        claps: (prevCol.claps ?? 0) - deltaClap,
-        dislikes: (prevCol.dislikes ?? 0) - deltaDislike
-      } : null)
-    } finally {
-      setReactionLoading(false)
-    }
+    setContentReaction(id, userId, reaction)
+      .then((res) => {
+        setCollection((prevCol) => prevCol ? { ...prevCol, likes: res.likes, claps: res.claps, dislikes: res.dislikes } : null)
+        setUserReaction(res.userReaction)
+      })
+      .catch(() => {
+        setUserReaction(prev)
+        setCollection((prevCol) => prevCol ? {
+          ...prevCol,
+          likes: (prevCol.likes ?? 0) - deltaLike,
+          claps: (prevCol.claps ?? 0) - deltaClap,
+          dislikes: (prevCol.dislikes ?? 0) - deltaDislike
+        } : null)
+      })
   }, [id, userId, userReaction])
 
   if (loading) {
@@ -157,7 +162,6 @@ export default function CollectionDetailPage() {
               dislikes={collection.dislikes ?? 0}
               userReaction={userReaction}
               onReaction={handleReaction}
-              loading={reactionLoading}
               compact
             />
             {collection.body && (
@@ -173,7 +177,6 @@ export default function CollectionDetailPage() {
               dislikes={collection.dislikes ?? 0}
               userReaction={userReaction}
               onReaction={handleReaction}
-              loading={reactionLoading}
               showDislike
             />
           </div>

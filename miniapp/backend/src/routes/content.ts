@@ -63,6 +63,33 @@ router.get('/', async (_req, res) => {
   }
 })
 
+// GET /api/content/:id/reaction?userId=xxx — текущая реакция пользователя по контенту
+router.get('/:id/reaction', async (req, res) => {
+  try {
+    const contentId = req.params.id
+    const userId = (req.query.userId as string)?.trim()
+    if (!userId) return res.status(400).json({ error: 'userId required' })
+
+    await ensureSheet(SHEET_ID, REACTIONS_SHEET, REACTIONS_HEADERS)
+    const reactionRows = await readSheet(SHEET_ID, `${REACTIONS_SHEET}!A2:E5000`)
+    for (const row of reactionRows) {
+      if (String(row[0] || '').trim() === contentId && String(row[1] || '').trim() === String(userId)) {
+        return res.json({
+          userReaction: {
+            like: Number(row[2]) || 0,
+            clap: Number(row[3]) || 0,
+            dislike: Number(row[4]) || 0
+          }
+        })
+      }
+    }
+    res.json({ userReaction: { like: 0, clap: 0, dislike: 0 } })
+  } catch (e: any) {
+    logger.error({ error: e?.message }, 'ошибка чтения реакции контента')
+    res.status(500).json({ error: 'server_error' })
+  }
+})
+
 // POST /api/content/:id/react — поставить/снять реакцию (like, clap, dislike). дизлайк сбрасывает лайк и класс.
 router.post('/:id/react', async (req, res) => {
   try {

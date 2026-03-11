@@ -137,6 +137,11 @@ export type ContentReactionResponse = {
   userReaction: { like: number; clap: number; dislike: number }
 }
 
+export const getContentReaction = (contentId: string, userId: string) =>
+  request<{ userReaction: { like: number; clap: number; dislike: number } }>(
+    `/content/${encodeURIComponent(contentId)}/reaction?userId=${encodeURIComponent(userId)}`
+  )
+
 export const setContentReaction = (contentId: string, userId: string, reaction: ContentReaction) =>
   request<ContentReactionResponse>(`/content/${encodeURIComponent(contentId)}/react`, {
     method: 'POST',

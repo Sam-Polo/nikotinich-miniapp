@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getContent, setContentReaction } from '../api'
+import { getContent, getContentReaction, setContentReaction } from '../api'
 import type { ContentItem, ContentReaction } from '../api'
 import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
@@ -16,7 +16,6 @@ export default function NewsDetailPage() {
   const [item, setItem] = useState<ContentItem | null>(null)
   const [allItems, setAllItems] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [reactionLoading, setReactionLoading] = useState(false)
   const [userReaction, setUserReaction] = useState<UserReactionState>({ like: 0, clap: 0, dislike: 0 })
 
   const load = useCallback(async () => {
@@ -36,6 +35,14 @@ export default function NewsDetailPage() {
   useEffect(() => {
     load()
   }, [load])
+
+  // загрузка своей реакции при открытии статьи (чтобы подсветка сохранялась после возврата)
+  useEffect(() => {
+    if (!item?.id || !userId) return
+    getContentReaction(item.id, userId)
+      .then((data) => setUserReaction(data.userReaction))
+      .catch(() => {})
+  }, [item?.id, userId])
 
   const handleReaction = useCallback(async (reaction: ContentReaction) => {
     if (!id || !userId) return
@@ -66,22 +73,20 @@ export default function NewsDetailPage() {
       claps: Math.max(0, (prevItem.claps ?? 0) + deltaClap),
       dislikes: Math.max(0, (prevItem.dislikes ?? 0) + deltaDislike)
     } : null)
-    setReactionLoading(true)
-    try {
-      const res = await setContentReaction(id, userId, reaction)
-      setItem((prevItem) => prevItem ? { ...prevItem, likes: res.likes, claps: res.claps, dislikes: res.dislikes } : null)
-      setUserReaction(res.userReaction)
-    } catch {
-      setUserReaction(prev)
-      setItem((prevItem) => prevItem ? {
-        ...prevItem,
-        likes: (prevItem.likes ?? 0) - deltaLike,
-        claps: (prevItem.claps ?? 0) - deltaClap,
-        dislikes: (prevItem.dislikes ?? 0) - deltaDislike
-      } : null)
-    } finally {
-      setReactionLoading(false)
-    }
+    setContentReaction(id, userId, reaction)
+      .then((res) => {
+        setItem((prevItem) => prevItem ? { ...prevItem, likes: res.likes, claps: res.claps, dislikes: res.dislikes } : null)
+        setUserReaction(res.userReaction)
+      })
+      .catch(() => {
+        setUserReaction(prev)
+        setItem((prevItem) => prevItem ? {
+          ...prevItem,
+          likes: (prevItem.likes ?? 0) - deltaLike,
+          claps: (prevItem.claps ?? 0) - deltaClap,
+          dislikes: (prevItem.dislikes ?? 0) - deltaDislike
+        } : null)
+      })
   }, [id, userId, userReaction])
 
   if (loading) {
@@ -149,7 +154,6 @@ export default function NewsDetailPage() {
               dislikes={item.dislikes ?? 0}
               userReaction={userReaction}
               onReaction={handleReaction}
-              loading={reactionLoading}
               compact
             />
             {item.body && (
@@ -165,7 +169,6 @@ export default function NewsDetailPage() {
               dislikes={item.dislikes ?? 0}
               userReaction={userReaction}
               onReaction={handleReaction}
-              loading={reactionLoading}
               showDislike
             />
           </div>
