@@ -27,6 +27,10 @@ export type SheetProduct = {
   line?: string
   strength?: string // легкая | средняя | крепкая
   image_keys?: string[]
+  // вариативные товары (семейства, вкусы, количество затяжек)
+  familyKey?: string
+  flavor?: string
+  puffs?: number
 }
 
 // получение авторизации для Google Sheets (с правами на чтение и запись)
@@ -72,7 +76,10 @@ const PRODUCT_SHEET_HEADERS = [
   'article',
   'brand',
   'line',
-  'strength'
+  'strength',
+  'family_key',
+  'flavor',
+  'puffs'
 ]
 
 // проверка/создание листа товаров для категории (с заголовками)
@@ -99,7 +106,7 @@ export async function ensureProductSheet(
     })
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: `${sheetName}!A1:N1`,
+      range: `${sheetName}!A1:Z1`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [PRODUCT_SHEET_HEADERS]
@@ -200,6 +207,9 @@ export async function appendProductToSheet(
   if (headerIndex.brand !== undefined) row[headerIndex.brand] = product.brand || ''
   if (headerIndex.line !== undefined) row[headerIndex.line] = product.line || ''
   if (headerIndex.strength !== undefined) row[headerIndex.strength] = product.strength || ''
+  if (headerIndex.family_key !== undefined) row[headerIndex.family_key] = product.familyKey || ''
+  if (headerIndex.flavor !== undefined) row[headerIndex.flavor] = product.flavor || ''
+  if (headerIndex.puffs !== undefined) row[headerIndex.puffs] = product.puffs !== undefined && product.puffs !== null ? product.puffs : ''
 
   // добавляем строку в конец листа
   await sheets.spreadsheets.values.append({
@@ -254,6 +264,9 @@ export async function updateProductInSheet(
   if (headerIndex.brand !== undefined) row[headerIndex.brand] = product.brand || ''
   if (headerIndex.line !== undefined) row[headerIndex.line] = product.line || ''
   if (headerIndex.strength !== undefined) row[headerIndex.strength] = product.strength || ''
+  if (headerIndex.family_key !== undefined) row[headerIndex.family_key] = product.familyKey || ''
+  if (headerIndex.flavor !== undefined) row[headerIndex.flavor] = product.flavor || ''
+  if (headerIndex.puffs !== undefined) row[headerIndex.puffs] = product.puffs !== undefined && product.puffs !== null ? product.puffs : ''
 
   // обновляем строку
   await sheets.spreadsheets.values.update({

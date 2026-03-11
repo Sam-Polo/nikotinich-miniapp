@@ -245,7 +245,12 @@ router.post('/', async (req, res) => {
         : undefined,
       image_keys: productData.image_keys && Array.isArray(productData.image_keys)
         ? productData.image_keys.filter((key: string) => key.trim())
-        : []
+        : [],
+      familyKey: sanitizeOptionalString(productData.familyKey ?? productData.family_key, 80),
+      flavor: sanitizeOptionalString(productData.flavor, 80),
+      puffs: productData.puffs !== undefined && productData.puffs !== null && String(productData.puffs).trim() !== ''
+        ? Number(productData.puffs)
+        : undefined
     }
 
     for (const cat of normalizedCategories) {
@@ -413,7 +418,12 @@ router.put('/:slug', async (req, res) => {
         : undefined,
       image_keys: productData.image_keys && Array.isArray(productData.image_keys)
         ? productData.image_keys.filter((key: string) => key.trim())
-        : (oldProduct.image_keys || [])
+        : (oldProduct.image_keys || []),
+      familyKey: sanitizeOptionalString(productData.familyKey ?? productData.family_key ?? oldProduct.familyKey, 80),
+      flavor: sanitizeOptionalString(productData.flavor ?? oldProduct.flavor, 80),
+      puffs: productData.puffs !== undefined && productData.puffs !== null && String(productData.puffs).trim() !== ''
+        ? Number(productData.puffs)
+        : oldProduct.puffs
     }
 
     const oldCategories = oldProduct.categories || [oldProduct.category]

@@ -29,6 +29,10 @@ export type SheetProduct = {
   image_keys?: string[]
   /** порядок товара в каждом листе (ключ — имя категории, значение — индекс строки) */
   orderInCategory?: Record<string, number>
+  // вариативные товары (семейства, вкусы, количество затяжек)
+  familyKey?: string
+  flavor?: string
+  puffs?: number
 }
 
 // получение авторизации для Google Sheets (с правами на чтение и запись)
@@ -102,6 +106,11 @@ async function fetchSheetRange(
         ? String(articleNum).padStart(4, '0')
         : (articleStr || undefined)
 
+    const familyKeyRaw = String(get('family_key') || '').trim()
+    const flavorRaw = String(get('flavor') || '').trim()
+    const puffsRaw = String(get('puffs') || '').replace(/\s/g, '')
+    const puffsVal = puffsRaw ? Number(puffsRaw) : NaN
+
     const item: SheetProduct = {
       id: String(get('id') || '').trim() || undefined,
       slug: String(get('slug')).trim(),
@@ -118,7 +127,10 @@ async function fetchSheetRange(
       brand: String(get('brand') || '').trim() || undefined,
       line: String(get('line') || '').trim() || undefined,
       strength: String(get('strength') || '').trim() || undefined,
-      image_keys: imageKeys.length > 0 ? imageKeys : undefined
+      image_keys: imageKeys.length > 0 ? imageKeys : undefined,
+      familyKey: familyKeyRaw || undefined,
+      flavor: flavorRaw || undefined,
+      puffs: Number.isFinite(puffsVal) ? puffsVal : undefined
     }
     
     if (!item.title || !item.slug) continue
@@ -183,6 +195,9 @@ export async function fetchProductsFromSheet(sheetId: string): Promise<SheetProd
             existing.stock = p.stock
             existing.article = p.article
             existing.id = p.id
+            existing.familyKey = p.familyKey ?? existing.familyKey
+            existing.flavor = p.flavor ?? existing.flavor
+            existing.puffs = p.puffs ?? existing.puffs
           }
         } else {
           const merged: SheetProduct & { __minOrder?: number } = {
