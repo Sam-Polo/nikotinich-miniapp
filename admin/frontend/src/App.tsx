@@ -1630,7 +1630,7 @@ function ProductFormModal({
   const [useFamily, setUseFamily] = useState<boolean>(() => {
     return !!(product?.familyKey || product?.flavor || product?.puffs)
   })
-  const [familyFillLoading, setFamilyFillLoading] = useState<'title' | 'description' | 'images' | 'price' | null>(null)
+  const [familyFillLoading, setFamilyFillLoading] = useState<'title' | 'description' | 'images' | 'price' | 'category' | null>(null)
   const [showFamilyKeySuggestions, setShowFamilyKeySuggestions] = useState(false)
 
   const allFamilyKeys = useMemo(
@@ -1837,15 +1837,26 @@ function ProductFormModal({
     }
   }
 
-  const handleFillFromFamily = (mode: 'title' | 'description' | 'images' | 'price') => {
+  const handleFillFromFamily = (mode: 'title' | 'description' | 'images' | 'price' | 'category') => {
     const key = (formData.familyKey || '').trim()
     if (!key) return
 
-    const base = products.find(
+    const candidates = products.filter(
       (p) =>
         p.familyKey === key &&
         (!product || p.slug !== product.slug)
     )
+
+    let base = candidates[0]
+
+    // если несколько товаров в семействе — берём самый «первый» по артикулу как базовый
+    if (candidates.length > 1) {
+      base = [...candidates].sort((a, b) => {
+        const aNum = parseArticle(a.article || '') ?? Number.MAX_SAFE_INTEGER
+        const bNum = parseArticle(b.article || '') ?? Number.MAX_SAFE_INTEGER
+        return aNum - bNum
+      })[0]
+    }
 
     if (!base) {
       showToast('В этом семействе пока нет других товаров', 'error')
@@ -1885,6 +1896,25 @@ function ProductFormModal({
         if (next.discount_price_rub == null && base.discount_price_rub != null) {
           next.discount_price_rub = base.discount_price_rub
         }
+      }
+
+      if (mode === 'category') {
+        if ((!next.categories || next.categories.length === 0) && (base.categories?.length || base.category)) {
+          if (base.categories && base.categories.length > 0) {
+            next.categories = [...base.categories]
+          } else if (base.category) {
+            next.categories = [base.category]
+          }
+        }
+        if (!next.category) {
+          if (next.categories && next.categories[0]) {
+            next.category = next.categories[0]
+          } else if (base.category) {
+            next.category = base.category
+          }
+        }
+        if (!next.brand && base.brand) next.brand = base.brand
+        if (!next.line && base.line) next.line = base.line
       }
 
       return next
@@ -2242,6 +2272,9 @@ function ProductFormModal({
                     <small className="form-hint form-hint-spaced">
                       Один и тот же ключ используйте для всех вкусов / затяжек одной модели. Можно выбрать существующее значение или ввести новое.
                     </small>
+                    <small className="form-hint form-hint-spaced">
+                      Заполнить с семейства:
+                    </small>
                     <div className="family-fill-buttons">
                       <button
                         type="button"
@@ -2306,6 +2339,22 @@ function ProductFormModal({
                         }
                       >
                         Цена
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn-secondary btn-small ${familyFillLoading === 'category' ? 'btn-loading' : ''}`}
+                        onClick={() => handleFillFromFamily('category')}
+                        disabled={
+                          !!familyFillLoading ||
+                          !formData.familyKey ||
+                          !products.some(
+                            (p) =>
+                              p.familyKey === formData.familyKey &&
+                              (!product || p.slug !== product.slug)
+                          )
+                        }
+                      >
+                        Категория / бренд / линейка
                       </button>
                     </div>
                   </div>
