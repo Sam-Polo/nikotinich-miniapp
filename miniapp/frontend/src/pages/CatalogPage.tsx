@@ -36,9 +36,9 @@ export default function CatalogPage() {
             <button
               key={cat.key}
               onClick={() => navigate(`/catalog/${cat.key}`)}
-              className="bg-card-bg rounded-card overflow-hidden shadow-sm active:scale-[0.97] transition-transform"
+              className="rounded-card overflow-hidden active:scale-[0.97] transition-transform"
             >
-              <div className="aspect-square bg-bg-base">
+              <div className="aspect-square bg-bg-base rounded-card overflow-hidden">
                 {cat.image ? (
                   <img
                     src={cat.image}

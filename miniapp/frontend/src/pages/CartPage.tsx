@@ -72,7 +72,7 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
 
       {/* основная карточка, сдвигаем по X */}
       <div
-        className="bg-card-bg rounded-[16px] px-3 py-3 flex items-center relative shadow-sm"
+        className="bg-card-bg rounded-[16px] px-3 py-3 flex items-center relative"
         style={{
           transform: `translateX(${offsetX}px)`,
           transition: dragging ? 'none' : 'transform 0.18s ease-out'
@@ -102,12 +102,15 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
           )}
         </div>
         <div className="ml-3 flex-1 flex flex-col justify-between py-0.5 min-w-0">
-          <div>
-            <p className="text-[12px] text-text-secondary leading-tight line-clamp-1">{product.category || product.brand || 'Товар'}</p>
-            <p className="text-[15px] font-semibold text-text-primary line-clamp-2 mt-1 pr-10">{product.title}</p>
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-[17px] mr-3">
+              {formatPriceRub(product.display_price * qty)}
+            </span>
+            <p className="text-[13px] text-text-secondary leading-tight line-clamp-1 flex-1 text-right">
+              {product.title}
+            </p>
           </div>
           <div className="flex items-center justify-between mt-2">
-            <span className="font-bold text-[17px]">{formatPriceRub(product.display_price * qty)}</span>
             <div className="flex items-center gap-2">
               <div className="flex items-center bg-[#F4F5F7] rounded-[12px] px-1.5 py-1 min-w-[96px]">
                 <button

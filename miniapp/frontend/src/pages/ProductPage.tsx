@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { getProduct, getBrands, getLines } from '../api'
 import type { Product, Brand, Line } from '../api'
@@ -18,9 +18,9 @@ function formatStrength(s?: string) {
 
 export default function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
-  const [imgIdx, setImgIdx] = useState(0)
   const [expanded, setExpanded] = useState(false)
   const [brandTitle, setBrandTitle] = useState<string | null>(null)
   const [lineTitle, setLineTitle] = useState<string | null>(null)
@@ -63,7 +63,7 @@ export default function ProductPage() {
   const p = product
   const displayPrice = p.display_price
   const hasDiscount = !!p.discount_price_rub
-  const images = p.images.length > 0 ? p.images : ['']
+  const mainImage = p.images[0] ?? ''
   const qty = getQty(p.slug)
   const stock = p.stock
   const canAddMore = stock == null || qty < stock
@@ -75,7 +75,7 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-full bg-white">
+    <div className="flex flex-col min-h-full bg-bg-base">
       <PageHeader
         title="Никотиныч"
         subtitle="mini app"
@@ -83,7 +83,7 @@ export default function ProductPage() {
         right={
           <button
             onClick={() => toggleFav(p)}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-bg-base"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/80"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
@@ -97,78 +97,81 @@ export default function ProductPage() {
         }
       />
 
-      {/* галерея изображений */}
-      <div className="relative bg-bg-base">
-        <div className="aspect-square overflow-hidden">
-          {images[imgIdx] ? (
-            <img
-              src={images[imgIdx]}
-              alt={p.title}
-              className="w-full h-full object-contain p-4"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-text-secondary">Нет фото</div>
-          )}
-        </div>
-
-        {/* индикаторы слайдера */}
-        {images.length > 1 && (
-          <div className="flex justify-center gap-1.5 py-3">
-            {images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setImgIdx(i)}
-                className={`rounded-full transition-all ${i === imgIdx ? 'w-4 h-2 bg-accent' : 'w-2 h-2 bg-gray-300'}`}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* верх: зона с картинкой */}
+        <div className="bg-bg-base">
+          <div className="aspect-square overflow-hidden">
+            {mainImage ? (
+              <img
+                src={mainImage}
+                alt={p.title}
+                className="w-full h-full object-contain p-4"
               />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* детали товара */}
-      <div className="px-4 pt-4 pb-32">
-        <h1 className="text-[22px] font-bold text-text-primary mb-1">{p.title}</h1>
-
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-[28px] font-bold text-text-primary">
-            {formatPriceRub(displayPrice)}
-          </span>
-          {hasDiscount && (
-            <span className="text-[18px] text-text-secondary line-through">
-              {formatPriceRub(p.price_rub)}
-            </span>
-          )}
-        </div>
-
-        {/* описание */}
-        {p.description && (
-          <div className="mb-4">
-            <p className={`text-[14px] text-text-secondary leading-relaxed ${!expanded ? 'line-clamp-3' : ''}`}>
-              {p.description}
-            </p>
-            {p.description.length > 120 && (
-              <button
-                onClick={() => setExpanded(v => !v)}
-                className="text-accent text-[14px] mt-1"
-              >
-                {expanded ? 'Свернуть' : 'Дальше'}
-              </button>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-text-secondary">
+                Нет фото
+              </div>
             )}
           </div>
-        )}
+        </div>
 
-        {/* характеристики: бренд и линейка по названиям, крепость с большой буквы */}
-        <div className="bg-bg-base rounded-card p-4 space-y-2">
-          {(brandTitle ?? p.brand) && <Row label="Бренд" value={brandTitle ?? p.brand ?? ''} />}
-          {(lineTitle ?? p.line) && <Row label="Линейка" value={lineTitle ?? p.line ?? ''} />}
-          {p.strength && <Row label="Крепость" value={formatStrength(p.strength)} />}
-          {p.article && <Row label="Артикул" value={p.article} />}
+        {/* нижняя карточка как шит, «вылазит» сверху изображения */}
+        <div className="-mt-5 flex-1 overflow-y-auto">
+          <div className="bg-white rounded-t-3xl px-4 pt-4 pb-32 shadow-[0_-6px_18px_rgba(0,0,0,0.06)]">
+            <h1 className="text-[20px] font-bold text-text-primary mb-1">{p.title}</h1>
+
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[26px] font-bold text-text-primary">
+                {formatPriceRub(displayPrice)}
+              </span>
+              {hasDiscount && (
+                <span className="text-[16px] text-text-secondary line-through">
+                  {formatPriceRub(p.price_rub)}
+                </span>
+              )}
+            </div>
+
+            {/* описание */}
+            {p.description && (
+              <div className="mb-4">
+                <p
+                  className={`text-[14px] text-text-secondary leading-relaxed ${
+                    !expanded ? 'line-clamp-3' : ''
+                  }`}
+                >
+                  {p.description}
+                </p>
+                {p.description.length > 120 && (
+                  <button
+                    onClick={() => setExpanded((v) => !v)}
+                    className="text-accent text-[14px] mt-1"
+                  >
+                    {expanded ? 'Свернуть' : 'Дальше'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* характеристики: бренд и линейка по названиям, крепость с большой буквы */}
+            <div className="bg-bg-base rounded-card p-4 space-y-2">
+              {(brandTitle ?? p.brand) && (
+                <Row label="Бренд" value={brandTitle ?? p.brand ?? ''} />
+              )}
+              {(lineTitle ?? p.line) && (
+                <Row label="Линейка" value={lineTitle ?? p.line ?? ''} />
+              )}
+              {p.strength && <Row label="Крепость" value={formatStrength(p.strength)} />}
+              {p.article && <Row label="Артикул" value={p.article} />}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* кнопка корзины (sticky снизу) — счётчик если уже добавлен, учёт остатка */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
-        style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
+        style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
+      >
         {stock != null && stock <= 0 ? (
           <p className="py-3 text-center text-text-secondary text-[14px]">Нет в наличии</p>
         ) : qty > 0 ? (

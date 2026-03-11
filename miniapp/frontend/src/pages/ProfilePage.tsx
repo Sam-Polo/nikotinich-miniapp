@@ -23,6 +23,27 @@ const ORDER_STATUS_COLORS: Record<string, string> = {
   cancelled: 'text-red-600 bg-red-50'
 }
 
+function formatPhone(raw: string): string {
+  const digits = (raw || '').replace(/\D/g, '')
+  if (!digits) return ''
+  let d = digits
+  if (d.length === 11 && d.startsWith('8')) {
+    d = '7' + d.slice(1)
+  } else if (d.length === 10) {
+    d = '7' + d
+  } else if (d.length < 11) {
+    d = d.padStart(11, '7')
+  } else if (d.length > 11) {
+    d = d.slice(-11)
+  }
+  const country = '+7'
+  const p1 = d.slice(1, 4)
+  const p2 = d.slice(4, 7)
+  const p3 = d.slice(7, 9)
+  const p4 = d.slice(9, 11)
+  return `${country} ${p1} ${p2}-${p3}-${p4}`
+}
+
 // реферальная ссылка (bot username захардкожен — можно добавить в env)
 function buildRefLink(telegramId: string) {
   const botUsername = import.meta.env.VITE_BOT_USERNAME || 'nikotinich_bot'
@@ -51,19 +72,7 @@ export default function ProfilePage() {
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [editName, setEditName] = useState(user?.username || '')
 
-  const formattedPhone = (() => {
-    const raw = editPhone || user?.phone || ''
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return ''
-    // ожидаем 11 цифр, где первая 7 или 8
-    const d = digits.length === 11 ? digits : digits.padStart(11, '7')
-    const country = '+7'
-    const p1 = d.slice(1, 4)
-    const p2 = d.slice(4, 7)
-    const p3 = d.slice(7, 9)
-    const p4 = d.slice(9, 11)
-    return `${country} ${p1} ${p2}-${p3}-${p4}`
-  })()
+  const formattedPhone = formatPhone(editPhone || user?.phone || '')
 
   useEffect(() => {
     if (tab === 'orders' && user?.telegram_id) {
@@ -80,7 +89,7 @@ export default function ProfilePage() {
     setSaving(true)
     try {
       const payload: { phone?: string; email?: string; username?: string } = {}
-      if (editPhone.trim()) payload.phone = editPhone.trim()
+      if (editPhone.trim()) payload.phone = formatPhone(editPhone)
       if (editEmail.trim()) payload.email = editEmail.trim()
       if (editName.trim()) payload.username = editName.trim()
       const updated = await updateUser(user.telegram_id, payload)
@@ -444,7 +453,7 @@ export default function ProfilePage() {
                 <div className="flex gap-2">
                   <input
                     type="tel"
-                    value={editPhone}
+                    value={formatPhone(editPhone)}
                     onChange={e => setEditPhone(e.target.value)}
                     placeholder="+7 905 129-72-33"
                     className="flex-1 bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"

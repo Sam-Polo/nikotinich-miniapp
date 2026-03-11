@@ -180,30 +180,32 @@ export default function FavoritesPage() {
                     {outOfStock ? (
                       <p className="mt-2 text-[13px] text-red-500 font-medium">Нет в наличии</p>
                     ) : qty > 0 ? (
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <button
-                          type="button"
-                          className="h-9 w-9 rounded-lg bg-[#F8F8F8] text-[#6A6B70] text-lg leading-none flex items-center justify-center active:opacity-70"
-                          onClick={handleDec}
-                        >
-                          −
-                        </button>
-                        <span className="h-9 flex-1 min-w-[36px] rounded-lg bg-[#ECECEF] text-[15px] text-text-primary font-medium flex items-center justify-center">
-                          {qty}
-                        </span>
-                        <button
-                          type="button"
-                          className="h-9 w-9 rounded-lg bg-[#F8F8F8] text-accent text-lg leading-none flex items-center justify-center disabled:opacity-50 active:opacity-70"
-                          onClick={handleInc}
-                          disabled={!canAddMore}
-                        >
-                          +
-                        </button>
+                      <div className="mt-2 flex items-center">
+                        <div className="flex items-center bg-[#F4F5F7] rounded-[12px] px-1.5 py-1 min-w-[96px]">
+                          <button
+                            type="button"
+                            className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
+                            onClick={handleDec}
+                          >
+                            −
+                          </button>
+                          <span className="text-[14px] font-semibold text-text-primary px-2 min-w-[24px] text-center">
+                            {qty}
+                          </span>
+                          <button
+                            type="button"
+                            className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70 disabled:opacity-50"
+                            onClick={handleInc}
+                            disabled={!canAddMore}
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <button
                         type="button"
-                        className="mt-2 h-9 rounded-lg bg-[#F8F8F8] text-[15px] text-text-primary font-medium w-full active:opacity-70"
+                        className="mt-2 h-9 rounded-lg bg-[#F8F8F8] text-[14px] text-text-primary font-medium w-full active:opacity-70"
                         onClick={handleAdd}
                       >
                         В корзину

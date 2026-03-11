@@ -147,7 +147,7 @@ export default function CategoryPage() {
                 <button
                   key={b.key}
                   onClick={() => handleBrandSelect(b.key)}
-                  className="bg-card-bg rounded-card overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform"
+                  className="bg-card-bg rounded-card overflow-hidden text-left active:scale-[0.98] transition-transform"
                 >
                   <div className="flex items-center gap-4 p-4">
                     <div
@@ -183,7 +183,7 @@ export default function CategoryPage() {
                 <button
                   key={l.key}
                   onClick={() => handleLineSelect(l.key)}
-                  className="bg-card-bg rounded-card overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform"
+                  className="bg-card-bg rounded-card overflow-hidden text-left active:scale-[0.98] transition-transform"
                 >
                   <div className="flex items-center gap-4 p-4">
                     <div
@@ -301,10 +301,10 @@ export default function CategoryPage() {
       </BottomSheet>
 
       {/* фиксированные кнопки выбора снизу */}
-      {step === 'brand' && !loading && brands.length > 0 && (
+        {step === 'brand' && !loading && brands.length > 0 && (
         <div
           className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
-          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
+            style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 8px)' }}
         >
           {!selectedBrand ? (
             <div className="flex flex-col items-center">
@@ -339,10 +339,10 @@ export default function CategoryPage() {
         </div>
       )}
 
-      {step === 'line' && !loading && lines.length > 0 && (
+        {step === 'line' && !loading && lines.length > 0 && (
         <div
           className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
-          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
+            style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 8px)' }}
         >
           {!selectedLine ? (
             <div className="flex flex-col items-center">

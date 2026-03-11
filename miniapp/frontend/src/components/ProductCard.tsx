@@ -42,7 +42,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
 
   return (
     <div
-      className="bg-card-bg rounded-card overflow-hidden shadow-sm cursor-pointer active:opacity-80 transition-opacity"
+      className="bg-card-bg rounded-card overflow-hidden cursor-pointer active:opacity-80 transition-opacity"
       onClick={() => navigate(`/product/${product.slug}`)}
     >
       {/* изображение */}
@@ -96,27 +96,31 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
             <p className="mt-2 py-2 text-center text-[13px] text-text-secondary">Нет в наличии</p>
           ) : qty > 0 ? (
             <div
-              className="mt-2 flex items-center justify-between bg-bg-base rounded-[10px] px-1"
+              className="mt-2 flex items-center"
               onClick={e => e.stopPropagation()}
             >
-              <button
-                className="w-8 h-8 flex items-center justify-center text-accent text-[20px] font-light"
-                onClick={handleDec}
-              >
-                −
-              </button>
-              <span className="text-[14px] font-semibold text-text-primary">{qty}</span>
-              <button
-                className="w-8 h-8 flex items-center justify-center text-accent text-[20px] font-light disabled:opacity-50"
-                onClick={handleInc}
-                disabled={!canAddMore}
-              >
-                +
-              </button>
+              <div className="flex items-center bg-[#F4F5F7] rounded-[12px] px-1.5 py-1 min-w-[96px]">
+                <button
+                  className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
+                  onClick={handleDec}
+                >
+                  −
+                </button>
+                <span className="text-[14px] font-semibold text-text-primary px-2 min-w-[24px] text-center">
+                  {qty}
+                </span>
+                <button
+                  className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70 disabled:opacity-50"
+                  onClick={handleInc}
+                  disabled={!canAddMore}
+                >
+                  +
+                </button>
+              </div>
             </div>
           ) : (
             <button
-              className="mt-2 w-full py-2 bg-bg-base rounded-[10px] text-accent text-[13px] font-semibold active:bg-blue-50 transition-colors"
+              className="mt-2 w-full h-9 rounded-lg bg-[#F8F8F8] text-[14px] text-text-primary font-medium active:opacity-70"
               onClick={handleAdd}
             >
               В корзину
