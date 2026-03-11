@@ -168,12 +168,8 @@ export default function ProductPage() {
 
   function handlePuffsClick(puffs: number) {
     if (!p.familyKey || puffs === p.puffs) return
-    // сначала ищем вариант с тем же вкусом, но другими затяжками
-    let target = familyProducts.find(fp => fp.flavor === p.flavor && fp.puffs === puffs)
-    if (!target) {
-      // fallback — любой вариант с такими затяжками
-      target = familyProducts.find(fp => fp.puffs === puffs)
-    }
+    // ищем вариант ТОЛЬКО в рамках текущего вкуса
+    const target = familyProducts.find(fp => fp.flavor === p.flavor && fp.puffs === puffs)
     if (target && target.slug !== p.slug) {
       navigate(`/product/${target.slug}`)
     }
