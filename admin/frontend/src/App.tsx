@@ -1630,7 +1630,7 @@ function ProductFormModal({
   const [useFamily, setUseFamily] = useState<boolean>(() => {
     return !!(product?.familyKey || product?.flavor || product?.puffs)
   })
-  const [familyFillLoading, setFamilyFillLoading] = useState<'title' | 'description' | 'images' | 'price' | 'category' | null>(null)
+  const [familyFillLoading, setFamilyFillLoading] = useState<'title' | 'description' | 'images' | 'price' | 'category' | 'flavor' | null>(null)
   const [showFamilyKeySuggestions, setShowFamilyKeySuggestions] = useState(false)
 
   const allFamilyKeys = useMemo(
@@ -1837,7 +1837,7 @@ function ProductFormModal({
     }
   }
 
-  const handleFillFromFamily = (mode: 'title' | 'description' | 'images' | 'price' | 'category') => {
+  const handleFillFromFamily = (mode: 'title' | 'description' | 'images' | 'price' | 'category' | 'flavor') => {
     const key = (formData.familyKey || '').trim()
     if (!key) return
 
@@ -1915,6 +1915,12 @@ function ProductFormModal({
         }
         if (!next.brand && base.brand) next.brand = base.brand
         if (!next.line && base.line) next.line = base.line
+      }
+
+      if (mode === 'flavor') {
+        if (!next.flavor && base.flavor) {
+          next.flavor = base.flavor
+        }
       }
 
       return next
@@ -2240,9 +2246,12 @@ function ProductFormModal({
                       type="text"
                       list="family-key-list"
                       value={formData.familyKey || ''}
-                      onChange={(e) => handleChange('familyKey', e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        handleChange('familyKey', value)
+                        setShowFamilyKeySuggestions(!!value.trim())
+                      }}
                       placeholder="Например, lost_mary_mo_20000"
-                      onFocus={() => setShowFamilyKeySuggestions(true)}
                       onBlur={() => setTimeout(() => setShowFamilyKeySuggestions(false), 100)}
                     />
                     <datalist id="family-key-list">
@@ -2307,6 +2316,22 @@ function ProductFormModal({
                         }
                       >
                         Описание
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn-secondary btn-small ${familyFillLoading === 'flavor' ? 'btn-loading' : ''}`}
+                        onClick={() => handleFillFromFamily('flavor')}
+                        disabled={
+                          !!familyFillLoading ||
+                          !formData.familyKey ||
+                          !products.some(
+                            (p) =>
+                              p.familyKey === formData.familyKey &&
+                              (!product || p.slug !== product.slug)
+                          )
+                        }
+                      >
+                        Вкус
                       </button>
                       <button
                         type="button"

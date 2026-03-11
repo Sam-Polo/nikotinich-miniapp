@@ -37,9 +37,9 @@ export default function ContentReactions({
   const pill = (reaction: ContentReaction, count: number, userActive: number, label: string, showCount: boolean) => (
     <button
       type="button"
-      disabled={!userId || loading}
+      disabled={!userId}
       onClick={() => handleClick(reaction)}
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] transition-colors duration-200 disabled:opacity-50 disabled:pointer-events-none ${
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full min-w-[44px] min-h-[36px] px-3 py-1.5 text-[14px] transition-colors duration-200 disabled:opacity-50 disabled:pointer-events-none ${
         userActive > 0 ? 'bg-accent text-white' : 'bg-[#E5E5EA] text-text-secondary'
       }`}
       aria-label={label}

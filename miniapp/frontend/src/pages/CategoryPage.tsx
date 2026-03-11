@@ -260,7 +260,7 @@ export default function CategoryPage() {
           selected={selectedBrand}
           onSelect={(key) => { setSelectedBrand(key); setSelectedLine(null); setLines([]); setBrandConfirmed(false) }}
         />
-        <div className="p-4 border-t border-border-light">
+        <div className="p-4 border-t border-border-light flex flex-col items-center">
           <Button
             fullWidth
             onClick={() => { handleBrandProceed(); setBrandsSheet(false) }}
@@ -268,6 +268,13 @@ export default function CategoryPage() {
           >
             Продолжить
           </Button>
+          <button
+            type="button"
+            onClick={() => { navigate('/'); setBrandsSheet(false) }}
+            className="mt-2 text-[16px] font-semibold text-accent"
+          >
+            Вернуться в каталог
+          </button>
         </div>
       </BottomSheet>
 
@@ -279,7 +286,7 @@ export default function CategoryPage() {
           onSelect={(key) => { setSelectedLine(key) }}
           layout="grid"
         />
-        <div className="p-4 border-t border-border-light">
+        <div className="p-4 border-t border-border-light flex flex-col items-center">
           <Button
             fullWidth
             onClick={() => { handleLineProceed(); setLinesSheet(false) }}
@@ -287,6 +294,13 @@ export default function CategoryPage() {
           >
             Продолжить
           </Button>
+          <button
+            type="button"
+            onClick={() => { navigate('/'); setLinesSheet(false) }}
+            className="mt-2 text-[16px] font-semibold text-accent"
+          >
+            Вернуться в каталог
+          </button>
         </div>
       </BottomSheet>
 

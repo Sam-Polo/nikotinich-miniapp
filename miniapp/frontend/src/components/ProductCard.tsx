@@ -75,8 +75,8 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
         </button>
       </div>
 
-      {/* инфо */}
-      <div className="p-3">
+      {/* инфо — фиксированная высота блока под картинкой для одинаковых карточек в сетке */}
+      <div className="p-3 flex flex-col min-h-[120px]">
         <p className="text-[13px] text-text-primary font-medium leading-tight line-clamp-2 mb-1">
           {product.title}
         </p>
@@ -91,10 +91,10 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
 
         {showAddButton && (
           (stock != null && stock <= 0) ? (
-            <p className="mt-2 py-2 text-center text-[13px] text-text-secondary">Нет в наличии</p>
+            <p className="mt-2 py-2 text-center text-[13px] text-text-secondary flex-shrink-0">Нет в наличии</p>
           ) : qty > 0 ? (
             <div
-              className="mt-2 flex items-center"
+              className="mt-2 flex items-center flex-shrink-0"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center bg-[#F4F5F7] rounded-[12px] px-1.5 py-1 min-w-[96px]">
@@ -118,7 +118,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
             </div>
           ) : (
             <button
-              className="mt-2 w-full h-9 rounded-lg bg-[#F8F8F8] text-[14px] text-text-primary font-medium active:opacity-70"
+              className="mt-2 w-full h-9 rounded-lg bg-[#F8F8F8] text-[14px] text-text-primary font-medium active:opacity-70 flex-shrink-0"
               onClick={handleAdd}
             >
               В корзину
