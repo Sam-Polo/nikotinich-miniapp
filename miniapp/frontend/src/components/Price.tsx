@@ -1,5 +1,3 @@
-import React from 'react'
-
 type Size = 'lg' | 'md' | 'sm'
 
 type Props = {
