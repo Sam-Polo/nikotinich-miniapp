@@ -77,6 +77,32 @@
   font-style: italic;
 }
 
+/* маленькие чипы-кнопки (например, пресеты количества затяжек) */
+.btn-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  background: #f4f5f7;
+  color: #434343;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.btn-tag:hover {
+  background: #e5e5ea;
+}
+
+.btn-tag:active {
+  transform: scale(0.96);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) inset;
+}
+
 .login-box button {
   width: 100%;
   padding: 0.75rem;

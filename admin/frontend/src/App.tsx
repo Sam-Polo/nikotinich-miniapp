@@ -953,24 +953,6 @@ function ProductsList({
               setSelectedProduct(updated)
             }
           }}
-          onCreateVariant={() => {
-            // открываем форму добавления с предзаполненными полями семейства/вкуса/затяжек
-            const base = selectedProduct
-            const familyKey =
-              base.familyKey && base.familyKey.trim().length > 0
-                ? base.familyKey
-                : base.slug
-            setSelectedProduct({
-              ...base,
-              id: undefined,
-              article: undefined,
-              slug: '',
-              active: true,
-              familyKey,
-            })
-            setIsEditModalOpen(false)
-            setIsAddModalOpen(true)
-          }}
         />
       )}
 
@@ -1031,15 +1013,13 @@ function ProductModal({
   onClose,
   onEdit,
   onDelete,
-  onProductUpdate,
-  onCreateVariant
+  onProductUpdate
 }: {
   product: Product
   onClose: () => void
   onEdit: () => void
   onDelete: () => void
   onProductUpdate?: () => Promise<void>
-  onCreateVariant?: () => void
 }) {
   const [fullscreenImageIndex, setFullscreenImageIndex] = useState<number | null>(null)
   const [isReorderMode, setIsReorderMode] = useState(false)
@@ -1304,11 +1284,6 @@ function ProductModal({
                   <button className="btn btn-edit" onClick={onEdit}>
                     Редактировать
                   </button>
-                  {onCreateVariant && (
-                    <button className="btn btn-secondary" onClick={onCreateVariant}>
-                      Создать вариант
-                    </button>
-                  )}
                   {product.images.length > 1 && (
                     <button className="btn btn-reorder" onClick={handleStartReorder}>
                       Порядок
@@ -1636,7 +1611,7 @@ function ProductFormModal({
       price_rub: product?.price_rub || 0,
       discount_price_rub: product?.discount_price_rub || undefined,
       active: product?.active !== undefined ? product.active : true,
-      stock: product?.stock || undefined,
+      stock: product?.stock ?? 1000,
       article: initialArticle,
       images: product?.images || [],
       image_keys: product?.image_keys || [],
@@ -1650,6 +1625,9 @@ function ProductFormModal({
   })
   const [slugTouched, setSlugTouched] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
+  const [useFamily, setUseFamily] = useState<boolean>(() => {
+    return !!(product?.familyKey || product?.flavor || product?.puffs)
+  })
 
   const [brandsForForm, setBrandsForForm] = useState<{ key: string; title: string }[]>([])
   const [linesForForm, setLinesForForm] = useState<{ key: string; title: string }[]>([])
@@ -1783,9 +1761,14 @@ function ProductFormModal({
       return
     }
 
+    // если семейство отключено — не отправляем связанные поля
+    const dataToSave = useFamily
+      ? formData
+      : { ...formData, familyKey: undefined, flavor: '', puffs: undefined }
+
     setSaving(true)
     try {
-      await onSave(formData)
+      await onSave(dataToSave)
     } catch (err: any) {
       setErrors({ submit: err.message || 'Ошибка сохранения' })
     } finally {
@@ -2097,59 +2080,91 @@ function ProductFormModal({
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Ключ семейства (family_key)</label>
-              <input
-                type="text"
-                value={formData.familyKey || ''}
-                onChange={(e) => handleChange('familyKey', e.target.value)}
-                placeholder="Например, lost_mary_mo_20000"
-              />
-              <small className="form-hint">
-                Одинаковый ключ для всех вкусов / затяжек одной модели. Можно оставить пустым для обычных товаров.
-              </small>
+          {/* семейство (варианты вкусов/затяжек) */}
+          <div className="form-group">
+            <label>
+              Семейство{' '}
+              <span
+                style={{ cursor: 'help', fontSize: 13, color: '#666' }}
+                title="Семейство — группа товаров одной модели (разные вкусы и/или количество затяжек). У всех вариантов один family_key, а вкус и затяжки задаются отдельно."
+              >
+                (?)
+              </span>
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#333' }}>
+                <input
+                  type="checkbox"
+                  checked={useFamily}
+                  onChange={(e) => setUseFamily(e.target.checked)}
+                />
+                Использовать семейство (варианты вкуса / затяжек)
+              </label>
             </div>
-          </div>
+            {useFamily && (
+              <>
+                <div className="form-row">
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Ключ семейства (family_key)</label>
+                    <input
+                      type="text"
+                      list="family-key-list"
+                      value={formData.familyKey || ''}
+                      onChange={(e) => handleChange('familyKey', e.target.value)}
+                      placeholder="Например, lost_mary_mo_20000"
+                    />
+                    <datalist id="family-key-list">
+                      {Array.from(new Set(products.map(p => p.familyKey).filter(Boolean))).map(key => (
+                        <option key={key as string} value={key as string} />
+                      ))}
+                    </datalist>
+                    <small className="form-hint">
+                      Один и тот же ключ используйте для всех вкусов / затяжек одной модели. Можно выбрать существующее значение или ввести новое.
+                    </small>
+                  </div>
+                </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Вкус (опционально)</label>
-              <input
-                type="text"
-                value={formData.flavor || ''}
-                onChange={(e) => handleChange('flavor', e.target.value)}
-                placeholder="Например, Вишня-малина-лайм"
-              />
-            </div>
-            <div className="form-group">
-              <label>Количество затяжек (опционально)</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.puffs ?? ''}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/\s/g, '')
-                  const num = raw ? parseInt(raw, 10) : undefined
-                  handleChange('puffs', Number.isFinite(num as number) ? num : undefined)
-                }}
-                placeholder="Например, 20000"
-              />
-              <small className="form-hинt">
-                Быстрый выбор:&nbsp;
-                {[20000, 15000, 10000, 5000, 2000, 1000].map(v => (
-                  <button
-                    key={v}
-                    type="button"
-                    className="btn-tag"
-                    onClick={() => handleChange('puffs', v)}
-                    style={{ marginRight: 4 }}
-                  >
-                    {v.toLocaleString('ru-RU')}
-                  </button>
-                ))}
-              </small>
-            </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Вкус</label>
+                    <input
+                      type="text"
+                      value={formData.flavor || ''}
+                      onChange={(e) => handleChange('flavor', e.target.value)}
+                      placeholder="Например, Вишня-малина-лайм"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Количество затяжек</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.puffs ?? ''}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\s/g, '')
+                        const num = raw ? parseInt(raw, 10) : undefined
+                        handleChange('puffs', Number.isFinite(num as number) ? num : undefined)
+                      }}
+                      placeholder="Например, 20000"
+                    />
+                    <small className="form-hint">
+                      Быстрый выбор:{' '}
+                      {[20000, 15000, 10000, 5000, 2000, 1000].map(v => (
+                        <button
+                          key={v}
+                          type="button"
+                          className="btn-tag"
+                          onClick={() => handleChange('puffs', v)}
+                          style={{ marginRight: 4 }}
+                        >
+                          {v.toLocaleString('ru-RU')}
+                        </button>
+                      ))}
+                    </small>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="form-row">
