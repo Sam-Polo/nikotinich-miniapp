@@ -9,8 +9,8 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET не задан в переменных окружения')
 }
 
-// время жизни токена: 30 минут
-const TOKEN_EXPIRES_IN = '30m'
+// время жизни токена: 24 часа
+const TOKEN_EXPIRES_IN = '24h'
 
 export interface TokenPayload {
   userId: string

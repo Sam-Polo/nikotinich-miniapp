@@ -31,8 +31,22 @@ function formatTextBlock(text: string): React.ReactNode {
     let rest = s
     let key = 0
     while (rest.length > 0) {
+      // ссылка [текст](url) — раньше bold/italic, чтобы внутри ссылки работало форматирование
+      const link = rest.match(/\[([^\]]*)\]\(([^)]*)\)/)
       const bold = rest.match(/\*\*(.+?)\*\*/)
       const italic = !bold && rest.match(/\*([^*]+)\*/)
+      if (link) {
+        const idx = rest.indexOf(link[0])
+        if (idx > 0) parts.push(<React.Fragment key={key++}>{formatInline(rest.slice(0, idx))}</React.Fragment>)
+        const url = link[2].trim()
+        parts.push(
+          <a key={key++} href={url} target="_blank" rel="noopener noreferrer" className="text-accent underline">
+            {formatInline(link[1])}
+          </a>
+        )
+        rest = rest.slice(idx + link[0].length)
+        continue
+      }
       if (bold) {
         const idx = rest.indexOf(bold[0])
         if (idx > 0) parts.push(<React.Fragment key={key++}>{formatInline(rest.slice(0, idx))}</React.Fragment>)

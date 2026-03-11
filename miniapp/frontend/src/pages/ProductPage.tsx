@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState, useRef } from 'react'
+import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { getProduct, getBrands, getLines } from '../api'
 import type { Product, Brand, Line } from '../api'
@@ -18,12 +18,15 @@ function formatStrength(s?: string) {
 
 export default function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
-  const navigate = useNavigate()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(false)
   const [brandTitle, setBrandTitle] = useState<string | null>(null)
   const [lineTitle, setLineTitle] = useState<string | null>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  const touchStartXRef = useRef<number | null>(null)
+  const touchStartYRef = useRef<number | null>(null)
 
   const { addItem, updateQty, getQty } = useCartStore()
   const isFav = useFavoritesStore(s => s.isFavorite(slug))
@@ -35,6 +38,11 @@ export default function ProductPage() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [slug])
+
+  useEffect(() => {
+    // сбрасываем текущую картинку при смене товара
+    setCurrentImageIndex(0)
+  }, [product?.slug])
 
   useEffect(() => {
     if (!product?.category || !product?.brand) return
@@ -63,10 +71,42 @@ export default function ProductPage() {
   const p = product
   const displayPrice = p.display_price
   const hasDiscount = !!p.discount_price_rub
-  const mainImage = p.images[0] ?? ''
+  const images = p.images && p.images.length > 0 ? p.images : []
+  const mainImage = images.length > 0 ? images[Math.min(currentImageIndex, images.length - 1)] : ''
   const qty = getQty(p.slug)
   const stock = p.stock
   const canAddMore = stock == null || qty < stock
+
+  function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+    if (e.touches.length !== 1) return
+    const touch = e.touches[0]
+    touchStartXRef.current = touch.clientX
+    touchStartYRef.current = touch.clientY
+  }
+
+  function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
+    const startX = touchStartXRef.current
+    const startY = touchStartYRef.current
+    touchStartXRef.current = null
+    touchStartYRef.current = null
+
+    if (startX == null || startY == null) return
+    if (!images.length || images.length <= 1) return
+
+    const touch = e.changedTouches[0]
+    const dx = touch.clientX - startX
+    const dy = touch.clientY - startY
+
+    if (Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy)) return
+
+    if (dx < 0) {
+      // свайп влево — следующая картинка
+      setCurrentImageIndex(prev => (prev + 1) % images.length)
+    } else {
+      // свайп вправо — предыдущая картинка
+      setCurrentImageIndex(prev => (prev - 1 + images.length) % images.length)
+    }
+  }
 
   function handleAdd() {
     if (stock != null && stock <= 0) return
@@ -100,7 +140,11 @@ export default function ProductPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* верх: зона с картинкой */}
         <div className="bg-bg-base">
-          <div className="aspect-square overflow-hidden">
+          <div
+            className="aspect-square overflow-hidden relative"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             {mainImage ? (
               <img
                 src={mainImage}
@@ -110,6 +154,18 @@ export default function ProductPage() {
             ) : (
               <div className="w-full h-full flex items-center justify-center text-text-secondary">
                 Нет фото
+              </div>
+            )}
+            {images.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#2F62F3]/60 flex items-center gap-1">
+                {images.map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`rounded-full bg-white transition-all ${
+                      idx === currentImageIndex ? 'w-1.5 h-1.5' : 'w-1 h-1 opacity-70'
+                    }`}
+                  />
+                ))}
               </div>
             )}
           </div>

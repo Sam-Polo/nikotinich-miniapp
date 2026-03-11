@@ -279,7 +279,12 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
       )}
 
       {deleteConfirm && (
-        <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setDeleteConfirm(null)
+          }}
+        >
           <div className="modal-content confirm-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Удалить пользователя?</h3>
             <p>Пользователь {deleteConfirm.username ? `@${deleteConfirm.username}` : deleteConfirm.telegram_id} будет удалён. Это действие нельзя отменить.</p>
@@ -292,7 +297,12 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
       )}
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false)
+          }}
+        >
           <div className="modal-content modal-form" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setIsModalOpen(false)}>×</button>
             <h2>{editingUser ? 'Редактировать пользователя' : 'Добавить пользователя'}</h2>

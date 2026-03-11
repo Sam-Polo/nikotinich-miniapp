@@ -361,7 +361,12 @@ function BrandsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
       )}
 
       {deleteConfirm && (
-        <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setDeleteConfirm(null)
+          }}
+        >
           <div className="modal-content confirm-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Удалить бренд?</h3>
             <p>Бренд «{deleteConfirm.title}» будет удалён.</p>
@@ -374,7 +379,12 @@ function BrandsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
       )}
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false)
+          }}
+        >
           <div className="modal-content modal-form" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setIsModalOpen(false)}>×</button>
             <h2>{editingBrand ? 'Редактировать бренд' : 'Добавить бренд'}</h2>

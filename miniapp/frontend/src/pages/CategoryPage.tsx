@@ -162,11 +162,6 @@ export default function CategoryPage() {
                       )}
                     </div>
                     <p className="text-[16px] font-medium text-text-primary flex-1">{b.title}</p>
-                    {selectedBrand === b.key && (
-                      <svg className="w-5 h-5 text-accent flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
                   </div>
                 </button>
               ))}
@@ -198,11 +193,6 @@ export default function CategoryPage() {
                       )}
                     </div>
                     <p className="text-[16px] font-medium text-text-primary flex-1">{l.title}</p>
-                    {selectedLine === l.key && (
-                      <svg className="w-5 h-5 text-accent flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
                   </div>
                 </button>
               ))}

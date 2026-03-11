@@ -591,7 +591,12 @@ export default function OrdersPage({
       </div>
 
       {deleteConfirm && (
-        <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setDeleteConfirm(null)
+          }}
+        >
           <div className="modal-content confirm-modal" onClick={e => e.stopPropagation()}>
             <h3>Подтверждение</h3>
             <p>Удалить заказ клиента <strong>{deleteConfirm.name}</strong>? Это действие необратимо.</p>

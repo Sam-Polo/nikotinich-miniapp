@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { api, getToken, saveToken, removeToken } from './api'
-import { generateSlug, formatArticle, parseArticle, normalizeArticle } from './utils'
+import { generateSlug, formatArticle, parseArticle, normalizeArticle, isValidKey } from './utils'
 import PromocodesPage from './PromocodesPage'
 import CategoriesPage from './CategoriesPage'
 import ContentPage from './ContentPage'
@@ -67,8 +67,15 @@ function ConfirmModal({
   const multi = productCats.length > 1
   const getCategoryTitle = (key: string) => categories.find((c) => c.key === key)?.title || key
 
+  const handleOverlayMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // закрываем только по «чистому» клику на подложку, а не при драг‑выделении текста
+    if (e.target === e.currentTarget) {
+      onCancel()
+    }
+  }
+
   return (
-    <div className="modal-overlay" onClick={onCancel}>
+    <div className="modal-overlay" onMouseDown={handleOverlayMouseDown}>
       <div className="modal-content confirm-modal" onClick={(e) => e.stopPropagation()}>
         <h3>Подтверждение</h3>
         <p>
@@ -1142,9 +1149,15 @@ function ProductModal({
     }
   }, [fullscreenImageIndex, product.images.length])
 
+  const handleOverlayMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay" onMouseDown={handleOverlayMouseDown}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
           <button className="modal-close" onClick={onClose}>&times;</button>
           
@@ -1603,19 +1616,8 @@ function ProductFormModal({
       strength: product?.strength || ''
     }
   })
-
-  // обновляем slug при изменении названия или артикула (только при добавлении)
-  useEffect(() => {
-    if (!isEdit && formData.title && formData.article) {
-      const newSlug = generateSlug(formData.title, formData.article)
-      setFormData(prev => {
-        if (prev.slug !== newSlug) {
-          return { ...prev, slug: newSlug }
-        }
-        return prev
-      })
-    }
-  }, [formData.title, formData.article, isEdit, formData.slug])
+  const [slugTouched, setSlugTouched] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
 
   const [brandsForForm, setBrandsForForm] = useState<{ key: string; title: string }[]>([])
   const [linesForForm, setLinesForForm] = useState<{ key: string; title: string }[]>([])
@@ -1693,6 +1695,23 @@ function ProductFormModal({
       newErrors.price_rub = 'Цена должна быть больше 0'
     }
 
+    // валидация slug: обязателен, формат и уникальность
+    const slug = (formData.slug || '').trim()
+    if (!slug) {
+      newErrors.slug = 'Slug обязателен'
+    } else {
+      if (!isValidKey(slug)) {
+        newErrors.slug = 'Только латиница, цифры, дефис и подчёркивание; без пробелов'
+      } else {
+        const exists = products.some(
+          (p) => p.slug === slug && (!product || p.slug !== product.slug)
+        )
+        if (exists) {
+          newErrors.slug = 'Товар с таким slug уже есть'
+        }
+      }
+    }
+
     // валидация цены со скидкой
     if (formData.discount_price_rub !== undefined && formData.discount_price_rub !== null) {
       const discountPrice = typeof formData.discount_price_rub === 'string' 
@@ -1744,10 +1763,13 @@ function ProductFormModal({
 
   const handleChange = (field: keyof Product, value: any) => {
     setFormData(prev => {
+      if (!isDirty) {
+        setIsDirty(true)
+      }
       const updated = { ...prev, [field]: value }
       
-      // автогенерация slug при изменении названия или артикула
-      if (field === 'title' || field === 'article') {
+      // автогенерация slug при изменении названия или артикула (только для нового товара и пока slug не редактировали вручную)
+      if (!isEdit && !slugTouched && (field === 'title' || field === 'article')) {
         if (updated.title && updated.article) {
           updated.slug = generateSlug(updated.title, updated.article)
         }
@@ -1769,6 +1791,9 @@ function ProductFormModal({
   const handleImagesChange = (value: string) => {
     // разделяем по новой строке
     const images = value.split('\n').map(img => img.trim()).filter(Boolean)
+    if (!isDirty) {
+      setIsDirty(true)
+    }
     const keys = (formData.image_keys || []).slice(0, images.length)
     setFormData(prev => ({ ...prev, images, image_keys: keys }))
   }
@@ -1782,6 +1807,9 @@ function ProductFormModal({
       const uploaded = await api.uploadImage(file)
       // добавляем URL к текущему списку изображений используя функциональное обновление
       setFormData(prev => {
+        if (!isDirty) {
+          setIsDirty(true)
+        }
         const currentImages = prev.images || []
         const currentKeys = prev.image_keys || []
         return {
@@ -1822,11 +1850,24 @@ function ProductFormModal({
   }
 
   const handleRemoveImage = (index: number) => {
+    if (!isDirty) {
+      setIsDirty(true)
+    }
     const currentImages = formData.images || []
     const currentKeys = formData.image_keys || []
     const newImages = currentImages.filter((_, i) => i !== index)
     const newKeys = currentKeys.filter((_, i) => i !== index)
     setFormData(prev => ({ ...prev, images: newImages, image_keys: newKeys }))
+  }
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      const confirmClose = window.confirm('Изменения не сохранены. Закрыть без сохранения?')
+      if (!confirmClose) {
+        return
+      }
+    }
+    onClose()
   }
 
   const handleDragEndForm = (event: DragEndEvent) => {
@@ -1868,10 +1909,16 @@ function ProductFormModal({
     }
   }
 
+  const handleOverlayMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      handleRequestClose()
+    }
+  }
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onMouseDown={handleOverlayMouseDown}>
       <div className="modal-content modal-form" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>&times;</button>
+        <button className="modal-close" onClick={handleRequestClose}>&times;</button>
         
         <h2>{isEdit ? 'Редактировать товар' : 'Добавить товар'}</h2>
         
@@ -2020,14 +2067,20 @@ function ProductFormModal({
 
           <div className="form-row">
             <div className="form-group">
-              <label>Slug {isEdit ? '(авто)' : '*'}</label>
+              <label>Slug *</label>
               <input
                 type="text"
                 value={formData.slug || ''}
-                readOnly
-                placeholder="Генерируется автоматически"
-                className="readonly-input"
+                onChange={(e) => {
+                  const raw = e.target.value
+                  const normalized = raw.replace(/\s/g, '').toLowerCase()
+                  setSlugTouched(true)
+                  handleChange('slug', normalized)
+                }}
+                placeholder="uniquekey_123"
+                className="admin-input"
               />
+              {errors.slug && <small style={{ color: '#dc3545' }}>{errors.slug}</small>}
             </div>
             
             <div className="form-group">

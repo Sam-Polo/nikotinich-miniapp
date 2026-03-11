@@ -336,7 +336,12 @@ function CategoriesPage({
       )}
 
       {deleteConfirm && (
-        <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setDeleteConfirm(null)
+          }}
+        >
           <div className="modal-content confirm-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Убрать категорию из приложения?</h3>
             <p>
@@ -351,7 +356,12 @@ function CategoriesPage({
       )}
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false)
+          }}
+        >
           <div className="modal-content modal-form" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setIsModalOpen(false)}>×</button>
             <h2>{editingCategory ? 'Редактировать категорию' : 'Добавить категорию'}</h2>

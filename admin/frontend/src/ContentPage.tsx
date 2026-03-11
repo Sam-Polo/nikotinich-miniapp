@@ -51,6 +51,10 @@ type ContentItem = {
   dislikes?: number
 }
 
+// допустимый диапазон дат для новостей и подборок: 2026–2027 годы включительно
+const MIN_CONTENT_DATE = '2026-01-01'
+const MAX_CONTENT_DATE = '2027-12-31'
+
 type Product = { slug: string; title?: string; article?: string }
 
 const EditIcon = () => (
@@ -556,7 +560,12 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false)
+          }}
+        >
           <div className="modal-content modal-form content-modal" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setIsModalOpen(false)}>
               ×
@@ -595,7 +604,7 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                 Для вставки фото по месту используйте <strong>{'{{img1}}'}</strong>,{' '}
                 <strong>{'{{img2}}'}</strong> и т.д. по порядку загруженных фото ниже. Форматирование:
                 заголовки (# Заголовок), списки (- пункт или 1. пункт), жирный (**текст**), наклонный
-                (*текст*).
+                (*текст*). Ссылки: <strong>{'[текст](https://...)'}</strong> — в миниапп отображаются синим, по нажатию открываются.
               </small>
             </div>
 
@@ -896,7 +905,21 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
                 type="date"
                 className="admin-input"
                 value={formData.publishedAt}
-                onChange={(e) => setFormData((p) => ({ ...p, publishedAt: e.target.value }))}
+                min={MIN_CONTENT_DATE}
+                max={MAX_CONTENT_DATE}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // пустое значение — снимаем дату
+                  if (!value) {
+                    setFormData((p) => ({ ...p, publishedAt: '' }))
+                    return
+                  }
+                  // жёстко ограничиваем диапазон 2026–2027
+                  if (value < MIN_CONTENT_DATE || value > MAX_CONTENT_DATE) {
+                    return
+                  }
+                  setFormData((p) => ({ ...p, publishedAt: value }))
+                }}
               />
             </div>
 
@@ -988,7 +1011,12 @@ export default function ContentPage({ onNavigate }: { onNavigate?: (page: AdminP
       )}
 
       {deleteConfirm && (
-        <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setDeleteConfirm(null)
+          }}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setDeleteConfirm(null)}>
               ×

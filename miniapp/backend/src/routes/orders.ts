@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { randomUUID } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
 import { SHEET_ID } from '../config.js'
 import { readSheet, ensureSheet, appendRow, getAuth, updateRange, getSheetTitles } from '../sheets-utils.js'
 import { sendOrderNotification } from '../notify.js'
@@ -17,6 +17,11 @@ const HEADERS = [
 ]
 
 const SERVICE_SHEETS = new Set(['categories', 'brands', 'lines', 'content', 'orders', 'miniapp_users', 'settings', 'promocodes', 'visits'])
+
+// генерация короткого id заказа — 8 hex-символов (~4.3 млрд вариантов)
+function generateOrderId(): string {
+  return randomBytes(4).toString('hex')
+}
 
 // списание остатка по товарам заказа в листах каталога
 async function decrementStockForOrder(items: { slug: string; qty: number }[]): Promise<void> {
@@ -157,7 +162,7 @@ router.post('/', async (req, res) => {
     }
   }
 
-  const id = randomUUID()
+  const id = generateOrderId()
   const now = new Date().toISOString()
 
   const orderData = {
