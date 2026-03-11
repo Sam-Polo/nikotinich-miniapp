@@ -125,6 +125,12 @@ function parseProductRows(rows: string[][], categoryName: string) {
     const stock = typeof stockNum === 'number' && !Number.isNaN(stockNum) ? stockNum : undefined
     if (stock !== undefined && stock <= 0) continue
 
+    // дополнительные опциональные поля для вариативных товаров
+    const familyKey = get('family_key') || undefined
+    const flavor = get('flavor') || undefined
+    const puffsRaw = get('puffs')
+    const puffs = puffsRaw ? Number(puffsRaw.replace(/\s/g, '')) || undefined : undefined
+
     products.push({
       slug,
       title,
@@ -138,7 +144,10 @@ function parseProductRows(rows: string[][], categoryName: string) {
       line: get('line') || undefined,
       strength: get('strength') || undefined,
       article: get('article') || undefined,
-      stock
+      stock,
+      familyKey,
+      flavor,
+      puffs
     })
   }
 

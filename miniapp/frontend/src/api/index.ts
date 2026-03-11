@@ -33,6 +33,12 @@ export type Product = {
   strength?: string
   article?: string
   stock?: number
+  /** ключ семейства вариативных товаров (например, электронки с разными вкусами/затяжками) */
+  familyKey?: string
+  /** вкус варианта */
+  flavor?: string
+  /** количество затяжек для варианта (если применимо) */
+  puffs?: number
 }
 
 export type ContentItem = {

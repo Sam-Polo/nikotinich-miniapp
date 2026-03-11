@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { getProduct, getBrands, getLines } from '../api'
+import { getProduct, getBrands, getLines, getProducts } from '../api'
 import type { Product, Brand, Line } from '../api'
 import { useCartStore } from '../store/cart'
 import { useFavoritesStore } from '../store/favorites'
@@ -18,12 +18,14 @@ function formatStrength(s?: string) {
 
 export default function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(false)
   const [brandTitle, setBrandTitle] = useState<string | null>(null)
   const [lineTitle, setLineTitle] = useState<string | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [familyVariants, setFamilyVariants] = useState<Product[]>([])
 
   const touchStartXRef = useRef<number | null>(null)
   const touchStartYRef = useRef<number | null>(null)
@@ -64,6 +66,23 @@ export default function ProductPage() {
       .catch(() => setLineTitle(product.line ?? null))
   }, [product?.brand, product?.line])
 
+  // варианты внутри семейства (электронки с разными вкусами/затяжками)
+  useEffect(() => {
+    if (!product?.familyKey || !product.category) {
+      setFamilyVariants([])
+      return
+    }
+
+    getProducts({ category: product.category })
+      .then(list => {
+        const sameFamily = list.filter(
+          p => p.familyKey === product.familyKey && p.slug !== product.slug
+        )
+        setFamilyVariants(sameFamily)
+      })
+      .catch(() => setFamilyVariants([]))
+  }, [product?.familyKey, product?.category, product?.slug])
+
   if (loading) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><Spinner /></div>
   if (!product) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><p className="text-center text-text-secondary mt-20">Товар не найден</p></div>
 
@@ -76,6 +95,26 @@ export default function ProductPage() {
   const qty = getQty(p.slug)
   const stock = p.stock
   const canAddMore = stock == null || qty < stock
+
+  const familyProducts: Product[] = p.familyKey
+    ? [p, ...familyVariants.filter(v => v.slug !== p.slug)]
+    : []
+
+  const flavors = Array.from(
+    new Set(
+      familyProducts
+        .map(fp => fp.flavor || '')
+        .filter(Boolean)
+    )
+  )
+
+  const puffsOptions = Array.from(
+    new Set(
+      familyProducts
+        .filter(fp => fp.flavor === p.flavor && fp.puffs != null)
+        .map(fp => fp.puffs as number)
+    )
+  ).sort((a, b) => a - b)
 
   function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
     if (e.touches.length !== 1) return
@@ -114,6 +153,33 @@ export default function ProductPage() {
     toast.success('Добавлено в корзину', { id: `cart-${p.slug}` })
   }
 
+  function handleFlavorClick(flavor: string) {
+    if (!p.familyKey || flavor === p.flavor) return
+    const candidates = familyProducts.filter(fp => fp.flavor === flavor)
+    if (!candidates.length) return
+    // стараемся сохранить текущее количество затяжек, иначе берём первый вариант
+    const samePuffs = p.puffs != null
+      ? candidates.find(fp => fp.puffs === p.puffs)
+      : undefined
+    const target = samePuffs || candidates[0]
+    if (target.slug !== p.slug) {
+      navigate(`/product/${target.slug}`)
+    }
+  }
+
+  function handlePuffsClick(puffs: number) {
+    if (!p.familyKey || puffs === p.puffs) return
+    // сначала ищем вариант с тем же вкусом, но другими затяжками
+    let target = familyProducts.find(fp => fp.flavor === p.flavor && fp.puffs === puffs)
+    if (!target) {
+      // fallback — любой вариант с такими затяжками
+      target = familyProducts.find(fp => fp.puffs === puffs)
+    }
+    if (target && target.slug !== p.slug) {
+      navigate(`/product/${target.slug}`)
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
       <PageHeader
@@ -139,7 +205,7 @@ export default function ProductPage() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* верх: зона с картинкой */}
-        <div className="bg-bg-base">
+        <div className="bg-[#F8F8F8]">
           <div
             className="aspect-square overflow-hidden relative"
             onTouchStart={handleTouchStart}
@@ -174,7 +240,7 @@ export default function ProductPage() {
         {/* нижняя карточка как шит, «вылазит» сверху изображения */}
         <div className="-mt-5 flex-1 overflow-y-auto">
           <div className="bg-white rounded-t-3xl px-4 pt-4 pb-32 shadow-[0_-6px_18px_rgba(0,0,0,0.06)]">
-            <h1 className="text-[20px] font-bold text-text-primary mb-1">{p.title}</h1>
+            <h1 className="text-[20px] font-bold text-text-primary mb-1 leading-[1.2]">{p.title}</h1>
 
             <div className="flex items-center gap-3 mb-4">
               <Price value={displayPrice} size="lg" />
@@ -184,6 +250,67 @@ export default function ProductPage() {
                 </span>
               )}
             </div>
+
+            {/* теги: вкус и количество затяжек, в стиле Figma */}
+            {familyProducts.length > 1 && (
+              <div className="space-y-4 mb-4">
+                {flavors.length > 0 && p.flavor && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1 text-[14px]">
+                      <span className="text-[#797979]">Вкус</span>
+                      <span className="text-[#595959]">{p.flavor}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {flavors.map(f => {
+                        const isActive = f === p.flavor
+                        return (
+                          <button
+                            key={f}
+                            type="button"
+                            onClick={() => handleFlavorClick(f)}
+                            className={[
+                              'px-3 py-1.5 rounded-full text-[14px] leading-[22px] text-center',
+                              isActive ? 'bg-[#434343] text-white' : 'bg-[#F8F8F8] text-[#434343]'
+                            ].join(' ')}
+                          >
+                            {f}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {puffsOptions.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1 text-[14px]">
+                      <span className="text-[#797979]">Затяжки</span>
+                      {p.puffs != null && (
+                        <span className="text-[#595959]">{p.puffs.toLocaleString('ru-RU')}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {puffsOptions.map(v => {
+                        const isActive = p.puffs === v
+                        return (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => handlePuffsClick(v)}
+                            className={[
+                              'px-3 py-1.5 rounded-full text-[14px] leading-[22px] text-center',
+                              isActive ? 'bg-[#434343] text-white' : 'bg-[#F8F8F8] text-[#434343]'
+                            ].join(' ')}
+                          >
+                            {v.toLocaleString('ru-RU')}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* описание */}
             {p.description && (
