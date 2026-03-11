@@ -91,7 +91,6 @@ export default function ProductPage() {
   const displayPrice = p.display_price
   const hasDiscount = !!p.discount_price_rub
   const images = p.images && p.images.length > 0 ? p.images : []
-  const mainImage = images.length > 0 ? images[Math.min(currentImageIndex, images.length - 1)] : ''
   const qty = getQty(p.slug)
   const stock = p.stock
   const canAddMore = stock == null || qty < stock
@@ -211,24 +210,35 @@ export default function ProductPage() {
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {mainImage ? (
-              <img
-                src={mainImage}
-                alt={p.title}
-                className="w-full h-full object-contain p-4"
-              />
+            {images.length > 0 ? (
+              <div className="w-full h-full overflow-hidden">
+                <div
+                  className="flex h-full transition-transform duration-300 ease-out"
+                  style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+                >
+                  {images.map((src, idx) => (
+                    <div key={src + idx} className="w-full h-full flex-shrink-0 flex items-center justify-center">
+                      <img
+                        src={src}
+                        alt={p.title}
+                        className="w-full h-full object-contain p-4"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-text-secondary">
                 Нет фото
               </div>
             )}
             {images.length > 1 && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#2F62F3]/60 flex items-center gap-1">
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[rgba(0,0,0,0.3)] backdrop-blur-[10px] flex items-center gap-1.5">
                 {images.map((_, idx) => (
                   <span
                     key={idx}
                     className={`rounded-full bg-white transition-all ${
-                      idx === currentImageIndex ? 'w-1.5 h-1.5' : 'w-1 h-1 opacity-70'
+                      idx === currentImageIndex ? 'w-2 h-2' : 'w-1.5 h-1.5 opacity-70'
                     }`}
                   />
                 ))}
@@ -237,15 +247,15 @@ export default function ProductPage() {
           </div>
         </div>
 
-        {/* нижняя карточка как шит, «вылазит» сверху изображения */}
-        <div className="-mt-5 flex-1 overflow-y-auto">
-          <div className="bg-white rounded-t-3xl px-4 pt-4 pb-32 shadow-[0_-6px_18px_rgba(0,0,0,0.06)]">
-            <h1 className="text-[20px] font-bold text-text-primary mb-1 leading-[1.2]">{p.title}</h1>
+        {/* нижняя карточка как bottom sheet, «вылазит» с границей ровно под фото */}
+        <div className="-mt-6 flex-1 overflow-y-auto">
+          <div className="bg-white rounded-t-[26px] px-4 pt-4 pb-32 shadow-[0_-6px_18px_rgba(0,0,0,0.06)]">
+            <h1 className="text-[20px] font-bold text-[#434343] mb-1 leading-[1.2]">{p.title}</h1>
 
             <div className="flex items-center gap-3 mb-4">
               <Price value={displayPrice} size="lg" />
               {hasDiscount && (
-                <span className="text-[16px] text-text-secondary line-through">
+                <span className="text-[16px] text-[#8E8E93] line-through">
                   {p.price_rub.toLocaleString('ru-RU')} ₽
                 </span>
               )}
@@ -255,12 +265,12 @@ export default function ProductPage() {
             {familyProducts.length > 1 && (
               <div className="space-y-4 mb-4">
                 {flavors.length > 0 && p.flavor && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1 text-[14px]">
-                      <span className="text-[#797979]">Вкус</span>
-                      <span className="text-[#595959]">{p.flavor}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1 text-[14px]">
+                    <span className="text-[#797979]">Вкус</span>
+                    <span className="text-[#595959]">{p.flavor}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                       {flavors.map(f => {
                         const isActive = f === p.flavor
                         return (
@@ -269,7 +279,7 @@ export default function ProductPage() {
                             type="button"
                             onClick={() => handleFlavorClick(f)}
                             className={[
-                              'px-3 py-1.5 rounded-full text-[14px] leading-[22px] text-center',
+                                'px-3 py-1.5 rounded-full text-[14px] leading-[22px] text-center',
                               isActive ? 'bg-[#434343] text-white' : 'bg-[#F8F8F8] text-[#434343]'
                             ].join(' ')}
                           >
@@ -298,7 +308,7 @@ export default function ProductPage() {
                             type="button"
                             onClick={() => handlePuffsClick(v)}
                             className={[
-                              'px-3 py-1.5 rounded-full text-[14px] leading-[22px] text-center',
+                                'px-3 py-1.5 rounded-full text-[14px] leading-[22px] text-center',
                               isActive ? 'bg-[#434343] text-white' : 'bg-[#F8F8F8] text-[#434343]'
                             ].join(' ')}
                           >
@@ -334,7 +344,7 @@ export default function ProductPage() {
             )}
 
             {/* характеристики: бренд и линейка по названиям, крепость с большой буквы */}
-            <div className="bg-bg-base rounded-card p-4 space-y-2">
+            <div className="bg-[#F4F4F7] rounded-card p-4 space-y-2 mt-2">
               {(brandTitle ?? p.brand) && (
                 <Row label="Бренд" value={brandTitle ?? p.brand ?? ''} />
               )}
