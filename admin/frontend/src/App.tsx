@@ -1600,7 +1600,7 @@ function ProductFormModal({
   const [formData, setFormData] = useState<Partial<Product> & { categories?: string[] }>(() => {
     const initialArticle = product?.article || nextArticle
     const initialTitle = product?.title || ''
-    const initialSlug = product?.slug || (initialTitle && initialArticle ? generateSlug(initialTitle, initialArticle) : '')
+    const initialSlug = product?.slug || (initialTitle && initialArticle ? generateSlug(initialTitle, initialArticle, product?.puffs) : '')
     const initialCategories = product?.categories ?? (product?.category ? [product.category] : [])
     return {
       title: initialTitle,
@@ -1625,6 +1625,8 @@ function ProductFormModal({
   })
   const [slugTouched, setSlugTouched] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
+  const [showFamilyHint, setShowFamilyHint] = useState(false)
+  const familyHintRef = useRef<HTMLDivElement>(null)
   const [useFamily, setUseFamily] = useState<boolean>(() => {
     return !!(product?.familyKey || product?.flavor || product?.puffs)
   })
@@ -1653,6 +1655,18 @@ function ProductFormModal({
       .then((data: { lines?: { key: string; title: string }[] }) => setLinesForForm((data.lines || []).map((l) => ({ key: l.key, title: l.title || l.key }))))
       .catch(() => setLinesForForm([]))
   }, [formData.brand])
+
+  // закрытие попапа подсказки «Семейство» по клику снаружи
+  useEffect(() => {
+    if (!showFamilyHint) return
+    const onMouseDown = (e: MouseEvent) => {
+      if (familyHintRef.current && !familyHintRef.current.contains(e.target as Node)) {
+        setShowFamilyHint(false)
+      }
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [showFamilyHint])
 
   // при смене первой категории (пользователем) сбрасываем бренд и линейку
   const prevFirstCatRef = useRef(firstCategoryKey)
@@ -1783,10 +1797,10 @@ function ProductFormModal({
       }
       const updated = { ...prev, [field]: value }
       
-      // автогенерация slug при изменении названия или артикула (только для нового товара и пока slug не редактировали вручную)
-      if (!isEdit && !slugTouched && (field === 'title' || field === 'article')) {
+      // автогенерация slug при изменении названия, артикула или затяжек (только для нового товара и пока slug не редактировали вручную)
+      if (!isEdit && !slugTouched && (field === 'title' || field === 'article' || field === 'puffs')) {
         if (updated.title && updated.article) {
-          updated.slug = generateSlug(updated.title, updated.article)
+          updated.slug = generateSlug(updated.title, updated.article, updated.puffs)
         }
       }
       
@@ -1801,6 +1815,67 @@ function ProductFormModal({
         return newErrors
       })
     }
+  }
+
+  const handleFillFromFamily = () => {
+    const key = (formData.familyKey || '').trim()
+    if (!key) return
+
+    const base = products.find(
+      (p) =>
+        p.familyKey === key &&
+        (!product || p.slug !== product.slug)
+    )
+
+    if (!base) {
+      showToast('В этом семействе пока нет других товаров', 'error')
+      return
+    }
+
+    setFormData(prev => {
+      if (!isDirty) {
+        setIsDirty(true)
+      }
+
+      const next: typeof prev = { ...prev }
+
+      if (!next.title && base.title) next.title = base.title
+      if (!next.description && base.description) next.description = base.description
+
+      if ((!next.images || next.images.length === 0) && base.images && base.images.length > 0) {
+        next.images = [...base.images]
+        if (base.image_keys && base.image_keys.length > 0) {
+          next.image_keys = [...base.image_keys]
+        }
+      }
+
+      if ((!next.price_rub || next.price_rub <= 0) && base.price_rub) {
+        next.price_rub = base.price_rub
+      }
+
+      if (next.discount_price_rub == null && base.discount_price_rub != null) {
+        next.discount_price_rub = base.discount_price_rub
+      }
+
+      if (!next.brand && base.brand) next.brand = base.brand
+      if (!next.line && base.line) next.line = base.line
+      if (!next.strength && base.strength) next.strength = base.strength
+
+      if ((!next.categories || next.categories.length === 0) && (base.categories?.length || base.category)) {
+        if (base.categories && base.categories.length > 0) {
+          next.categories = [...base.categories]
+        } else if (base.category) {
+          next.categories = [base.category]
+        }
+        if (next.categories && next.categories[0]) {
+          next.category = next.categories[0]
+        }
+      } else if (!next.category && base.category) {
+        next.category = base.category
+      }
+
+      return next
+    })
   }
 
   const handleImagesChange = (value: string) => {
@@ -2081,15 +2156,24 @@ function ProductFormModal({
           </div>
 
           {/* семейство (варианты вкусов/затяжек) */}
-          <div className="form-group">
-            <label>
+          <div className="form-group" ref={familyHintRef}>
+            <label className="label-with-popover">
               Семейство{' '}
-              <span
-                style={{ cursor: 'help', fontSize: 13, color: '#666' }}
-                title="Семейство — группа товаров одной модели (разные вкусы и/или количество затяжек). У всех вариантов один family_key, а вкус и затяжки задаются отдельно."
+              <button
+                type="button"
+                onClick={() => setShowFamilyHint((v) => !v)}
+                className="family-hint-trigger"
+                aria-label="Подсказка про семейство"
               >
-                (?)
-              </span>
+                ?
+              </button>
+              {showFamilyHint && (
+                <div className="family-hint-popover">
+                  <p>Семейство используется для привязки нескольких разновидностей вкусов / количества затяжек у товаров одной модели.</p>
+                  <p>Чтобы модель имела выбор вкусов или затяг, она должна иметь заполненное поле вкуса / затяг, семейство и другой товар с таким же семейством и другим вкусом. Аналогично с кол-вом затяжек.</p>
+                  <p>Пример использования: создаётся один товар и новое семейство (lost-mary), указывается вкус (например вишня), количество тяг (опц.), далее создаётся отдельно другой товар, указывается то же семейство lost-mary и другой вкус (малина). Получаем два товара, которые имеют шкалу выбора вкуса: вишня / малина. При выборе вкуса перекидывает на другой товар.</p>
+                </div>
+              )}
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#333' }}>
@@ -2118,15 +2202,32 @@ function ProductFormModal({
                         <option key={key as string} value={key as string} />
                       ))}
                     </datalist>
-                    <small className="form-hint">
+                    <small className="form-hint form-hint-spaced">
                       Один и тот же ключ используйте для всех вкусов / затяжек одной модели. Можно выбрать существующее значение или ввести новое.
                     </small>
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="btn-secondary btn-small"
+                        onClick={handleFillFromFamily}
+                        disabled={
+                          !formData.familyKey ||
+                          !products.some(
+                            (p) =>
+                              p.familyKey === formData.familyKey &&
+                              (!product || p.slug !== product.slug)
+                          )
+                        }
+                      >
+                        Заполнить из семейства
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="form-row">
+                <div className="form-row form-row-spaced">
                   <div className="form-group">
-                    <label>Вкус</label>
+                    <label className="label-spaced">Вкус</label>
                     <input
                       type="text"
                       value={formData.flavor || ''}
@@ -2135,7 +2236,7 @@ function ProductFormModal({
                     />
                   </div>
                   <div className="form-group">
-                    <label>Количество затяжек</label>
+                    <label className="label-spaced">Количество затяжек</label>
                     <input
                       type="number"
                       min="0"
@@ -2147,19 +2248,20 @@ function ProductFormModal({
                       }}
                       placeholder="Например, 20000"
                     />
-                    <small className="form-hint">
+                    <small className="form-hint form-hint-spaced">
                       Быстрый выбор:{' '}
-                      {[20000, 15000, 10000, 5000, 2000, 1000].map(v => (
-                        <button
-                          key={v}
-                          type="button"
-                          className="btn-tag"
-                          onClick={() => handleChange('puffs', v)}
-                          style={{ marginRight: 4 }}
-                        >
-                          {v.toLocaleString('ru-RU')}
-                        </button>
-                      ))}
+                      <span className="form-hint-tags">
+                        {[20000, 15000, 10000, 5000, 2000, 1000].map(v => (
+                          <button
+                            key={v}
+                            type="button"
+                            className="btn-tag"
+                            onClick={() => handleChange('puffs', v)}
+                          >
+                            {v.toLocaleString('ru-RU')}
+                          </button>
+                        ))}
+                      </span>
                     </small>
                   </div>
                 </div>

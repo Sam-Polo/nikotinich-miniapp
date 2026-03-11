@@ -24,10 +24,11 @@ export function transliterate(text: string): string {
     .replace(/^-|-$/g, '') // убираем дефисы в начале и конце
 }
 
-// генерация slug из названия и артикула
-export function generateSlug(title: string, article: string): string {
+// генерация slug: название + опционально затяжки (p) + артикул. пример: lost-mary-p20000-0001
+export function generateSlug(title: string, article: string, puffs?: number): string {
   const transliterated = transliterate(title)
-  return `${transliterated}-${article}`
+  const puffsPart = puffs != null && puffs > 0 ? `-p${puffs}` : ''
+  return `${transliterated}${puffsPart}-${article}`
 }
 
 // парсинг артикула: 1–4 цифры (в таблице Google хранят как число без ведущих нулей: 100, 1 и т.д.)
