@@ -6,6 +6,7 @@ import type { Order } from '../api'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
 import Spinner from '../components/Spinner'
+import Price from '../components/Price'
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   new: 'Новый',
@@ -280,9 +281,7 @@ export default function ProfilePage() {
               {user.referral_balance_rub > 0 && (
                 <div className="bg-card-bg rounded-card p-4">
                   <p className="text-[14px] text-text-secondary">Бонусные рубли</p>
-                  <p className="text-[24px] font-bold text-accent">
-                    {user.referral_balance_rub.toLocaleString('ru-RU')} ₽
-                  </p>
+                  <Price value={user.referral_balance_rub} size="md" className="text-accent" />
                   <p className="text-[12px] text-text-secondary mt-1">Бонусы можно списать при оформлении заказа</p>
                 </div>
               )}
@@ -390,9 +389,7 @@ export default function ProfilePage() {
                 <p className="text-[13px] text-text-secondary mb-2">
                   {order.items.map(i => `${i.title || i.slug} × ${i.qty}`).join(', ')}
                 </p>
-                <p className="text-[16px] font-bold text-text-primary">
-                  ₽{order.totalRub.toLocaleString('ru-RU')}
-                </p>
+                <Price value={order.totalRub} size="sm" />
               </button>
             ))}
           </div>

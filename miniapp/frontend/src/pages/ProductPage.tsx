@@ -6,9 +6,9 @@ import type { Product, Brand, Line } from '../api'
 import { useCartStore } from '../store/cart'
 import { useFavoritesStore } from '../store/favorites'
 import PageHeader from '../components/PageHeader'
-import { formatPriceRub } from '../utils/formatPrice'
 import Spinner from '../components/Spinner'
 import Button from '../components/Button'
+import Price from '../components/Price'
 
 // крепость с большой буквы
 function formatStrength(s?: string) {
@@ -177,12 +177,10 @@ export default function ProductPage() {
             <h1 className="text-[20px] font-bold text-text-primary mb-1">{p.title}</h1>
 
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-[26px] font-bold text-text-primary">
-                {formatPriceRub(displayPrice)}
-              </span>
+              <Price value={displayPrice} size="lg" />
               {hasDiscount && (
                 <span className="text-[16px] text-text-secondary line-through">
-                  {formatPriceRub(p.price_rub)}
+                  {p.price_rub.toLocaleString('ru-RU')} ₽
                 </span>
               )}
             </div>
@@ -250,7 +248,7 @@ export default function ProductPage() {
         ) : (
           <Button fullWidth onClick={handleAdd} className="justify-between">
             <span>Добавить в корзину</span>
-            <span className="opacity-80">{formatPriceRub(displayPrice)}</span>
+            <Price value={displayPrice} size="sm" className="opacity-80" />
           </Button>
         )}
       </div>

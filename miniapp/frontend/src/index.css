@@ -5,8 +5,8 @@
 @layer base {
   html, body, #root {
     height: 100%;
-    /* используем системный шрифт iOS/Android */
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+    /* основной шрифт — SF Pro Display, далее системный стек */
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     background-color: #FFFFFF;
   }

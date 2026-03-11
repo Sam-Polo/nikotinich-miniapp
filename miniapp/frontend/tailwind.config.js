@@ -15,7 +15,7 @@ export default {
         'destructive': '#FF3B30'
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Segoe UI', 'sans-serif']
+        sans: ['SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Segoe UI', 'system-ui', 'sans-serif']
       },
       borderRadius: {
         'card': '16px',

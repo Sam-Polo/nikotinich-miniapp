@@ -4,8 +4,8 @@ import { getUserOrders, getProducts, cancelOrder } from '../api'
 import type { Order, OrderItem, Product } from '../api'
 import { useUserStore } from '../store/user'
 import PageHeader from '../components/PageHeader'
-import { formatPriceRub } from '../utils/formatPrice'
 import Spinner from '../components/Spinner'
+import Price from '../components/Price'
 import toast from 'react-hot-toast'
 
 function formatDateTime(value?: string) {
@@ -179,9 +179,7 @@ export default function OrderDetailsPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] leading-tight text-text-primary line-clamp-2">{item.title || item.slug}</p>
-                  <p className="mt-1 text-[15px] font-semibold text-text-primary">
-                    {formatPriceRub((item.priceRub || 0) * item.qty)}
-                  </p>
+                  <Price value={(item.priceRub || 0) * item.qty} size="sm" className="mt-1" />
                 </div>
               </div>
             ))}
@@ -189,9 +187,7 @@ export default function OrderDetailsPage() {
 
           <div className="mt-4 pt-3 border-t border-border-light flex items-center justify-between">
             <span className="text-[15px] font-semibold text-text-primary">Итого</span>
-            <span className="text-[22px] font-bold text-text-primary">
-              {formatPriceRub(order.totalRub)}
-            </span>
+            <Price value={order.totalRub} size="md" />
           </div>
         </section>
 
