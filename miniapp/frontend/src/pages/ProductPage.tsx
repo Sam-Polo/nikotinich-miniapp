@@ -107,13 +107,15 @@ export default function ProductPage() {
     )
   )
 
-  const puffsOptions = Array.from(
-    new Set(
-      familyProducts
-        .filter(fp => fp.flavor === p.flavor && fp.puffs != null)
-        .map(fp => fp.puffs as number)
-    )
-  ).sort((a, b) => a - b)
+  const puffsOptions = p.flavor
+    ? Array.from(
+        new Set(
+          familyProducts
+            .filter(fp => fp.flavor === p.flavor && fp.puffs != null)
+            .map(fp => fp.puffs as number)
+        )
+      ).sort((a, b) => a - b)
+    : []
 
   function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
     if (e.touches.length !== 1) return
@@ -167,7 +169,7 @@ export default function ProductPage() {
   }
 
   function handlePuffsClick(puffs: number) {
-    if (!p.familyKey || puffs === p.puffs) return
+    if (!p.familyKey || !p.flavor || puffs === p.puffs) return
     // ищем вариант ТОЛЬКО в рамках текущего вкуса
     const target = familyProducts.find(fp => fp.flavor === p.flavor && fp.puffs === puffs)
     if (target && target.slug !== p.slug) {
