@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { api, getToken, saveToken, removeToken } from './api'
 import { generateSlug, formatArticle, parseArticle, normalizeArticle, isValidKey } from './utils'
 import PromocodesPage from './PromocodesPage'
@@ -1630,6 +1630,26 @@ function ProductFormModal({
   const [useFamily, setUseFamily] = useState<boolean>(() => {
     return !!(product?.familyKey || product?.flavor || product?.puffs)
   })
+  const [familyFillLoading, setFamilyFillLoading] = useState<'title' | 'description' | 'images' | 'price' | null>(null)
+  const [showFamilyKeySuggestions, setShowFamilyKeySuggestions] = useState(false)
+
+  const allFamilyKeys = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          products
+            .map((p) => p.familyKey)
+            .filter((v): v is string => !!v)
+        )
+      ),
+    [products]
+  )
+
+  const filteredFamilyKeys = useMemo(() => {
+    const q = (formData.familyKey || '').toLowerCase().trim()
+    if (!q) return allFamilyKeys.slice(0, 10)
+    return allFamilyKeys.filter((k) => k.toLowerCase().includes(q)).slice(0, 10)
+  }, [allFamilyKeys, formData.familyKey])
 
   const [brandsForForm, setBrandsForForm] = useState<{ key: string; title: string }[]>([])
   const [linesForForm, setLinesForForm] = useState<{ key: string; title: string }[]>([])
@@ -1817,7 +1837,7 @@ function ProductFormModal({
     }
   }
 
-  const handleFillFromFamily = () => {
+  const handleFillFromFamily = (mode: 'title' | 'description' | 'images' | 'price') => {
     const key = (formData.familyKey || '').trim()
     if (!key) return
 
@@ -1832,6 +1852,8 @@ function ProductFormModal({
       return
     }
 
+    setFamilyFillLoading(mode)
+
     setFormData(prev => {
       if (!isDirty) {
         setIsDirty(true)
@@ -1839,43 +1861,37 @@ function ProductFormModal({
 
       const next: typeof prev = { ...prev }
 
-      if (!next.title && base.title) next.title = base.title
-      if (!next.description && base.description) next.description = base.description
+      if (mode === 'title' && !next.title && base.title) {
+        next.title = base.title
+      }
 
-      if ((!next.images || next.images.length === 0) && base.images && base.images.length > 0) {
-        next.images = [...base.images]
-        if (base.image_keys && base.image_keys.length > 0) {
-          next.image_keys = [...base.image_keys]
+      if (mode === 'description' && !next.description && base.description) {
+        next.description = base.description
+      }
+
+      if (mode === 'images') {
+        if ((!next.images || next.images.length === 0) && base.images && base.images.length > 0) {
+          next.images = [...base.images]
+          if (base.image_keys && base.image_keys.length > 0) {
+            next.image_keys = [...base.image_keys]
+          }
         }
       }
 
-      if ((!next.price_rub || next.price_rub <= 0) && base.price_rub) {
-        next.price_rub = base.price_rub
-      }
-
-      if (next.discount_price_rub == null && base.discount_price_rub != null) {
-        next.discount_price_rub = base.discount_price_rub
-      }
-
-      if (!next.brand && base.brand) next.brand = base.brand
-      if (!next.line && base.line) next.line = base.line
-      if (!next.strength && base.strength) next.strength = base.strength
-
-      if ((!next.categories || next.categories.length === 0) && (base.categories?.length || base.category)) {
-        if (base.categories && base.categories.length > 0) {
-          next.categories = [...base.categories]
-        } else if (base.category) {
-          next.categories = [base.category]
+      if (mode === 'price') {
+        if ((!next.price_rub || next.price_rub <= 0) && base.price_rub) {
+          next.price_rub = base.price_rub
         }
-        if (next.categories && next.categories[0]) {
-          next.category = next.categories[0]
+        if (next.discount_price_rub == null && base.discount_price_rub != null) {
+          next.discount_price_rub = base.discount_price_rub
         }
-      } else if (!next.category && base.category) {
-        next.category = base.category
       }
 
       return next
     })
+
+    // маленькая псевдо-загрузка, чтобы была анимация
+    setTimeout(() => setFamilyFillLoading(null), 200)
   }
 
   const handleImagesChange = (value: string) => {
@@ -2196,21 +2212,43 @@ function ProductFormModal({
                       value={formData.familyKey || ''}
                       onChange={(e) => handleChange('familyKey', e.target.value)}
                       placeholder="Например, lost_mary_mo_20000"
+                      onFocus={() => setShowFamilyKeySuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowFamilyKeySuggestions(false), 100)}
                     />
                     <datalist id="family-key-list">
                       {Array.from(new Set(products.map(p => p.familyKey).filter(Boolean))).map(key => (
                         <option key={key as string} value={key as string} />
                       ))}
                     </datalist>
+                    {showFamilyKeySuggestions && filteredFamilyKeys.length > 0 && (
+                      <ul className="family-key-suggestions">
+                        {filteredFamilyKeys.map((key) => (
+                          <li key={key}>
+                            <button
+                              type="button"
+                              className="family-key-suggestions-item"
+                              onMouseDown={(e) => {
+                                e.preventDefault()
+                                handleChange('familyKey', key)
+                                setShowFamilyKeySuggestions(false)
+                              }}
+                            >
+                              {key}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     <small className="form-hint form-hint-spaced">
                       Один и тот же ключ используйте для всех вкусов / затяжек одной модели. Можно выбрать существующее значение или ввести новое.
                     </small>
-                    <div style={{ marginTop: '0.5rem' }}>
+                    <div className="family-fill-buttons">
                       <button
                         type="button"
-                        className="btn-secondary btn-small"
-                        onClick={handleFillFromFamily}
+                        className={`btn-secondary btn-small ${familyFillLoading === 'title' ? 'btn-loading' : ''}`}
+                        onClick={() => handleFillFromFamily('title')}
                         disabled={
+                          !!familyFillLoading ||
                           !formData.familyKey ||
                           !products.some(
                             (p) =>
@@ -2219,7 +2257,55 @@ function ProductFormModal({
                           )
                         }
                       >
-                        Заполнить из семейства
+                        Название
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn-secondary btn-small ${familyFillLoading === 'description' ? 'btn-loading' : ''}`}
+                        onClick={() => handleFillFromFamily('description')}
+                        disabled={
+                          !!familyFillLoading ||
+                          !formData.familyKey ||
+                          !products.some(
+                            (p) =>
+                              p.familyKey === formData.familyKey &&
+                              (!product || p.slug !== product.slug)
+                          )
+                        }
+                      >
+                        Описание
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn-secondary btn-small ${familyFillLoading === 'images' ? 'btn-loading' : ''}`}
+                        onClick={() => handleFillFromFamily('images')}
+                        disabled={
+                          !!familyFillLoading ||
+                          !formData.familyKey ||
+                          !products.some(
+                            (p) =>
+                              p.familyKey === formData.familyKey &&
+                              (!product || p.slug !== product.slug)
+                          )
+                        }
+                      >
+                        Фото
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn-secondary btn-small ${familyFillLoading === 'price' ? 'btn-loading' : ''}`}
+                        onClick={() => handleFillFromFamily('price')}
+                        disabled={
+                          !!familyFillLoading ||
+                          !formData.familyKey ||
+                          !products.some(
+                            (p) =>
+                              p.familyKey === formData.familyKey &&
+                              (!product || p.slug !== product.slug)
+                          )
+                        }
+                      >
+                        Цена
                       </button>
                     </div>
                   </div>
