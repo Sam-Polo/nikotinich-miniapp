@@ -25,7 +25,7 @@ export default function ContentReactions({
   dislikes,
   userReaction,
   onReaction,
-  loading = false,
+  loading: _loading = false,
   compact,
   showDislike = false
 }: Props) {
