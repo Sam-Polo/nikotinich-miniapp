@@ -9,6 +9,8 @@ type CartItemRowProps = {
   item: CartItem
   onUpdateQty: (slug: string, qty: number) => void
   onRemove: (slug: string) => void
+  selected: boolean
+  onToggleSelect: (slug: string) => void
 }
 
 const UNDO_TOAST_MS = 4000
@@ -84,7 +86,7 @@ function UndoRemoveToast({ durationMs, onUndo }: UndoRemoveToastProps) {
   )
 }
 
-function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
+function CartItemRow({ item, onUpdateQty, onRemove, selected, onToggleSelect }: CartItemRowProps) {
   const { product, qty } = item
   const stock = product.stock
   const canInc = stock == null || qty < stock
@@ -128,7 +130,7 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
       <div className="absolute inset-0 flex justify-end items-stretch">
         <button
           type="button"
-          className="w-[82px] rounded-[22px] bg-[#FF3B30] text-white text-[13px] font-semibold flex flex-col items-center justify-center"
+          className="w-[82px] rounded-l-[22px] bg-[#FF3B30] text-white text-[13px] font-semibold flex flex-col items-center justify-center"
           onClick={() => onRemove(product.slug)}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -156,12 +158,20 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
           {/* чекбокс выбора товара */}
           <button
             type="button"
-            className="absolute left-[10px] top-[10px] z-10 w-6 h-6 rounded-[8px] border-2 border-white bg-accent shadow-[0_4px_20px_rgba(0,0,0,0.05)] flex items-center justify-center"
-            aria-label="Товар выбран"
+            className={`absolute left-[10px] top-[10px] z-10 w-6 h-6 rounded-[8px] border-2 shadow-[0_4px_20px_rgba(0,0,0,0.05)] flex items-center justify-center ${
+              selected ? 'border-white bg-accent' : 'border-[#D1D1D6] bg-white'
+            }`}
+            aria-label={selected ? 'Товар выбран' : 'Выбрать товар'}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleSelect(product.slug)
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            {selected && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
           </button>
           {product.images[0] ? (
             <img
@@ -184,7 +194,7 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
               {product.title}
             </p>
           </div>
-          <div className="w-full max-w-[180px] h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between">
+          <div className="w-full h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between">
             <button
               type="button"
               className="w-5 h-5 flex items-center justify-center text-[#595959] text-[24px] leading-none active:opacity-70"
@@ -214,6 +224,37 @@ export default function CartPage() {
 
   const sub = subtotal()
   const itemsTotal = totalItems()
+  const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set())
+
+  const allSelected = items.length > 0 && selectedSlugs.size === items.length
+  const hasSelection = selectedSlugs.size > 0
+
+  const handleToggleSelectAll = () => {
+    setSelectedSlugs(prev => {
+      if (allSelected) return new Set()
+      return new Set(items.map(i => i.product.slug))
+    })
+  }
+
+  const handleToggleItemSelect = (slug: string) => {
+    setSelectedSlugs(prev => {
+      const next = new Set(prev)
+      if (next.has(slug)) {
+        next.delete(slug)
+      } else {
+        next.add(slug)
+      }
+      return next
+    })
+  }
+
+  const handleDeleteSelected = () => {
+    if (!hasSelection) return
+    selectedSlugs.forEach(slug => {
+      removeItem(slug)
+    })
+    setSelectedSlugs(new Set())
+  }
 
   function handleRemoveWithUndo(slug: string) {
     const item = items.find(i => i.product.slug === slug)
@@ -261,11 +302,20 @@ export default function CartPage() {
         <div className="flex-1 min-h-0 pb-32">
           <div className="flex items-center justify-between h-8 mb-[22px]">
             <div className="flex items-center gap-[5px]">
-              <span className="w-6 h-6 rounded-[8px] border-2 border-white bg-accent shadow-[0_4px_20px_rgba(0,0,0,0.05)] flex items-center justify-center">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
+              <button
+                type="button"
+                onClick={handleToggleSelectAll}
+                className={`w-6 h-6 rounded-[8px] border-2 shadow-[0_4px_20px_rgba(0,0,0,0.05)] flex items-center justify-center ${
+                  allSelected ? 'border-white bg-accent' : 'border-[#D1D1D6] bg-white'
+                }`}
+                aria-label={allSelected ? 'Снять выделение со всех' : 'Выделить все товары'}
+              >
+                {allSelected && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
               <span className="text-[14px] font-medium leading-[22px] tracking-[-0.5px] text-[#595959]">
                 {getItemsLabel(itemsTotal)}
               </span>
@@ -273,13 +323,14 @@ export default function CartPage() {
             <button
               type="button"
               className="flex items-center gap-1 text-[14px] font-medium leading-[22px] tracking-[-0.5px] text-[#1C1C1E] active:opacity-70"
-              onClick={clearCart}
+              onClick={handleDeleteSelected}
+              disabled={!hasSelection}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M3 6h18" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Удалить всё
+              {allSelected ? 'Удалить всё' : 'Удалить'}
             </button>
           </div>
 
@@ -290,6 +341,8 @@ export default function CartPage() {
                 item={item}
                 onUpdateQty={updateQty}
                 onRemove={handleRemoveWithUndo}
+                selected={selectedSlugs.has(item.product.slug)}
+                onToggleSelect={handleToggleItemSelect}
               />
             ))}
           </div>
