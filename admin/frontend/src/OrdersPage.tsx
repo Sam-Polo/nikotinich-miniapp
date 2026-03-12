@@ -677,6 +677,26 @@ export default function OrdersPage({
           </div>
         </div>
       )}
+
+      {bulkDeleteConfirm && (
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setBulkDeleteConfirm(false)
+          }}
+        >
+          <div className="modal-content confirm-modal" onClick={e => e.stopPropagation()}>
+            <h3>Массовое удаление</h3>
+            <p>
+              Удалить выбранные заказы (<strong>{selectedOrderIds.length}</strong> шт.)? Это действие необратимо.
+            </p>
+            <div className="confirm-actions">
+              <button onClick={() => setBulkDeleteConfirm(false)} className="btn btn-cancel">Отмена</button>
+              <button onClick={bulkDelete} className="btn btn-confirm">Удалить</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
