@@ -220,7 +220,7 @@ function CartItemRow({ item, onUpdateQty, onRemove, selected, onToggleSelect }: 
 
 export default function CartPage() {
   const navigate = useNavigate()
-  const { items, addItem, removeItem, updateQty, subtotal, clearCart, totalItems } = useCartStore()
+  const { items, addItem, removeItem, updateQty, subtotal, totalItems } = useCartStore()
 
   const sub = subtotal()
   const itemsTotal = totalItems()
