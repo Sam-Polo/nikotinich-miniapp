@@ -254,16 +254,17 @@ export default function ProductPage() {
         showBack
       />
 
-      <div className="flex-1 relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-black/40 transition-opacity duration-200"
-          style={{ opacity: sheetPresented ? 1 : 0 }}
-        />
+      {/* overlay и sheet через fixed, чтобы не зависеть от flex в TG WebView */}
+      <div
+        className="fixed inset-0 bg-black/40 transition-opacity duration-200 z-[55]"
+        style={{ opacity: sheetPresented ? 1 : 0 }}
+        aria-hidden
+      />
 
-        <div
-          className="absolute inset-0 bg-white rounded-t-[26px] overflow-hidden transition-transform duration-200 ease-out"
-          style={{ transform: `translateY(${sheetPresented ? sheetDragY : 120}%)` }}
-        >
+      <div
+        className="fixed inset-x-0 bottom-0 top-14 bg-white rounded-t-[26px] overflow-hidden transition-transform duration-200 ease-out z-[56] flex flex-col"
+        style={{ transform: `translateY(${sheetPresented ? sheetDragY : 120}%)` }}
+      >
           <div
             className="h-[13px] flex items-center justify-center"
             onTouchStart={handleSheetTouchStart}
@@ -274,7 +275,7 @@ export default function ProductPage() {
             <span className="w-9 h-[3px] rounded-full bg-[#C5C5C5]" />
           </div>
 
-          <div className={`h-full overflow-y-auto pb-36 transition-all duration-200 ${contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}>
+          <div className={`min-h-0 flex-1 overflow-y-auto pb-36 transition-all duration-200 ${contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}>
             <div className="bg-[#F8F8F8] relative">
               <div
                 className="h-[310px] overflow-hidden relative"
