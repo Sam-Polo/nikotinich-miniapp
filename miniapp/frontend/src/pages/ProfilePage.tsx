@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '../store/user'
-import { updateUser, getUserOrders, getUser } from '../api'
-import type { Order } from '../api'
+import { updateUser, getUserOrders, getUser, getProducts } from '../api'
+import type { Order, Product } from '../api'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
 import Spinner from '../components/Spinner'
@@ -10,18 +10,25 @@ import Price from '../components/Price'
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   new: 'Новый',
-  confirmed: 'Подтверждён',
-  packed: 'Собирается',
-  completed: 'Выполнен',
+  confirmed: 'Заказ в пути',
+  packed: 'Упакован',
+  completed: 'Получен',
   cancelled: 'Отменён'
 }
 
-const ORDER_STATUS_COLORS: Record<string, string> = {
-  new: 'text-yellow-600 bg-yellow-50',
-  confirmed: 'text-blue-600 bg-blue-50',
-  packed: 'text-purple-600 bg-purple-50',
-  completed: 'text-green-600 bg-green-50',
-  cancelled: 'text-red-600 bg-red-50'
+function getOrderTitleByStatus(status: string) {
+  const s = String(status || '').toLowerCase()
+  if (s === 'confirmed' || s === 'packed') return 'В пути'
+  if (s === 'completed') return 'Получен'
+  if (s === 'cancelled') return 'Отменён'
+  return 'Новый'
+}
+
+function formatOrderDate(value?: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
 }
 
 function formatPhone(raw: string): string {
@@ -56,8 +63,8 @@ export default function ProfilePage() {
   const { user, setUser, settings } = useUserStore()
 
   const [orders, setOrders] = useState<Order[]>([])
+  const [orderProductImages, setOrderProductImages] = useState<Record<string, string>>({})
   const [ordersLoading, setOrdersLoading] = useState(false)
-  const [tab, setTab] = useState<'profile' | 'orders'>('profile')
 
   const [editPhone, setEditPhone] = useState(user?.phone || '')
   const [editEmail, setEditEmail] = useState(user?.email || '')
@@ -76,14 +83,43 @@ export default function ProfilePage() {
   const formattedPhone = formatPhone(editPhone || user?.phone || '')
 
   useEffect(() => {
-    if (tab === 'orders' && user?.telegram_id) {
-      setOrdersLoading(true)
-      getUserOrders(user.telegram_id)
-        .then(setOrders)
-        .catch(() => {})
-        .finally(() => setOrdersLoading(false))
+    if (!user?.telegram_id) return
+    let cancelled = false
+
+    setOrdersLoading(true)
+    getUserOrders(user.telegram_id)
+      .then(async (list) => {
+        if (cancelled) return
+        setOrders(list)
+
+        const slugs = Array.from(new Set(list.flatMap(o => o.items.map(i => i.slug).filter(Boolean))))
+        if (!slugs.length) {
+          setOrderProductImages({})
+          return
+        }
+        try {
+          const products = await getProducts({ slugs })
+          if (cancelled) return
+          const map: Record<string, string> = {}
+          products.forEach((p: Product) => {
+            if (p.images?.[0]) map[p.slug] = p.images[0]
+          })
+          setOrderProductImages(map)
+        } catch {
+          if (!cancelled) setOrderProductImages({})
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setOrders([])
+      })
+      .finally(() => {
+        if (!cancelled) setOrdersLoading(false)
+      })
+
+    return () => {
+      cancelled = true
     }
-  }, [tab, user?.telegram_id])
+  }, [user?.telegram_id])
 
   async function handleSave() {
     if (!user) return
@@ -253,25 +289,7 @@ export default function ProfilePage() {
           </svg>
         </button>
 
-        {/* вкладки */}
-        <div className="flex px-4 gap-2 mb-4">
-          {(['profile', 'orders'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={[
-                'flex-1 py-2 rounded-[10px] text-[14px] font-semibold transition-colors',
-                tab === t ? 'bg-accent text-white' : 'bg-card-bg text-text-secondary'
-              ].join(' ')}
-            >
-              {t === 'profile' ? 'Настройки' : 'Мои заказы'}
-            </button>
-          ))}
-        </div>
-
-        {/* вкладка профиль */}
-        {tab === 'profile' && (
-          <div className="px-4 space-y-4">
+        <div className="px-4 space-y-4">
             {/* реферальная система */}
             {/* реферальная система */}
             <section className="space-y-3">
@@ -353,47 +371,81 @@ export default function ProfilePage() {
                 Как это работает?
               </button>
             </section>
-          </div>
-        )}
+            <section className="pt-1">
+              <h2 className="text-[20px] font-bold leading-[120%] text-[#343434]">История заказов</h2>
 
-        {/* вкладка заказы */}
-        {tab === 'orders' && (
-          <div className="px-4 space-y-3">
-            {ordersLoading && <Spinner />}
-            {!ordersLoading && orders.length === 0 && (
-              <div className="text-center mt-10">
-                <p className="text-text-secondary text-[16px]">Заказов пока нет</p>
-                <Button variant="ghost" className="mt-4" onClick={() => navigate('/')}>
-                  В каталог
-                </Button>
-              </div>
-            )}
-            {orders.map(order => (
-              <button
-                key={order.id}
-                type="button"
-                onClick={() => navigate(`/order/${order.id}`)}
-                className="w-full text-left bg-card-bg rounded-card p-4 active:opacity-85 transition-opacity"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="text-[13px] font-mono text-text-secondary">#{order.id.slice(0, 8).toUpperCase()}</p>
-                    <p className="text-[12px] text-text-secondary">
-                      {new Date(order.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
-                    </p>
-                  </div>
-                  <span className={`text-[12px] font-semibold px-2 py-0.5 rounded-full ${ORDER_STATUS_COLORS[order.status] || 'text-text-secondary bg-bg-base'}`}>
-                    {ORDER_STATUS_LABELS[order.status] || order.status}
-                  </span>
+              {ordersLoading && (
+                <div className="pt-6">
+                  <Spinner />
                 </div>
-                <p className="text-[13px] text-text-secondary mb-2">
-                  {order.items.map(i => `${i.title || i.slug} × ${i.qty}`).join(', ')}
-                </p>
-                <Price value={order.totalRub} size="sm" />
-              </button>
-            ))}
-          </div>
-        )}
+              )}
+
+              {!ordersLoading && orders.length === 0 && (
+                <div className="text-center mt-6 pb-6">
+                  <p className="text-text-secondary text-[16px]">Заказов пока нет</p>
+                  <Button variant="ghost" className="mt-3" onClick={() => navigate('/')}>
+                    В каталог
+                  </Button>
+                </div>
+              )}
+
+              {!ordersLoading && orders.length > 0 && (
+                <div className="mt-4 space-y-5">
+                  {orders.map(order => {
+                    const previewItems = order.items.slice(0, 2)
+                    const orderTitle = getOrderTitleByStatus(order.status)
+                    const dateLabel = formatOrderDate(order.createdAt)
+                    return (
+                      <button
+                        key={order.id}
+                        type="button"
+                        onClick={() => navigate(`/order/${order.id}`)}
+                        className="w-full text-left bg-[#F8F8F8] rounded-[18px] p-[18px] active:opacity-85 transition-opacity"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[14px] font-semibold leading-[120%] text-[#434343]">{orderTitle}</p>
+                            <p className="text-[12px] font-normal leading-[14px] text-[#626262] truncate">
+                              {order.address || dateLabel || '—'}
+                            </p>
+                          </div>
+                          <svg className="w-5 h-5 text-[#595959] flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+
+                        <div className="mt-3 space-y-[10px]">
+                          {previewItems.map((item, idx) => (
+                            <div key={`${order.id}-${item.slug}-${idx}`} className="flex items-center gap-[10px]">
+                              <div className="w-[50px] h-[50px] rounded-[8px] bg-[#E7E7E7] overflow-hidden flex-shrink-0">
+                                {orderProductImages[item.slug] ? (
+                                  <img
+                                    src={orderProductImages[item.slug]}
+                                    alt={item.title || item.slug}
+                                    className="w-full h-full object-contain p-1 mix-blend-multiply"
+                                  />
+                                ) : null}
+                              </div>
+                              <p className="text-[12px] font-medium leading-[110%] text-[#626262] line-clamp-2">
+                                {item.title || item.slug}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-[12px] text-[#626262]">
+                            {ORDER_STATUS_LABELS[order.status] || ORDER_STATUS_LABELS.new}
+                          </span>
+                          <Price value={order.totalRub} size="sm" />
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+        </div>
       </div>
 
       {/* модалка «Как это работает» — инфо о рефералке из админки */}

@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
 import Price from '../components/Price'
 import toast from 'react-hot-toast'
+import { useCartStore } from '../store/cart'
 
 function formatDateTime(value?: string) {
   if (!value) return ''
@@ -18,10 +19,20 @@ function formatDateTime(value?: string) {
 // username менеджера для кнопки «Поддержка» — опционально из .env
 const SUPPORT_TG = (import.meta.env.VITE_SUPPORT_TG_USERNAME as string | undefined)?.trim() || ''
 
+function getOrderStatusTitle(status?: string) {
+  const s = String(status || '').toLowerCase()
+  if (s === 'confirmed' || s === 'packed') return 'Заказ в пути'
+  if (s === 'completed') return 'Заказ получен'
+  if (s === 'cancelled') return 'Заказ отменён'
+  return 'Новый заказ'
+}
+
 export default function OrderDetailsPage() {
   const navigate = useNavigate()
   const { orderId } = useParams<{ orderId: string }>()
   const user = useUserStore(s => s.user)
+  const addItem = useCartStore(s => s.addItem)
+  const clearCart = useCartStore(s => s.clearCart)
 
   const [loading, setLoading] = useState(true)
   const [order, setOrder] = useState<Order | null>(null)
@@ -53,11 +64,7 @@ export default function OrderDetailsPage() {
       .finally(() => setLoading(false))
   }, [user?.telegram_id, orderId])
 
-  const title = useMemo(() => {
-    if (!order) return 'Заказ'
-    if (order.status === 'completed') return 'Заказ получен'
-    return 'Заказ в пути'
-  }, [order])
+  const title = useMemo(() => getOrderStatusTitle(order?.status), [order?.status])
 
   function handleCopyOrderId() {
     if (!order) return
@@ -88,6 +95,38 @@ export default function OrderDetailsPage() {
     window.open(url, '_blank')
   }
 
+  async function handleRepeatOrder() {
+    if (!order || order.status !== 'completed') return
+    const slugs = Array.from(new Set(order.items.map(i => i.slug).filter(Boolean)))
+    if (!slugs.length) {
+      toast.error('В заказе нет товаров')
+      return
+    }
+
+    try {
+      const products = await getProducts({ slugs })
+      const bySlug = new Map(products.map(p => [p.slug, p]))
+      const matched = order.items
+        .map((i) => ({ item: i, product: bySlug.get(i.slug) }))
+        .filter((x): x is { item: OrderItem; product: Product } => !!x.product)
+
+      if (!matched.length) {
+        toast.error('Товары из заказа недоступны')
+        return
+      }
+
+      clearCart()
+      matched.forEach(({ product, item }) => {
+        addItem(product, item.qty || 1)
+      })
+
+      toast.success('Заказ добавлен в корзину')
+      navigate('/cart')
+    } catch {
+      toast.error('Не удалось повторить заказ')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
@@ -108,7 +147,11 @@ export default function OrderDetailsPage() {
     )
   }
 
-  const canCancel = order.status !== 'completed' && order.status !== 'cancelled'
+  const status = String(order.status || '').toLowerCase()
+  const canRepeat = status === 'completed'
+  const canCancel = status === 'new' || status === 'packed'
+  const canReturn = status === 'confirmed' || status === 'completed'
+  const showSupport = !!SUPPORT_TG
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
@@ -134,14 +177,14 @@ export default function OrderDetailsPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-[24px] leading-tight font-bold text-text-primary">{title}</h1>
-            {order.status === 'completed' && order.createdAt && (
+            {order.createdAt && (
               <p className="mt-2 text-[14px] text-text-secondary">{formatDateTime(order.createdAt)}</p>
             )}
           </div>
-          {order.status === 'completed' && (
+          {canRepeat && (
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={handleRepeatOrder}
               className="h-9 px-4 rounded-full bg-accent text-white text-[14px] font-medium whitespace-nowrap"
             >
               Повторить
@@ -191,8 +234,8 @@ export default function OrderDetailsPage() {
           </div>
         </section>
 
-        {(canCancel || SUPPORT_TG) && (
-          <div className={`mt-6 grid gap-2 ${canCancel && SUPPORT_TG ? 'grid-cols-2' : ''}`}>
+        {(canCancel || canReturn || showSupport) && (
+          <div className={`mt-6 grid gap-2 ${(canCancel || canReturn) && showSupport ? 'grid-cols-2' : ''}`}>
             {canCancel && (
               <button
                 type="button"
@@ -203,11 +246,20 @@ export default function OrderDetailsPage() {
                 {cancelling ? 'Отмена...' : 'Отменить заказ'}
               </button>
             )}
-            {SUPPORT_TG && (
+            {canReturn && (
               <button
                 type="button"
                 onClick={handleSupport}
-                className={`h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80 ${!canCancel ? 'w-full' : ''}`}
+                className="h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80"
+              >
+                Вернуть заказ
+              </button>
+            )}
+            {showSupport && (
+              <button
+                type="button"
+                onClick={handleSupport}
+                className={`h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80 ${!(canCancel || canReturn) ? 'w-full' : ''}`}
               >
                 Поддержка
               </button>
