@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
 import { getProduct, getBrands, getLines, getProducts } from '../api'
 import type { Product, Brand, Line } from '../api'
 import { useCartStore } from '../store/cart'
@@ -23,6 +22,57 @@ function formatArticleCode(article?: string) {
   return digits.slice(-4).padStart(4, '0')
 }
 
+const ADD_TOAST_MS = 2200
+
+type AddedToCartToastProps = {
+  durationMs: number
+}
+
+function AddedToCartToast({ durationMs }: AddedToCartToastProps) {
+  const [leftMs, setLeftMs] = useState(durationMs)
+
+  useEffect(() => {
+    const startedAt = Date.now()
+    const timer = window.setInterval(() => {
+      const elapsed = Date.now() - startedAt
+      setLeftMs(Math.max(0, durationMs - elapsed))
+    }, 100)
+    return () => window.clearInterval(timer)
+  }, [durationMs])
+
+  const secondsLeft = Math.max(1, Math.ceil(leftMs / 1000))
+  const progress = leftMs / durationMs
+  const radius = 9
+  const stroke = 1.8
+  const c = 2 * Math.PI * radius
+  const dashOffset = c * (1 - progress)
+
+  return (
+    <div className="w-[361px] max-w-[calc(100vw-32px)] h-[45px] rounded-[12px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)] px-[10px] py-[6px] flex items-center gap-[6px]">
+      <span className="relative w-6 h-6 flex-shrink-0">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r={radius} stroke="#D9D9D9" strokeWidth={stroke} />
+          <circle
+            cx="12"
+            cy="12"
+            r={radius}
+            stroke="#434343"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={dashOffset}
+            transform="rotate(-90 12 12)"
+          />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center text-[12px] font-semibold leading-none text-[#434343]">
+          {secondsLeft}
+        </span>
+      </span>
+      <span className="text-[14px] font-semibold leading-[110%] text-[#434343] truncate">Добавлено в корзину</span>
+    </div>
+  )
+}
+
 export default function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const navigate = useNavigate()
@@ -35,30 +85,53 @@ export default function ProductPage() {
   const [familyVariants, setFamilyVariants] = useState<Product[]>([])
   const [sheetPresented, setSheetPresented] = useState(false)
   const [sheetDragY, setSheetDragY] = useState(0)
+  const [sheetDragging, setSheetDragging] = useState(false)
   const [contentVisible, setContentVisible] = useState(false)
   const [switchingVariant, setSwitchingVariant] = useState(false)
+  const [showAddedToast, setShowAddedToast] = useState(false)
 
   const touchStartXRef = useRef<number | null>(null)
   const touchStartYRef = useRef<number | null>(null)
   const closeTouchStartYRef = useRef<number | null>(null)
   const closeDraggingRef = useRef(false)
-  const navigateTimeoutRef = useRef<number | null>(null)
+  const sheetPresentedRef = useRef(false)
 
   const { addItem, updateQty, getQty } = useCartStore()
   const isFav = useFavoritesStore(s => s.isFavorite(slug))
   const toggleFav = useFavoritesStore(s => s.toggle)
 
   useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setContentVisible(false)
+
     getProduct(slug)
-      .then(setProduct)
-      .catch(() => {})
-      .finally(() => setLoading(false))
+      .then((nextProduct) => {
+        if (cancelled) return
+        setProduct(nextProduct)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setProduct(null)
+      })
+      .finally(() => {
+        if (cancelled) return
+        setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [slug])
 
   useEffect(() => {
-    const raf = window.requestAnimationFrame(() => setSheetPresented(true))
+    if (loading || sheetPresentedRef.current) return
+    const raf = window.requestAnimationFrame(() => {
+      setSheetPresented(true)
+      sheetPresentedRef.current = true
+    })
     return () => window.cancelAnimationFrame(raf)
-  }, [])
+  }, [loading])
 
   useEffect(() => {
     // сбрасываем текущую картинку при смене товара
@@ -66,21 +139,19 @@ export default function ProductPage() {
   }, [product?.slug])
 
   useEffect(() => {
-    setContentVisible(false)
+    if (loading) return
     const raf = window.requestAnimationFrame(() => {
       setContentVisible(true)
       setSwitchingVariant(false)
     })
     return () => window.cancelAnimationFrame(raf)
-  }, [slug])
+  }, [loading, slug])
 
   useEffect(() => {
-    return () => {
-      if (navigateTimeoutRef.current != null) {
-        window.clearTimeout(navigateTimeoutRef.current)
-      }
-    }
-  }, [])
+    if (!showAddedToast) return
+    const tid = window.setTimeout(() => setShowAddedToast(false), ADD_TOAST_MS)
+    return () => window.clearTimeout(tid)
+  }, [showAddedToast])
 
   useEffect(() => {
     if (!product?.category || !product?.brand) return
@@ -202,21 +273,19 @@ export default function ProductPage() {
   function handleAdd() {
     if (stock != null && stock <= 0) return
     addItem(p)
-    toast.success('Добавлено в корзину', { id: `cart-${p.slug}` })
+    setShowAddedToast(true)
   }
 
   function closeSheet() {
     setSheetPresented(false)
-    window.setTimeout(() => navigate(-1), 180)
+    window.setTimeout(() => navigate('/'), 180)
   }
 
   function navigateWithTransition(targetSlug: string) {
     if (targetSlug === p.slug || switchingVariant) return
     setSwitchingVariant(true)
     setContentVisible(false)
-    navigateTimeoutRef.current = window.setTimeout(() => {
-      navigate(`/product/${targetSlug}`)
-    }, 120)
+    navigate(`/product/${targetSlug}`)
   }
 
   function handleFlavorClick(flavor: string) {
@@ -242,19 +311,22 @@ export default function ProductPage() {
     if (e.touches.length !== 1) return
     closeTouchStartYRef.current = e.touches[0].clientY
     closeDraggingRef.current = true
+    setSheetDragging(true)
   }
 
   function handleSheetTouchMove(e: React.TouchEvent<HTMLDivElement>) {
     if (!closeDraggingRef.current || closeTouchStartYRef.current == null) return
+    e.preventDefault()
     const delta = e.touches[0].clientY - closeTouchStartYRef.current
-    if (delta > 0) setSheetDragY(Math.min(delta, 180))
+    if (delta > 0) setSheetDragY(Math.min(delta * 0.65, 180))
   }
 
   function handleSheetTouchEnd() {
     if (!closeDraggingRef.current) return
     closeDraggingRef.current = false
     closeTouchStartYRef.current = null
-    if (sheetDragY > 90) {
+    setSheetDragging(false)
+    if (sheetDragY > 72) {
       closeSheet()
       return
     }
@@ -269,15 +341,18 @@ export default function ProductPage() {
       <div
         className="fixed inset-0 bg-black/40 transition-opacity duration-200 z-[55]"
         style={{ opacity: sheetPresented ? 1 : 0 }}
+        onClick={closeSheet}
         aria-hidden
       />
 
       <div
-        className="fixed inset-x-0 bottom-0 top-14 bg-white rounded-t-[26px] overflow-hidden transition-transform duration-200 ease-out z-[56] flex flex-col"
+        className={`fixed inset-x-0 bottom-0 top-14 bg-white rounded-t-[26px] overflow-hidden z-[56] flex flex-col ${
+          sheetDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
+        }`}
         style={{ transform: `translateY(${sheetPresented ? sheetDragY : 120}%)` }}
       >
         <div
-          className="h-[13px] flex items-center justify-center"
+          className="h-[13px] flex items-center justify-center touch-none"
           onTouchStart={handleSheetTouchStart}
           onTouchMove={handleSheetTouchMove}
           onTouchEnd={handleSheetTouchEnd}
@@ -287,10 +362,15 @@ export default function ProductPage() {
         </div>
 
         <div
-          className={`min-h-0 flex-1 overflow-y-auto pb-36 transition-all duration-200 ${
+          className={`relative min-h-0 flex-1 overflow-y-auto pb-36 transition-all duration-200 ${
             contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
           }`}
         >
+          {loading && (
+            <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
+              <Spinner />
+            </div>
+          )}
           <div className="bg-[#F8F8F8] relative">
             <div
               className="h-[310px] overflow-hidden relative"
@@ -451,8 +531,8 @@ export default function ProductPage() {
               </div>
             )}
 
-            {/* сохраненный блок мета-данных, но в более мягком стиле */}
-            <div className="bg-[#F8F8F8] border border-[#EDEDED] rounded-[16px] p-3 space-y-2 mt-2">
+            {/* блок мета-данных без заливки и рамки */}
+            <div className="space-y-2 mt-2">
               {(brandTitle ?? p.brand) && (
                 <Row label="Бренд" value={brandTitle ?? p.brand ?? ''} />
               )}
@@ -466,9 +546,18 @@ export default function ProductPage() {
         </div>
       </div>
 
+      {showAddedToast && (
+        <div
+          className="fixed left-4 right-4 z-[65] flex justify-center pointer-events-none"
+          style={{ bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <AddedToCartToast durationMs={ADD_TOAST_MS} />
+        </div>
+      )}
+
       <div
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
-        style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {stock != null && stock <= 0 ? (
           <p className="py-3 text-center text-text-secondary text-[14px]">Нет в наличии</p>
@@ -505,7 +594,12 @@ export default function ProductPage() {
         ) : (
           <Button fullWidth onClick={handleAdd} className="justify-between">
             <span>Добавить в корзину</span>
-            <Price value={displayPrice} size="sm" className="opacity-80" />
+            <span className="inline-flex items-baseline text-white opacity-90">
+              <span className="text-[14px] font-semibold leading-[100%]">
+                {displayPrice.toLocaleString('ru-RU')}
+              </span>
+              <span className="ml-1 text-[14px] font-semibold leading-[100%]">₽</span>
+            </span>
           </Button>
         )}
       </div>

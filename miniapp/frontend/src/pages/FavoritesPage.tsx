@@ -19,6 +19,57 @@ function getItemsLabel(total: number) {
   return `${total} товаров`
 }
 
+const ADD_TOAST_MS = 2200
+
+type AddedToCartToastProps = {
+  durationMs: number
+}
+
+function AddedToCartToast({ durationMs }: AddedToCartToastProps) {
+  const [leftMs, setLeftMs] = useState(durationMs)
+
+  useEffect(() => {
+    const startedAt = Date.now()
+    const timer = window.setInterval(() => {
+      const elapsed = Date.now() - startedAt
+      setLeftMs(Math.max(0, durationMs - elapsed))
+    }, 100)
+    return () => window.clearInterval(timer)
+  }, [durationMs])
+
+  const secondsLeft = Math.max(1, Math.ceil(leftMs / 1000))
+  const progress = leftMs / durationMs
+  const radius = 9
+  const stroke = 1.8
+  const c = 2 * Math.PI * radius
+  const dashOffset = c * (1 - progress)
+
+  return (
+    <div className="w-[361px] max-w-[calc(100vw-32px)] h-[45px] rounded-[12px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)] px-[10px] py-[6px] flex items-center gap-[6px]">
+      <span className="relative w-6 h-6 flex-shrink-0">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r={radius} stroke="#D9D9D9" strokeWidth={stroke} />
+          <circle
+            cx="12"
+            cy="12"
+            r={radius}
+            stroke="#434343"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={dashOffset}
+            transform="rotate(-90 12 12)"
+          />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center text-[12px] font-semibold leading-none text-[#434343]">
+          {secondsLeft}
+        </span>
+      </span>
+      <span className="text-[14px] font-semibold leading-[110%] text-[#434343] truncate">Добавлено в корзину</span>
+    </div>
+  )
+}
+
 export default function FavoritesPage() {
   const { items, toggle } = useFavoritesStore()
   const addItem = useCartStore(s => s.addItem)
@@ -30,7 +81,6 @@ export default function FavoritesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
   const [showAddedToast, setShowAddedToast] = useState(false)
-  const [toastImage, setToastImage] = useState<string | undefined>(undefined)
 
   const cartQty = totalItems()
   const cartSum = subtotal()
@@ -43,7 +93,7 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     if (!showAddedToast) return
-    const tid = window.setTimeout(() => setShowAddedToast(false), 2200)
+    const tid = window.setTimeout(() => setShowAddedToast(false), ADD_TOAST_MS)
     return () => window.clearTimeout(tid)
   }, [showAddedToast])
 
@@ -115,7 +165,6 @@ export default function FavoritesPage() {
                 e.stopPropagation()
                 if (outOfStock) return
                 addItem(product)
-                setToastImage(product.images[0])
                 setShowAddedToast(true)
               }
 
@@ -239,27 +288,29 @@ export default function FavoritesPage() {
       </div>
 
       {showAddedToast && (
-        <div className="fixed left-4 right-4 bottom-[86px] z-[65] bg-[#F1F1F2] rounded-[14px] px-3 py-2 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-[8px] bg-white overflow-hidden flex items-center justify-center">
-            {toastImage ? (
-              <img src={toastImage} alt="" className="w-full h-full object-contain p-1 mix-blend-multiply" />
-            ) : (
-              <span className="text-[9px] text-text-secondary">товар</span>
-            )}
-          </div>
-          <span className="text-[14px] text-[#4A4B50] font-medium">Товар в корзине</span>
+        <div
+          className="fixed left-4 right-4 z-[65] flex justify-center pointer-events-none"
+          style={{ bottom: 'calc(141px + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <AddedToCartToast durationMs={ADD_TOAST_MS} />
         </div>
       )}
 
       {cartQty > 0 && (
-        <button
-          className="fixed left-4 right-4 bottom-[86px] z-[60] h-[55px] rounded-[18px] bg-[#0099FF] px-[18px] flex items-center justify-between active:opacity-90"
-          onClick={() => navigate('/cart')}
+        <div
+          className="fixed left-0 right-0 px-4 z-[60]"
+          style={{ bottom: 'calc(74px + env(safe-area-inset-bottom, 0px))' }}
         >
-          <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">{getItemsLabel(cartQty)}</span>
-          <span className="text-[16px] font-semibold leading-[19px] text-white">Перейти в корзину</span>
-          <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">{formatRub(cartSum)}</span>
-        </button>
+          <button
+            type="button"
+            className="w-full h-[55px] rounded-[18px] bg-[#0099FF] px-[18px] flex items-center justify-between active:opacity-90"
+            onClick={() => navigate('/cart')}
+          >
+            <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">{getItemsLabel(cartQty)}</span>
+            <span className="text-[16px] font-semibold leading-[19px] text-white">Перейти в корзину</span>
+            <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">{formatRub(cartSum)}</span>
+          </button>
+        </div>
       )}
     </div>
   )
