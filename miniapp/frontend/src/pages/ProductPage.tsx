@@ -247,7 +247,7 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-full bg-bg-base">
+    <div className="flex flex-col min-h-full bg-bg-base" data-product-layout="sheet">
       <PageHeader
         title="Никотиныч"
         subtitle="mini app"
