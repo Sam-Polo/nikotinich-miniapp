@@ -311,7 +311,7 @@ export default function CheckoutPage() {
                 value={promoInput}
                 onChange={(e) => { setPromoInput(e.target.value); setPromoError('') }}
                 placeholder="PROMO"
-                className="w-1/2 h-[44px] rounded-[12px] px-4 text-[16px] font-medium leading-[120%] text-[#343434] bg-white border border-[#D1D1D6] outline-none focus:border-[#8E8E93] transition-colors duration-150"
+                className="w-1/2 h-[44px] rounded-[12px] px-4 text-[16px] font-medium leading-[120%] text-[#626262] bg-white border border-[#E5E5EA] outline-none focus:border-[#8E8E93] transition-colors duration-150"
               />
               <button
                 type="button"
@@ -339,7 +339,7 @@ export default function CheckoutPage() {
                 }}
                 className="h-[44px] px-1 text-[#0099FF] flex items-center justify-center active:opacity-90 disabled:opacity-50 flex-shrink-0"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                   <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
