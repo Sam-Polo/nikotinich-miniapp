@@ -266,14 +266,13 @@ export default function CheckoutPage() {
           </div>
 
           <div>
-            <p className="text-[12px] font-bold leading-[120%] text-[#434343] px-1 mb-2">Промокод</p>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={promoInput}
                 onChange={(e) => { setPromoInput(e.target.value); setPromoError('') }}
-                placeholder="Например, SALE10"
-                className="flex-1 h-[44px] rounded-[12px] px-4 text-[16px] font-medium leading-[120%] text-[#343434] bg-[#F8F8F8] border outline-none border-transparent focus:border-[#000000]"
+                placeholder="PROMO"
+                className="flex-1 h-[44px] rounded-[12px] px-4 text-[16px] font-medium leading-[120%] text-[#343434] bg-white border border-[#E5E5EA] outline-none focus:border-[#000000]"
               />
               <button
                 type="button"
@@ -299,9 +298,11 @@ export default function CheckoutPage() {
                     setPromoLoading(false)
                   }
                 }}
-                className="h-[44px] px-4 rounded-[12px] bg-[#0099FF] text-white text-[14px] font-semibold leading-[17px] active:opacity-90 disabled:opacity-50 flex-shrink-0"
+                className="h-[44px] w-[44px] rounded-[12px] bg-[#0099FF] text-white flex items-center justify-center active:opacity-90 disabled:opacity-50 flex-shrink-0"
               >
-                {promoLoading ? 'Проверка...' : 'Применить'}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             </div>
             {promoApplied && !promoError && (
@@ -377,17 +378,15 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-2 mt-2">
               <span className="text-[13px] font-normal leading-[120%] text-[#626262]">
-                Доставка {isFree ? 'бесплатно' : formatRub(delivery)}
+                Доставка
               </span>
-              {!isFree && (
-                <span className="text-[13px] font-normal leading-[120%] text-[#626262]">
-                  входит в сумму заказа
-                </span>
-              )}
+              <span className="text-[13px] font-normal leading-[120%] text-[#626262]">
+                {isFree ? '0 ₽' : formatRub(delivery)}
+              </span>
             </div>
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-1 mt-1">
               <span className="text-[14px] font-semibold leading-[120%] text-[#434343]">Итого</span>
               <span className="text-[18px] font-bold leading-[110%] text-[#434343]">{formatRub(total)}</span>
             </div>
