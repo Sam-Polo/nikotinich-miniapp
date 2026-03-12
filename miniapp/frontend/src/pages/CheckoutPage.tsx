@@ -1,11 +1,55 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cart'
 import { useUserStore } from '../store/user'
 import { createOrder } from '../api'
 import PageHeader from '../components/PageHeader'
-import Button from '../components/Button'
-import Price from '../components/Price'
+import BottomSheet from '../components/BottomSheet'
+
+function formatRub(value: number) {
+  return `${value.toLocaleString('ru-RU')} ₽`
+}
+
+function normalizePhone(value: string) {
+  return value.replace(/\D/g, '')
+}
+
+function formatPhone(value: string) {
+  const digits = normalizePhone(value)
+  if (digits.length !== 11) return value
+  const normalized = digits[0] === '8' ? `7${digits.slice(1)}` : digits
+  return `+${normalized[0]} ${normalized.slice(1, 4)} ${normalized.slice(4, 7)}-${normalized.slice(7, 9)}-${normalized.slice(9, 11)}`
+}
+
+function validateFullName(value: string) {
+  const safe = value.trim()
+  if (!safe) return 'Укажите ФИО'
+  if (!/^[A-Za-zА-Яа-яЁё\s-]+$/.test(safe)) return 'Используйте только буквы'
+  if (safe.split(/\s+/).length < 2) return 'Укажите имя и фамилию'
+  if (safe.length < 5) return 'Слишком короткое ФИО'
+  return ''
+}
+
+function validateEmail(value: string) {
+  const safe = value.trim()
+  if (!safe) return 'Укажите email'
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safe)) return 'Некорректный email'
+  return ''
+}
+
+function validatePhone(value: string) {
+  const digits = normalizePhone(value)
+  if (!digits) return 'Укажите телефон'
+  if (digits.length !== 11) return 'Телефон должен быть из 11 цифр'
+  if (digits[0] !== '7' && digits[0] !== '8') return 'Телефон должен начинаться с 7 или 8'
+  return ''
+}
+
+function validateAddress(value: string) {
+  if (!value.trim()) return 'Укажите адрес доставки'
+  if (value.trim().length < 6) return 'Адрес слишком короткий'
+  return ''
+}
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
@@ -13,12 +57,25 @@ export default function CheckoutPage() {
   const { user, settings } = useUserStore()
 
   const [name, setName] = useState(user?.username || '')
+  const [email, setEmail] = useState(user?.email || '')
   const [phone, setPhone] = useState(user?.phone || '')
   const [address, setAddress] = useState('')
-  const [note, setNote] = useState('')
+
+  const [sheetDataOpen, setSheetDataOpen] = useState(false)
+  const [sheetAddressOpen, setSheetAddressOpen] = useState(false)
+
+  const [draftName, setDraftName] = useState('')
+  const [draftEmail, setDraftEmail] = useState('')
+  const [draftPhone, setDraftPhone] = useState('')
+  const [draftAddress, setDraftAddress] = useState('')
+
+  const [draftNameError, setDraftNameError] = useState('')
+  const [draftEmailError, setDraftEmailError] = useState('')
+  const [draftPhoneError, setDraftPhoneError] = useState('')
+  const [draftAddressError, setDraftAddressError] = useState('')
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [addressError, setAddressError] = useState('')
 
   const deliveryFee = settings?.deliveryFee ?? 300
   const freeFrom = settings?.freeDeliveryFrom ?? 3500
@@ -31,11 +88,67 @@ export default function CheckoutPage() {
   const effectiveBonus = Math.min(referralBonusUsed, afterPromo)
   const total = Math.max(0, afterPromo - effectiveBonus)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setAddressError('')
-    if (!name.trim()) { setError('Введите ваше имя'); return }
-    if (!address.trim()) { setAddressError('Укажите адрес доставки'); return }
+  const receiverMeta = useMemo(() => {
+    const phoneText = phone.trim() ? formatPhone(phone.trim()) : ''
+    return [email.trim(), phoneText].filter(Boolean).join('   ')
+  }, [email, phone])
+
+  useEffect(() => {
+    if (!user) return
+    setName(prev => prev || user.username || '')
+    setEmail(prev => prev || user.email || '')
+    setPhone(prev => prev || user.phone || '')
+  }, [user])
+
+  function openDataSheet() {
+    setDraftName(name)
+    setDraftEmail(email)
+    setDraftPhone(phone)
+    setDraftNameError('')
+    setDraftEmailError('')
+    setDraftPhoneError('')
+    setSheetDataOpen(true)
+  }
+
+  function openAddressSheet() {
+    setDraftAddress(address)
+    setDraftAddressError('')
+    setSheetAddressOpen(true)
+  }
+
+  function saveReceiverData() {
+    const nextNameError = validateFullName(draftName)
+    const nextEmailError = validateEmail(draftEmail)
+    const nextPhoneError = validatePhone(draftPhone)
+    setDraftNameError(nextNameError)
+    setDraftEmailError(nextEmailError)
+    setDraftPhoneError(nextPhoneError)
+    if (nextNameError || nextEmailError || nextPhoneError) return
+
+    setName(draftName.trim())
+    setEmail(draftEmail.trim())
+    setPhone(formatPhone(draftPhone.trim()))
+    setSheetDataOpen(false)
+  }
+
+  function saveAddressData() {
+    const nextAddressError = validateAddress(draftAddress)
+    setDraftAddressError(nextAddressError)
+    if (nextAddressError) return
+    setAddress(draftAddress.trim())
+    setSheetAddressOpen(false)
+  }
+
+  async function handleSubmit() {
+    const nameError = validateFullName(name)
+    const emailError = validateEmail(email)
+    const phoneError = validatePhone(phone)
+    const addressError = validateAddress(address)
+    if (nameError || emailError || phoneError || addressError) {
+      setError(nameError || emailError || phoneError || addressError)
+      return
+    }
+
     setError('')
     setLoading(true)
     try {
@@ -50,12 +163,13 @@ export default function CheckoutPage() {
         customerName: name.trim(),
         items: orderItems,
         userId: user?.telegram_id,
-        phone: phone.trim() || undefined,
+        phone: formatPhone(phone.trim()),
         address: address.trim() || undefined,
         totalRub: total,
         deliveryFee: delivery,
         promoCode: promoApplied?.code || undefined,
-        note: note.trim() || undefined,
+        // email не изменяет профиль, но уходит в заказ в заметке для менеджера
+        note: `email: ${email.trim()}`,
         referralBonusUsed: effectiveBonus > 0 ? effectiveBonus : undefined
       })
 
@@ -72,103 +186,188 @@ export default function CheckoutPage() {
     <div className="flex flex-col min-h-full bg-bg-base">
       <PageHeader title="Никотиныч" subtitle="mini app" showBack />
 
-      <form onSubmit={handleSubmit} className="flex-1 px-4 pt-4 pb-36">
-        <h1 className="text-[28px] font-bold text-text-primary mb-6">Оформить заказ</h1>
-
-        {/* данные покупателя */}
-        <section className="bg-card-bg rounded-card p-4 mb-4 space-y-4">
-          <h2 className="text-[16px] font-semibold text-text-primary">Контактные данные</h2>
-          <Field label="Имя *" value={name} onChange={setName} placeholder="Ваше имя" />
-          <Field label="Телефон" value={phone} onChange={setPhone} placeholder="+7 (___) ___-__-__" type="tel" />
-        </section>
-
-        {/* доставка */}
-        <section className="bg-card-bg rounded-card p-4 mb-4 space-y-4">
-          <h2 className="text-[16px] font-semibold text-text-primary">Доставка</h2>
+      <div className="flex-1 px-4 pt-4 pb-[190px] overflow-y-auto">
+        <section className="space-y-6">
           <div>
-            <label className="block text-[13px] text-text-secondary mb-1">Адрес *</label>
-            <input
-              type="text"
-              value={address}
-              onChange={e => { setAddress(e.target.value); setAddressError('') }}
-              placeholder="Москва, ул. Примерная, д. 1"
-              className={`w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border ${addressError ? 'border-red-500' : 'border-border-light'} focus:border-accent`}
-            />
-            {addressError && <p className="text-destructive text-[13px] mt-1">{addressError}</p>}
+            <h2 className="text-[20px] font-bold leading-[120%] text-[#343434] mb-3">Получатель</h2>
+            <button
+              type="button"
+              onClick={openDataSheet}
+              className="w-full h-[56px] flex items-center gap-2.5 py-3 text-left"
+            >
+              <span className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.75 4.75C11.75 5.81087 11.3286 6.82828 10.5784 7.57843C9.82828 8.32857 8.81087 8.75 7.75 8.75C6.68913 8.75 5.67172 8.32857 4.92157 7.57843C4.17143 6.82828 3.75 5.81087 3.75 4.75C3.75 3.68913 4.17143 2.67172 4.92157 1.92157C5.67172 1.17143 6.68913 0.75 7.75 0.75C8.81087 0.75 9.82828 1.17143 10.5784 1.92157C11.3286 2.67172 11.75 3.68913 11.75 4.75ZM7.75 11.75C5.89348 11.75 4.11301 12.4875 2.80025 13.8003C1.4875 15.113 0.75 16.8935 0.75 18.75H14.75C14.75 16.8935 14.0125 15.113 12.6997 13.8003C11.387 12.4875 9.60652 11.75 7.75 11.75Z" stroke="#434343" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[15px] font-semibold leading-[110%] text-[#434343] truncate">
+                  {name || 'Укажите ФИО'}
+                </span>
+                <span className="block text-[12px] font-normal leading-[110%] text-[#797979] truncate mt-0.5">
+                  {receiverMeta || 'Укажите email и телефон'}
+                </span>
+              </span>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="flex-shrink-0">
+                <path d="M7.5 5L12.5 10L7.5 15" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
           </div>
-        </section>
 
-        {/* комментарий */}
-        <section className="bg-card-bg rounded-card p-4 mb-4">
-          <label className="block text-[13px] text-text-secondary mb-1">Комментарий к заказу</label>
-          <textarea
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            placeholder="Любые пожелания..."
-            rows={3}
-            className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent resize-none"
-          />
-        </section>
+          <div>
+            <p className="text-[12px] font-bold leading-[120%] text-[#434343] px-1 mb-2">Адрес доставки</p>
+            <button
+              type="button"
+              onClick={openAddressSheet}
+              className="w-full h-[44px] rounded-[12px] bg-[#F8F8F8] px-3 flex items-center justify-between gap-3"
+            >
+              <span className="text-[16px] font-normal leading-[19px] text-[#434343] truncate">
+                {address || 'Укажите адрес'}
+              </span>
+              <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9.20565 2.98391L12.3168 6.09488M1.25825 11.0024L0.650024 14.65L4.29783 14.0418C4.93157 13.9366 5.51653 13.6358 5.97084 13.1817L14.199 4.95315C14.4878 4.66437 14.65 4.2727 14.65 3.86432C14.65 3.45593 14.4878 3.06427 14.199 2.77548L12.526 1.10178C12.383 0.958569 12.2131 0.844956 12.0261 0.76744C11.8392 0.689924 11.6387 0.650024 11.4363 0.650024C11.2339 0.650024 11.0335 0.689924 10.8465 0.76744C10.6595 0.844956 10.4897 0.958569 10.3467 1.10178L2.11848 9.33028C1.66442 9.78436 1.36366 10.369 1.25825 11.0024Z" stroke="black" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </button>
+          </div>
 
-        {/* итоги */}
-        <section className="bg-card-bg rounded-card p-4 space-y-2 mb-4">
-          <div className="flex justify-between text-[14px] text-text-secondary">
-            <span>Товары ({items.reduce((s, i) => s + i.qty, 0)} шт.)</span>
-            <Price value={sub} size="sm" />
-          </div>
-          <div className="flex justify-between text-[14px] text-text-secondary">
-            <span>Доставка</span>
-            <span className={isFree ? 'text-green-500' : ''}>
-              {isFree ? 'Бесплатно' : <Price value={delivery} size="sm" />}
-            </span>
-          </div>
-          {promoDiscount > 0 && (
-            <div className="flex justify-between text-[14px] text-green-500">
-              <span>Промокод {promoApplied?.code}</span>
-              <span>−{promoDiscount.toLocaleString('ru-RU')} ₽</span>
+          <section className="rounded-[18px] bg-[#F8F8F8] p-[18px] space-y-4">
+            <div className="space-y-[10px]">
+              {items.map((item) => (
+                <div key={item.product.slug} className="flex items-center gap-[10px] h-[50px]">
+                  <div className="w-[50px] h-[50px] rounded-[8px] bg-[#E7E7E7] overflow-hidden flex-shrink-0">
+                    {item.product.images[0] ? (
+                      <img
+                        src={item.product.images[0]}
+                        alt={item.product.title}
+                        className="w-full h-full object-contain p-1 mix-blend-multiply"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="min-w-0 flex-1 h-[50px] flex flex-col justify-between">
+                    <p className="text-[12px] font-medium leading-[110%] text-[#626262] line-clamp-2">
+                      {item.product.title}
+                    </p>
+                    <p className="text-[15px] font-bold leading-[110%] text-[#434343]">
+                      {formatRub(item.product.display_price * item.qty)}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
-          {effectiveBonus > 0 && (
-            <div className="flex justify-between text-[14px] text-green-500">
-              <span>Реферальные баллы</span>
-              <span>−{effectiveBonus.toLocaleString('ru-RU')} ₽</span>
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[14px] font-semibold leading-[120%] text-[#434343]">Итого</span>
+              <span className="text-[18px] font-bold leading-[110%] text-[#434343]">{formatRub(total)}</span>
             </div>
-          )}
-          <div className="flex justify-between text-[17px] font-bold text-text-primary border-t border-border-light pt-2 mt-1">
-            <span>Итого</span>
-            <Price value={total} size="md" />
-          </div>
+          </section>
+
+          {error && <p className="text-destructive text-[14px]">{error}</p>}
         </section>
-
-        {error && <p className="text-destructive text-[14px] mb-3">{error}</p>}
-      </form>
-
-      {/* кнопка подтверждения — выше BottomNav */}
-      <div className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
-        style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
-        <Button fullWidth loading={loading} onClick={handleSubmit as any}>
-          Подтвердить заказ — <Price value={total} size="md" />
-        </Button>
       </div>
+
+      <div className="fixed left-0 right-0 px-4 z-[60]" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 6px)' }}>
+        <button
+          type="button"
+          disabled={loading}
+          className="w-full h-[55px] rounded-[18px] bg-[#0099FF] px-[15px] flex items-center justify-between active:opacity-90 disabled:opacity-50"
+          onClick={handleSubmit}
+        >
+          <span className="text-[16px] font-semibold leading-[19px] text-white">Сформировать заказ</span>
+          <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">{formatRub(total)}</span>
+        </button>
+      </div>
+
+      <BottomSheet open={sheetDataOpen} onClose={() => setSheetDataOpen(false)} snapHeight="78vh">
+        <div className="bg-white">
+          <div className="h-11 flex items-center justify-between px-4">
+            <span className="w-14" />
+            <h3 className="text-[17px] font-semibold leading-[22px] tracking-[-0.4px] text-[#343434]">Данные получателя</h3>
+            <button type="button" className="text-[17px] font-normal leading-[22px] tracking-[-0.4px] text-[#00AAFF]" onClick={() => setSheetDataOpen(false)}>
+              Готово
+            </button>
+          </div>
+          <div className="px-[14px] pt-4 pb-5 space-y-2">
+            <InputField
+              value={draftName}
+              onChange={(v) => { setDraftName(v); setDraftNameError('') }}
+              placeholder="Фамилия Имя Отчество"
+              error={draftNameError}
+            />
+            <InputField
+              value={draftEmail}
+              onChange={(v) => { setDraftEmail(v); setDraftEmailError('') }}
+              placeholder="Электронная почта"
+              error={draftEmailError}
+            />
+            <InputField
+              value={draftPhone}
+              onChange={(v) => { setDraftPhone(v); setDraftPhoneError('') }}
+              placeholder="Укажите телефон"
+              error={draftPhoneError}
+            />
+            <button
+              type="button"
+              onClick={saveReceiverData}
+              className="mt-[18px] w-full h-[55px] rounded-[18px] bg-[#0099FF] text-white font-semibold active:opacity-90"
+            >
+              <span className="text-[16px] leading-[19px]">Сохранить</span>
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={sheetAddressOpen} onClose={() => setSheetAddressOpen(false)} snapHeight="78vh">
+        <div className="bg-white">
+          <div className="h-11 flex items-center justify-between px-4">
+            <span className="w-14" />
+            <h3 className="text-[17px] font-semibold leading-[22px] tracking-[-0.4px] text-[#343434]">Адрес доставки</h3>
+            <button type="button" className="text-[17px] font-normal leading-[22px] tracking-[-0.4px] text-[#00AAFF]" onClick={() => setSheetAddressOpen(false)}>
+              Готово
+            </button>
+          </div>
+          <div className="px-[14px] pt-4 pb-5 space-y-2">
+            <InputField
+              value={draftAddress}
+              onChange={(v) => { setDraftAddress(v); setDraftAddressError('') }}
+              placeholder="Москва, Окская улица, 4"
+              error={draftAddressError}
+            />
+            <button
+              type="button"
+              onClick={saveAddressData}
+              className="mt-[18px] w-full h-[55px] rounded-[18px] bg-[#0099FF] text-white text-[16px] font-semibold leading-[19px] active:opacity-90"
+            >
+              Сохранить
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   )
 }
 
-function Field({
-  label, value, onChange, placeholder, type = 'text'
+function InputField({
+  value,
+  onChange,
+  placeholder,
+  error
 }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+  error: string
 }) {
   return (
-    <div>
-      <label className="block text-[13px] text-text-secondary mb-1">{label}</label>
+    <div className="space-y-1">
       <input
-        type={type}
+        type="text"
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
+        className={`w-full h-[51px] rounded-[12px] px-4 text-[16px] font-medium leading-[120%] text-[#343434] bg-[#F8F8F8] border outline-none ${error ? 'border-[#FF3B30]' : 'border-transparent focus:border-[#000000]'}`}
       />
+      {error && <p className="text-[13px] text-[#FF3B30]">{error}</p>}
     </div>
   )
 }
