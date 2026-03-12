@@ -698,11 +698,11 @@
 }
 
 .btn-deactivate {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.1rem;
   background: #fc79d5;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
@@ -719,11 +719,11 @@
 }
 
 .btn-activate {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.1rem;
   background: var(--admin-accent);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
@@ -737,6 +737,35 @@
 .btn-activate:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* кнопка удаления выбранных товаров в тулбаре */
+.btn-delete-selected {
+  padding: 0.5rem 1.1rem;
+  background: #dc3545;
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-delete-selected:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.btn-delete-selected:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.toolbar-bulk-actions {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 /* уведомления */
@@ -1047,7 +1076,7 @@
   line-height: 1;
 }
 
-.product-card-checkbox input[type="checkbox"]:hover {
+.product-card-checkbox input[type="checkbox"]:not(:checked):hover {
   border-color: rgba(0, 0, 0, 0.5);
   background: #fff;
 }

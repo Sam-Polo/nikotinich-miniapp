@@ -422,6 +422,35 @@ function ProductsList({
     }
   }
 
+  const handleDeleteSelected = async () => {
+    if (selectedProductSlugs.size === 0) {
+      showToast('Выберите товары для удаления', 'error')
+      return
+    }
+
+    const count = selectedProductSlugs.size
+    const confirmed = window.confirm(
+      count === 1
+        ? 'Удалить выбранный товар без возможности восстановления?'
+        : `Удалить ${count} выбранных товаров без возможности восстановления?`
+    )
+    if (!confirmed) return
+
+    setIsDeactivating(true)
+    try {
+      const slugs = Array.from(selectedProductSlugs)
+      const promises = slugs.map(slug => api.deleteProduct(slug))
+      await Promise.all(promises)
+      showToast(`Удалено товаров: ${slugs.length}`, 'success')
+      await loadProducts()
+      setSelectedProductSlugs(new Set())
+    } catch (err: any) {
+      showToast(err.message || 'Ошибка удаления товаров', 'error')
+    } finally {
+      setIsDeactivating(false)
+    }
+  }
+
 
   const handleLogout = () => {
     removeToken()
@@ -717,7 +746,7 @@ function ProductsList({
               const allActive = selectedProducts.every(p => p.active)
               const allInactive = selectedProducts.every(p => !p.active)
               return (
-                <>
+                <div className="toolbar-bulk-actions">
                   {allActive && (
                     <button
                       onClick={handleDeactivateSelected}
@@ -758,7 +787,15 @@ function ProductsList({
                       </button>
                     </>
                   )}
-                </>
+                  <button
+                    onClick={handleDeleteSelected}
+                    disabled={isDeactivating || isActivating || loading}
+                    className="btn-delete-selected"
+                    title="Удалить выбранные товары"
+                  >
+                    Удалить ({selectedProductSlugs.size})
+                  </button>
+                </div>
               )
             })()}
           </div>
