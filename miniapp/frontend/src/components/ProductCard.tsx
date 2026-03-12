@@ -12,13 +12,14 @@ type Props = {
 
 export default function ProductCard({ product, showAddButton = true }: Props) {
   const navigate = useNavigate()
-  const { addItem, updateQty, getQty } = useCartStore()
+  const addItem = useCartStore(s => s.addItem)
+  const updateQty = useCartStore(s => s.updateQty)
+  const qty = useCartStore(s => s.getQty(product.slug))
   const isFav = useFavoritesStore(s => s.isFavorite(product.slug))
   const toggleFav = useFavoritesStore(s => s.toggle)
 
   const displayPrice = product.display_price
   const hasDiscount = !!product.discount_price_rub
-  const qty = getQty(product.slug)
   const stock = product.stock
   const canAddMore = stock == null || qty < stock
 
@@ -90,25 +91,27 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
         </div>
 
         {showAddButton && (
-          (stock != null && stock <= 0) ? (
-            <p className="mt-2 py-2 text-center text-[13px] text-text-secondary flex-shrink-0">Нет в наличии</p>
+          stock != null && stock <= 0 ? (
+            <p className="mt-2 py-2 text-center text-[13px] text-text-secondary flex-shrink-0">
+              Нет в наличии
+            </p>
           ) : qty > 0 ? (
             <div
               className="mt-2 flex items-center flex-shrink-0"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-center bg-[#F4F5F7] rounded-[12px] px-1.5 py-1 min-w-[96px]">
+              <div className="w-full h-9 rounded-lg bg-[#F8F8F8] px-2 flex items-center justify-between">
                 <button
-                  className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
+                  className="w-6 h-6 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
                   onClick={handleDec}
                 >
                   −
                 </button>
-                <span className="text-[14px] font-semibold text-text-primary px-2 min-w-[24px] text-center">
+                <span className="text-[14px] font-semibold text-text-primary px-2 min-w-[32px] text-center">
                   {qty}
                 </span>
                 <button
-                  className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70 disabled:opacity-50"
+                  className="w-6 h-6 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70 disabled:opacity-50"
                   onClick={handleInc}
                   disabled={!canAddMore}
                 >

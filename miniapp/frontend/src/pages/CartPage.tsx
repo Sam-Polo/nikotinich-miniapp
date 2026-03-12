@@ -251,7 +251,7 @@ export default function CartPage() {
   const handleDeleteSelected = () => {
     if (!hasSelection) return
     selectedSlugs.forEach(slug => {
-      removeItem(slug)
+      handleRemoveWithUndo(slug)
     })
     setSelectedSlugs(new Set())
   }

@@ -96,7 +96,9 @@ export default function ProductPage() {
   const closeDraggingRef = useRef(false)
   const sheetPresentedRef = useRef(false)
 
-  const { addItem, updateQty, getQty } = useCartStore()
+  const addItem = useCartStore(s => s.addItem)
+  const updateQty = useCartStore(s => s.updateQty)
+  const qty = useCartStore(s => s.getQty(slug))
   const isFav = useFavoritesStore(s => s.isFavorite(slug))
   const toggleFav = useFavoritesStore(s => s.toggle)
 
@@ -213,7 +215,6 @@ export default function ProductPage() {
   const displayPrice = p.display_price
   const hasDiscount = !!p.discount_price_rub
   const images = p.images && p.images.length > 0 ? p.images : []
-  const qty = getQty(p.slug)
   const stock = p.stock
   const canAddMore = stock == null || qty < stock
 
