@@ -187,6 +187,8 @@ export default function OrdersPage({
   const [visitsPeriod, setVisitsPeriod] = useState<'7d' | '30d' | 'all'>('30d')
   const [visitsStats, setVisitsStats] = useState<{ uniqueUsersPeriod: number; uniqueUsersAllTime: number } | null>(null)
   const [visitsLoading, setVisitsLoading] = useState(false)
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
 
   useEffect(() => {
     load(0)
@@ -312,6 +314,40 @@ export default function OrdersPage({
     }
   }
 
+  const toggleOrderSelection = (id: string) => {
+    setSelectedOrderIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  const toggleSelectAllOnPage = () => {
+    const pageIds = filteredOrders.map(o => o.id)
+    const allSelected = pageIds.every(id => selectedOrderIds.includes(id))
+    if (allSelected) {
+      setSelectedOrderIds(prev => prev.filter(id => !pageIds.includes(id)))
+    } else {
+      setSelectedOrderIds(prev => Array.from(new Set([...prev, ...pageIds])))
+    }
+  }
+
+  const bulkDelete = async () => {
+    const ids = selectedOrderIds
+    if (ids.length === 0) {
+      setBulkDeleteConfirm(false)
+      return
+    }
+    try {
+      await api.bulkDeleteOrders(ids)
+      setOrders(prev => prev.filter(o => !ids.includes(o.id)))
+      setTotalOrders(prev => Math.max(0, prev - ids.length))
+      setSelectedOrderIds([])
+    } catch (err: any) {
+      setError(err.message || 'Ошибка массового удаления')
+    } finally {
+      setBulkDeleteConfirm(false)
+    }
+  }
+
   // границы периода для фильтра по дате (по createdAt заказа)
   const salesDateRange = useMemo(() => {
     const now = new Date()
@@ -429,12 +465,39 @@ export default function OrdersPage({
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </label>
+                <div className="toolbar-row-actions">
+                  <div className="toolbar-bulk-actions">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id))}
+                        onChange={toggleSelectAllOnPage}
+                      />
+                      <span>Выбрать все на странице</span>
+                    </label>
+                    <button
+                      type="button"
+                      className="btn-delete-selected"
+                      disabled={selectedOrderIds.length === 0}
+                      onClick={() => setBulkDeleteConfirm(true)}
+                    >
+                      Удалить выбранные
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="orders-table-wrapper">
               <table className="promocodes-table orders-table">
                 <thead>
                   <tr>
+                    <th>
+                      <input
+                        type="checkbox"
+                        checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id))}
+                        onChange={toggleSelectAllOnPage}
+                      />
+                    </th>
                     {th('id', 'ID')}
                     {th('customerName', 'Клиент')}
                     <th>Телефон</th>
@@ -448,6 +511,13 @@ export default function OrdersPage({
                 <tbody>
                   {filteredOrders.map((order) => (
                     <tr key={order.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedOrderIds.includes(order.id)}
+                          onChange={() => toggleOrderSelection(order.id)}
+                        />
+                      </td>
                       <td data-label="ID">{order.id.slice(0, 8)}</td>
                       <td data-label="Клиент">{order.customerName}</td>
                       <td data-label="Телефон">{order.phone || '—'}</td>

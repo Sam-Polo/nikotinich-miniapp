@@ -195,7 +195,6 @@ bot.callbackQuery(/^os:/, async (ctx) => {
           `Статус: ${STATUS_NAMES[newStatus] ?? newStatus}`
         )
         await ctx.editMessageText(updatedText, {
-          parse_mode: 'Markdown',
           reply_markup: { inline_keyboard: rows }
         })
       } else {

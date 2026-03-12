@@ -307,6 +307,13 @@ export const api = {
   async deleteOrder(id: string) {
     return fetchWithAuth(`/api/orders/${id}`, { method: 'DELETE' })
   },
+  async bulkDeleteOrders(ids: string[]) {
+    return fetchWithAuth('/api/orders/bulk-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    })
+  },
 
   // статистика посещений
   async getVisitsStats(period: '7d' | '30d' | 'all') {

@@ -124,4 +124,31 @@ router.delete('/:id', async (req, res) => {
   }
 })
 
+// массовое удаление заказов по списку id
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const sheetId = process.env.GOOGLE_SHEET_ID
+    if (!sheetId) return res.status(500).json({ error: 'GOOGLE_SHEET_ID not configured' })
+
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map((id: any) => String(id)) : []
+    if (ids.length === 0) {
+      return res.status(400).json({ error: 'missing_ids' })
+    }
+
+    const orders = await fetchOrdersFromSheet(sheetId)
+    const filtered = orders.filter(o => !ids.includes(o.id))
+
+    if (filtered.length === orders.length) {
+      return res.status(404).json({ error: 'orders_not_found' })
+    }
+
+    await saveOrdersToSheet(sheetId, filtered)
+    logger.info({ count: ids.length }, 'заказы удалены (bulk)')
+    res.json({ success: true, deleted: ids.length })
+  } catch (error: any) {
+    logger.error({ error: error?.message }, 'failed to bulk delete orders')
+    res.status(500).json({ error: 'failed_to_bulk_delete_orders' })
+  }
+})
+
 export default router
