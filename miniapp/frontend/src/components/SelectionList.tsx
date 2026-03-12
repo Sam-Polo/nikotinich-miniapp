@@ -30,7 +30,7 @@ export default function SelectionList({ items, selected, onSelect, layout = 'lis
               ].join(' ')}
             >
               {item.image ? (
-                <img src={item.image} alt={item.title} className="w-full aspect-square object-contain rounded-xl" />
+                <img src={item.image} alt={item.title} className="w-full aspect-square object-contain rounded-xl mix-blend-multiply" />
               ) : (
                 <div className="w-full aspect-square bg-bg-base rounded-xl flex items-center justify-center text-[11px] text-text-secondary">
                   Нет фото
@@ -66,7 +66,7 @@ export default function SelectionList({ items, selected, onSelect, layout = 'lis
               isSelected ? 'border-2 border-accent' : 'border-2 border-transparent'
             ].join(' ')}>
               {item.image ? (
-                <img src={item.image} alt={item.title} className="w-10 h-10 object-contain" />
+                <img src={item.image} alt={item.title} className="w-10 h-10 object-contain mix-blend-multiply" />
               ) : (
                 <span className="text-[10px] text-text-secondary">Нет фото</span>
               )}

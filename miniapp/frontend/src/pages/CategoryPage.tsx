@@ -156,7 +156,7 @@ export default function CategoryPage() {
                       }`}
                     >
                       {b.image ? (
-                        <img src={b.image} alt={b.title} className="w-full h-full object-contain p-1" />
+                        <img src={b.image} alt={b.title} className="w-full h-full object-contain p-1 mix-blend-multiply" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-text-secondary text-[11px]">Нет фото</div>
                       )}
@@ -187,7 +187,7 @@ export default function CategoryPage() {
                       }`}
                     >
                       {l.image ? (
-                        <img src={l.image} alt={l.title} className="w-full h-full object-contain p-1" />
+                        <img src={l.image} alt={l.title} className="w-full h-full object-contain p-1 mix-blend-multiply" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-text-secondary text-[11px]">Нет фото</div>
                       )}

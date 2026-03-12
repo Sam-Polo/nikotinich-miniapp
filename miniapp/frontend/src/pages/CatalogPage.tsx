@@ -43,7 +43,7 @@ export default function CatalogPage() {
                   <img
                     src={cat.image}
                     alt={cat.title}
-                    className="w-full h-full object-contain p-3"
+                    className="w-full h-full object-contain p-3 mix-blend-multiply"
                     loading="lazy"
                   />
                 ) : (

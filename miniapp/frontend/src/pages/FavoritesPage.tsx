@@ -6,7 +6,18 @@ import type { Category } from '../api'
 import { useFavoritesStore } from '../store/favorites'
 import { useCartStore } from '../store/cart'
 import PageHeader from '../components/PageHeader'
-import Price from '../components/Price'
+
+function formatRub(value: number) {
+  return `${value.toLocaleString('ru-RU')} ₽`
+}
+
+function getItemsLabel(total: number) {
+  const mod10 = total % 10
+  const mod100 = total % 100
+  if (mod10 === 1 && mod100 !== 11) return `${total} товар`
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${total} товара`
+  return `${total} товаров`
+}
 
 export default function FavoritesPage() {
   const { items, toggle } = useFavoritesStore()
@@ -48,7 +59,7 @@ export default function FavoritesPage() {
       <PageHeader title="Никотиныч" subtitle="mini app" />
 
       <div className="flex-1 px-4 pt-4 pb-[190px]">
-        <h1 className="text-[28px] font-bold text-text-primary mb-4">Избранное</h1>
+        <h1 className="text-[26px] font-bold leading-[130%] text-[#343434] mb-4">Избранное</h1>
 
         {/* фильтры: иконка filter + чипы категорий по Figma */}
         <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide">
@@ -72,8 +83,8 @@ export default function FavoritesPage() {
               type="button"
               onClick={() => setActiveFilter(activeFilter === cat.key ? null : cat.key)}
               className={[
-                'h-9 px-4 rounded-full text-[14px] whitespace-nowrap transition-colors flex-shrink-0 font-medium',
-                activeFilter === cat.key ? 'bg-accent text-white' : 'bg-[#F8F8F8] text-[#55565A]'
+                'h-[34px] px-[14px] rounded-full text-[14px] whitespace-nowrap transition-colors flex-shrink-0 font-normal leading-[22px] tracking-[-0.5px]',
+                activeFilter === cat.key ? 'bg-[#33ADFF] text-white' : 'bg-[#F8F8F8] text-[#595959]'
               ].join(' ')}
             >
               {cat.title}
@@ -93,7 +104,7 @@ export default function FavoritesPage() {
         )}
 
         {filteredItems.length > 0 && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-[7px]">
             {filteredItems.map(product => {
               const qty = getQty(product.slug)
               const stock = product.stock
@@ -128,10 +139,10 @@ export default function FavoritesPage() {
               return (
                 <div
                   key={product.slug}
-                  className="min-w-0 bg-white rounded-[16px] overflow-hidden shadow-sm"
+                  className="min-w-0 bg-white"
                 >
                   <div
-                    className="w-full aspect-square bg-[#F8F8F8] relative overflow-hidden"
+                    className="w-full aspect-square bg-[#F8F8F8] rounded-[22px] relative overflow-hidden"
                     onClick={() => navigate(`/product/${product.slug}`)}
                     role="button"
                     tabIndex={0}
@@ -148,10 +159,10 @@ export default function FavoritesPage() {
                         e.stopPropagation()
                         toggle(product)
                       }}
-                      className="absolute top-2 right-2 z-10 text-[#FF3B30]"
+                      className="absolute top-[10px] right-[10px] z-10 text-[#FF4545]"
                       aria-label="Удалить из избранного"
                     >
-                      <svg width="22" height="22" viewBox="0 0 24 22" fill="currentColor">
+                      <svg width="28" height="28" viewBox="0 0 24 22" fill="currentColor">
                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                       </svg>
                     </button>
@@ -159,7 +170,7 @@ export default function FavoritesPage() {
                       <img
                         src={product.images[0]}
                         alt={product.title}
-                        className="w-full h-full object-contain p-3"
+                        className="w-full h-full object-contain p-3 mix-blend-multiply"
                         loading="lazy"
                       />
                     ) : (
@@ -169,30 +180,34 @@ export default function FavoritesPage() {
                     )}
                   </div>
 
-                  <div className="p-3">
-                    <Price value={product.display_price} size="md" />
-                    <p className="text-[14px] text-text-secondary line-clamp-2 mt-1 leading-snug">
+                  <div className="pt-[10px]">
+                    <p className="text-[18px] font-bold leading-[110%] text-[#434343]">
+                      {formatRub(product.display_price)}
+                    </p>
+                    <p className="text-[14px] font-medium leading-[110%] text-[#797979] line-clamp-2 mt-[5px] min-h-[32px]">
                       {product.title}
                     </p>
 
                     {outOfStock ? (
-                      <p className="mt-2 text-[13px] text-red-500 font-medium">Нет в наличии</p>
+                      <p className="mt-[14px] h-[44px] rounded-[10px] bg-[#F8F8F8] text-[13px] text-[#595959] font-medium flex items-center justify-center">
+                        Нет в наличии
+                      </p>
                     ) : qty > 0 ? (
-                      <div className="mt-2 flex items-center">
-                        <div className="flex items-center bg-[#F4F5F7] rounded-[12px] px-1.5 py-1 min-w-[96px]">
+                      <div className="mt-[14px] flex items-center">
+                        <div className="w-full h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between">
                           <button
                             type="button"
-                            className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
+                            className="w-5 h-5 flex items-center justify-center text-[#595959] text-[24px] leading-none active:opacity-70"
                             onClick={handleDec}
                           >
                             −
                           </button>
-                          <span className="text-[14px] font-semibold text-text-primary px-2 min-w-[24px] text-center">
+                          <span className="text-[16px] font-medium leading-[19px] text-[#595959] min-w-[24px] text-center">
                             {qty}
                           </span>
                           <button
                             type="button"
-                            className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70 disabled:opacity-50"
+                            className="w-5 h-5 flex items-center justify-center text-[#258CD1] text-[24px] leading-none active:opacity-70 disabled:opacity-50"
                             onClick={handleInc}
                             disabled={!canAddMore}
                           >
@@ -203,10 +218,10 @@ export default function FavoritesPage() {
                     ) : (
                       <button
                         type="button"
-                        className="mt-2 h-9 rounded-lg bg-[#F8F8F8] text-[14px] text-text-primary font-medium w-full active:opacity-70"
+                        className="mt-[14px] h-[44px] rounded-[10px] bg-[#F8F8F8] text-[#595959] font-medium w-full active:opacity-70 leading-none"
                         onClick={handleAdd}
                       >
-                        В корзину
+                        <span className="text-[13px] leading-[16px]">В корзину</span>
                       </button>
                     )}
                   </div>
@@ -227,7 +242,7 @@ export default function FavoritesPage() {
         <div className="fixed left-4 right-4 bottom-[86px] z-[65] bg-[#F1F1F2] rounded-[14px] px-3 py-2 flex items-center gap-3">
           <div className="w-9 h-9 rounded-[8px] bg-white overflow-hidden flex items-center justify-center">
             {toastImage ? (
-              <img src={toastImage} alt="" className="w-full h-full object-contain p-1" />
+              <img src={toastImage} alt="" className="w-full h-full object-contain p-1 mix-blend-multiply" />
             ) : (
               <span className="text-[9px] text-text-secondary">товар</span>
             )}
@@ -238,12 +253,12 @@ export default function FavoritesPage() {
 
       {cartQty > 0 && (
         <button
-          className="fixed left-4 right-4 bottom-[86px] z-[60] h-14 rounded-[18px] bg-accent text-white px-4 flex items-center justify-between text-[15px] font-semibold"
+          className="fixed left-4 right-4 bottom-[86px] z-[60] h-[55px] rounded-[18px] bg-[#0099FF] px-[18px] flex items-center justify-between active:opacity-90"
           onClick={() => navigate('/cart')}
         >
-          <span>{cartQty} товар{cartQty > 1 && cartQty < 5 ? 'а' : cartQty >= 5 ? 'ов' : ''}</span>
-          <span>Перейти в корзину</span>
-          <Price value={cartSum} size="sm" />
+          <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">{getItemsLabel(cartQty)}</span>
+          <span className="text-[16px] font-semibold leading-[19px] text-white">Перейти в корзину</span>
+          <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">{formatRub(cartSum)}</span>
         </button>
       )}
     </div>

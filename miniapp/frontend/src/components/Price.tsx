@@ -7,15 +7,15 @@ type Props = {
 }
 
 const NUM_CLASSES_BY_SIZE: Record<Size, string> = {
-  lg: 'text-[28px] font-extrabold leading-[1.1]',
-  md: 'text-[22px] font-extrabold leading-[1.1]',
-  sm: 'text-[15px] font-extrabold leading-[1.1]'
+  lg: 'text-[28px] font-bold leading-[110%] text-[#434343]',
+  md: 'text-[18px] font-bold leading-[110%] text-[#434343]',
+  sm: 'text-[14px] font-semibold leading-[110%] text-[#434343]'
 }
 
 const RUB_CLASSES_BY_SIZE: Record<Size, string> = {
-  lg: 'ml-1 text-[18px] font-semibold leading-[1.1]',
-  md: 'ml-1 text-[14px] font-semibold leading-[1.1]',
-  sm: 'ml-1 text-[12px] font-semibold leading-[1.1]'
+  lg: 'ml-1 text-[20px] font-bold leading-[110%] text-[#434343]',
+  md: 'ml-1 text-[18px] font-bold leading-[110%] text-[#434343]',
+  sm: 'ml-1 text-[14px] font-semibold leading-[110%] text-[#434343]'
 }
 
 export default function Price({ value, size = 'lg', className = '' }: Props) {
