@@ -164,7 +164,11 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
             </svg>
           </button>
           {product.images[0] ? (
-            <img src={product.images[0]} alt={product.title} className="w-full h-full object-contain p-1.5" />
+            <img
+              src={product.images[0]}
+              alt={product.title}
+              className="w-full h-full object-contain p-1.5 mix-blend-multiply"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px] bg-[#F4F5F7]">
               Нет фото
@@ -180,7 +184,7 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
               {product.title}
             </p>
           </div>
-          <div className="w-[180px] h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between">
+          <div className="w-full max-w-[180px] h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between">
             <button
               type="button"
               className="w-5 h-5 flex items-center justify-center text-[#595959] text-[24px] leading-none active:opacity-70"
