@@ -26,13 +26,13 @@ export default function SelectionList({ items, selected, onSelect, layout = 'lis
                 'flex flex-col items-center gap-2 p-3 rounded-card transition-all',
                 isSelected
                   ? 'border-2 border-accent bg-blue-50'
-                  : 'border-2 border-transparent bg-bg-base hover:border-gray-200'
+                  : 'border-2 border-transparent bg-[#F8F8F8] hover:border-gray-200'
               ].join(' ')}
             >
               {item.image ? (
                 <img src={item.image} alt={item.title} className="w-full aspect-square object-contain rounded-xl mix-blend-multiply" />
               ) : (
-                <div className="w-full aspect-square bg-bg-base rounded-xl flex items-center justify-center text-[11px] text-text-secondary">
+                <div className="w-full aspect-square bg-[#F8F8F8] rounded-xl flex items-center justify-center text-[11px] text-text-secondary">
                   Нет фото
                 </div>
               )}
@@ -62,7 +62,7 @@ export default function SelectionList({ items, selected, onSelect, layout = 'lis
           >
             {/* логотип/иконка */}
             <div className={[
-              'w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0 bg-bg-base',
+              'w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0 bg-[#F8F8F8]',
               isSelected ? 'border-2 border-accent' : 'border-2 border-transparent'
             ].join(' ')}>
               {item.image ? (

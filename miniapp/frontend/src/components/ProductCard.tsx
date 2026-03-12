@@ -46,7 +46,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
       onClick={() => navigate(`/product/${product.slug}`)}
     >
       {/* изображение */}
-      <div className="relative aspect-square bg-bg-base">
+      <div className="relative aspect-square bg-[#F8F8F8]">
         {product.images[0] ? (
           <img
             src={product.images[0]}

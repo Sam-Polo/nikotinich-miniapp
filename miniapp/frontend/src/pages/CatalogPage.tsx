@@ -38,7 +38,7 @@ export default function CatalogPage() {
               onClick={() => navigate(`/catalog/${cat.key}`)}
               className="rounded-card overflow-hidden active:scale-[0.97] transition-transform"
             >
-              <div className="aspect-square bg-bg-base rounded-card overflow-hidden">
+              <div className="aspect-square bg-[#F8F8F8] rounded-card overflow-hidden">
                 {cat.image ? (
                   <img
                     src={cat.image}
@@ -47,7 +47,7 @@ export default function CatalogPage() {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-text-secondary text-[13px] bg-bg-base">
+                  <div className="w-full h-full flex items-center justify-center text-text-secondary text-[13px] bg-[#F8F8F8]">
                     Нет фото
                   </div>
                 )}

@@ -151,7 +151,7 @@ export default function CategoryPage() {
                 >
                   <div className="flex items-center gap-4 p-4">
                     <div
-                      className={`w-16 h-16 rounded-[10px] bg-bg-base flex-shrink-0 overflow-hidden ${
+                      className={`w-16 h-16 rounded-[10px] bg-[#F8F8F8] flex-shrink-0 overflow-hidden ${
                         selectedBrand === b.key ? 'ring-2 ring-accent' : ''
                       }`}
                     >
@@ -182,7 +182,7 @@ export default function CategoryPage() {
                 >
                   <div className="flex items-center gap-4 p-4">
                     <div
-                      className={`w-16 h-16 rounded-[10px] bg-bg-base flex-shrink-0 overflow-hidden ${
+                      className={`w-16 h-16 rounded-[10px] bg-[#F8F8F8] flex-shrink-0 overflow-hidden ${
                         selectedLine === l.key ? 'ring-2 ring-accent' : ''
                       }`}
                     >
