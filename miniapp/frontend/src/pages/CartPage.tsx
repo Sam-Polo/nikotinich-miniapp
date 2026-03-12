@@ -1,17 +1,87 @@
-import { useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore, type CartItem } from '../store/cart'
-import { useUserStore } from '../store/user'
-import { validatePromo } from '../api'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
-import Price from '../components/Price'
 
 type CartItemRowProps = {
   item: CartItem
   onUpdateQty: (slug: string, qty: number) => void
   onRemove: (slug: string) => void
+}
+
+const UNDO_TOAST_MS = 4000
+
+function formatRub(value: number) {
+  return `${value.toLocaleString('ru-RU')} ₽`
+}
+
+function getItemsLabel(total: number) {
+  const mod10 = total % 10
+  const mod100 = total % 100
+  if (mod10 === 1 && mod100 !== 11) return `${total} товар`
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${total} товара`
+  return `${total} товаров`
+}
+
+type UndoRemoveToastProps = {
+  durationMs: number
+  onUndo: () => void
+}
+
+function UndoRemoveToast({ durationMs, onUndo }: UndoRemoveToastProps) {
+  const [leftMs, setLeftMs] = useState(durationMs)
+
+  useEffect(() => {
+    const startedAt = Date.now()
+    const timer = window.setInterval(() => {
+      const elapsed = Date.now() - startedAt
+      setLeftMs(Math.max(0, durationMs - elapsed))
+    }, 100)
+    return () => window.clearInterval(timer)
+  }, [durationMs])
+
+  const secondsLeft = Math.max(1, Math.ceil(leftMs / 1000))
+  const progress = leftMs / durationMs
+  const radius = 9
+  const stroke = 1.8
+  const c = 2 * Math.PI * radius
+  const dashOffset = c * (1 - progress)
+
+  return (
+    <div className="w-[361px] max-w-[calc(100vw-32px)] h-[45px] rounded-[12px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)] px-[6px] py-[6px] flex items-center justify-between gap-2">
+      <div className="flex items-center gap-[5px] min-w-0">
+        <span className="relative w-6 h-6 flex-shrink-0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r={radius} stroke="#D9D9D9" strokeWidth={stroke} />
+            <circle
+              cx="12"
+              cy="12"
+              r={radius}
+              stroke="#434343"
+              strokeWidth={stroke}
+              strokeLinecap="round"
+              strokeDasharray={c}
+              strokeDashoffset={dashOffset}
+              transform="rotate(-90 12 12)"
+            />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center text-[12px] font-semibold leading-none text-[#434343]">
+            {secondsLeft}
+          </span>
+        </span>
+        <span className="text-[14px] font-semibold leading-[110%] text-[#434343] truncate">Товар удалён</span>
+      </div>
+      <button
+        type="button"
+        className="h-[33px] px-[10px] rounded-[20px] text-[14px] font-semibold leading-[17px] text-[#0099FF] flex-shrink-0"
+        onClick={onUndo}
+      >
+        Отменить
+      </button>
+    </div>
+  )
 }
 
 function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
@@ -53,12 +123,12 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative h-[150px]">
       {/* красная зона удаления по свайпу */}
-      <div className="absolute inset-0 flex justify-end items-stretch pr-0">
+      <div className="absolute inset-0 flex justify-end items-stretch">
         <button
           type="button"
-          className="w-[82px] rounded-[16px] bg-[#FF3B30] text-white text-[13px] font-semibold flex flex-col items-center justify-center mr-3"
+          className="w-[82px] rounded-[22px] bg-[#FF3B30] text-white text-[13px] font-semibold flex flex-col items-center justify-center"
           onClick={() => onRemove(product.slug)}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -72,7 +142,7 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
 
       {/* основная карточка, сдвигаем по X */}
       <div
-        className="bg-card-bg rounded-[16px] px-3 py-3 flex items-center relative"
+        className="h-full flex items-start relative bg-white"
         style={{
           transform: `translateX(${offsetX}px)`,
           transition: dragging ? 'none' : 'transform 0.18s ease-out'
@@ -82,51 +152,51 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
       >
-        {/* чекбокс выбора товара */}
-        <button
-          type="button"
-          className="w-6 h-6 mr-3 rounded-full border border-accent bg-accent flex items-center justify-center flex-shrink-0"
-          aria-label="Товар выбран"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <div className="w-[72px] h-[72px] rounded-[12px] flex-shrink-0 overflow-hidden bg-bg-base">
+        <div className="relative w-[150px] h-[150px] rounded-[22px] overflow-hidden bg-[#F8F8F8] flex-shrink-0">
+          {/* чекбокс выбора товара */}
+          <button
+            type="button"
+            className="absolute left-[10px] top-[10px] z-10 w-6 h-6 rounded-[8px] border-2 border-white bg-accent shadow-[0_4px_20px_rgba(0,0,0,0.05)] flex items-center justify-center"
+            aria-label="Товар выбран"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
           {product.images[0] ? (
-            <img src={product.images[0]} alt={product.title} className="w-full h-full object-contain" />
+            <img src={product.images[0]} alt={product.title} className="w-full h-full object-contain p-1.5" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-text-secondary text-[10px] bg-[#F4F5F7]">
               Нет фото
             </div>
           )}
         </div>
-        <div className="ml-3 flex-1 flex flex-col justify-between py-0.5 min-w-0">
-          <div className="flex items-center justify-between">
-            <Price value={product.display_price * qty} size="sm" className="mr-3" />
-            <p className="text-[13px] text-text-secondary leading-tight line-clamp-1 flex-1 text-right">
+        <div className="ml-[10px] flex-1 min-w-0 h-[150px] pt-[10px] flex flex-col justify-between">
+          <div className="space-y-[5px]">
+            <p className="text-[18px] font-bold leading-[110%] text-[#434343]">
+              {formatRub(product.display_price * qty)}
+            </p>
+            <p className="text-[14px] font-medium leading-[110%] text-[#797979] line-clamp-3">
               {product.title}
             </p>
           </div>
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center bg-[#F4F5F7] rounded-[12px] px-1.5 py-1 min-w-[96px]">
-                <button
-                  className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
-                  onClick={() => onUpdateQty(product.slug, qty - 1)}
-                >
-                  −
-                </button>
-                <span className="text-[14px] font-semibold text-text-primary px-2 min-w-[24px] text-center">{qty}</span>
-                <button
-                  className="w-7 h-7 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70 disabled:opacity-50"
-                  onClick={() => canInc && onUpdateQty(product.slug, qty + 1)}
-                  disabled={!canInc}
-                >
-                  +
-                </button>
-              </div>
-            </div>
+          <div className="w-[180px] h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between">
+            <button
+              type="button"
+              className="w-5 h-5 flex items-center justify-center text-[#595959] text-[24px] leading-none active:opacity-70"
+              onClick={() => onUpdateQty(product.slug, qty - 1)}
+            >
+              −
+            </button>
+            <span className="text-[16px] font-medium leading-[19px] text-[#595959] min-w-[40px] text-center">{qty}</span>
+            <button
+              type="button"
+              className="w-5 h-5 flex items-center justify-center text-[#258CD1] text-[24px] leading-none active:opacity-70 disabled:opacity-50"
+              onClick={() => canInc && onUpdateQty(product.slug, qty + 1)}
+              disabled={!canInc}
+            >
+              +
+            </button>
           </div>
         </div>
       </div>
@@ -136,94 +206,26 @@ function CartItemRow({ item, onUpdateQty, onRemove }: CartItemRowProps) {
 
 export default function CartPage() {
   const navigate = useNavigate()
-  const { items, addItem, removeItem, updateQty, subtotal, promoApplied, applyPromo, clearPromo, referralBonusUsed, applyReferralBonus, clearReferralBonus } = useCartStore()
-  const { user, settings } = useUserStore()
+  const { items, addItem, removeItem, updateQty, subtotal, clearCart, totalItems } = useCartStore()
 
-  const deliveryFee = settings?.deliveryFee ?? 300
-  const freeFrom = settings?.freeDeliveryFrom ?? 3500
   const sub = subtotal()
-  const isFreeDelivery = sub >= freeFrom
-  const delivery = isFreeDelivery ? 0 : deliveryFee
-  const totalBeforeDiscount = sub + delivery
-
-  const [promoInput, setPromoInput] = useState('')
-  const [promoError, setPromoError] = useState('')
-  const [promoLoading, setPromoLoading] = useState(false)
-
-  const referralBalance = user?.referral_balance_rub ?? 0
-
-  const promoDiscount = promoApplied?.discount ?? 0
-  // итого после промокода, до реферального баланса
-  const afterPromo = Math.max(0, totalBeforeDiscount - promoDiscount)
-  // применённый реферальный бонус не может превышать итог после промокода
-  const effectiveReferralBonus = Math.min(referralBonusUsed, afterPromo)
-  const finalTotal = Math.max(0, afterPromo - effectiveReferralBonus)
-
-  const [, setRecentlyRemoved] = useState<CartItem | null>(null)
+  const itemsTotal = totalItems()
 
   function handleRemoveWithUndo(slug: string) {
     const item = items.find(i => i.product.slug === slug)
     if (!item) return
-    setRecentlyRemoved(item)
+
     removeItem(slug)
 
     toast.custom((t) => (
-      <div className="bg-white rounded-[14px] shadow-md px-3 py-2 flex items-center gap-3 border border-border-light">
-        <span className="text-[14px] text-text-primary">Товар удалён</span>
-        <button
-          type="button"
-          className="text-[14px] text-accent font-semibold"
-          onClick={() => {
-            addItem(item.product, item.qty)
-            setRecentlyRemoved(null)
-            toast.dismiss(t.id)
-          }}
-        >
-          Отменить
-        </button>
-      </div>
-    ), { duration: 4000, position: 'bottom-center' })
-  }
-
-  async function applyPromoCode() {
-    if (!promoInput.trim()) return
-    setPromoLoading(true)
-    setPromoError('')
-    try {
-      const slugs = items.map(i => i.product.slug)
-      // сначала делаем запрос чтобы узнать productSlugs промокода
-      const result = await validatePromo(promoInput.trim(), totalBeforeDiscount, slugs)
-
-      let finalDiscount = result.discount
-      // для percent-промокодов с ограничением по товарам: пересчитываем от eligible subtotal
-      if (result.type === 'percent' && result.productSlugs && result.productSlugs.length > 0) {
-        const eligibleSubtotal = items
-          .filter(i => result.productSlugs.includes(i.product.slug))
-          .reduce((s, i) => s + i.product.display_price * i.qty, 0)
-        finalDiscount = Math.round(eligibleSubtotal * result.value / 100)
-      }
-
-      applyPromo({ code: promoInput.trim().toUpperCase(), discount: finalDiscount, productSlugs: result.productSlugs })
-    } catch (e: any) {
-      const msg = e.message
-      setPromoError(
-        msg === 'invalid_code' ? 'Промокод не найден' :
-        msg === 'expired_code' ? 'Промокод истёк' :
-        msg === 'not_applicable' ? 'Промокод не действует на товары в корзине' :
-        'Ошибка проверки'
-      )
-    } finally {
-      setPromoLoading(false)
-    }
-  }
-
-  function toggleReferralBonus() {
-    if (referralBonusUsed > 0) {
-      clearReferralBonus()
-    } else if (referralBalance > 0) {
-      // применяем столько, сколько нужно для оплаты (не больше баланса)
-      applyReferralBonus(Math.min(referralBalance, afterPromo))
-    }
+      <UndoRemoveToast
+        durationMs={UNDO_TOAST_MS}
+        onUndo={() => {
+          addItem(item.product, item.qty)
+          toast.dismiss(t.id)
+        }}
+      />
+    ), { duration: UNDO_TOAST_MS, position: 'bottom-center' })
   }
 
   if (items.length === 0) {
@@ -249,11 +251,35 @@ export default function CartPage() {
     <div className="flex flex-col min-h-full bg-bg-base">
       <PageHeader title="Никотиныч" subtitle="mini app" />
 
-      <div className="flex-1 flex flex-col min-h-0 px-4 pt-4 overflow-y-auto">
-        <h1 className="text-[28px] font-bold text-text-primary mb-4 flex-shrink-0">Корзина</h1>
+      <div className="flex-1 flex flex-col min-h-0 px-4 pt-5 overflow-y-auto">
+        <h1 className="text-[26px] font-bold leading-[130%] text-[#343434] mb-[10px] flex-shrink-0">Корзина</h1>
 
         <div className="flex-1 min-h-0 pb-32">
-          <div className="flex flex-col gap-3 mb-4">
+          <div className="flex items-center justify-between h-8 mb-[22px]">
+            <div className="flex items-center gap-[5px]">
+              <span className="w-6 h-6 rounded-[8px] border-2 border-white bg-accent shadow-[0_4px_20px_rgba(0,0,0,0.05)] flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="text-[14px] font-medium leading-[22px] tracking-[-0.5px] text-[#595959]">
+                {getItemsLabel(itemsTotal)}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="flex items-center gap-1 text-[14px] font-medium leading-[22px] tracking-[-0.5px] text-[#1C1C1E] active:opacity-70"
+              onClick={clearCart}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Удалить всё
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-[22px] mb-4">
             {items.map((item) => (
               <CartItemRow
                 key={item.product.slug}
@@ -263,109 +289,27 @@ export default function CartPage() {
               />
             ))}
           </div>
-
-        {/* промокод */}
-        <div className="bg-card-bg rounded-card p-4 mb-3">
-          <p className="text-[14px] font-semibold text-text-primary mb-2">Промокод</p>
-          {promoApplied ? (
-            <div className="flex items-center justify-between">
-                <p className="text-accent text-[14px]">
-                  🎉 {promoApplied.code} — −{promoApplied.discount.toLocaleString('ru-RU')} ₽
-                </p>
-              <button onClick={() => { clearPromo(); setPromoInput('') }} className="text-destructive text-[13px]">
-                Убрать
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-1.5">
-              <input
-                type="text"
-                value={promoInput}
-                onChange={e => setPromoInput(e.target.value.toUpperCase())}
-                placeholder="Введите промокод"
-                className="flex-1 min-w-0 px-3 py-2 bg-bg-base rounded-[10px] text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
-              />
-              <Button
-                variant="secondary"
-                loading={promoLoading}
-                onClick={applyPromoCode}
-                className="flex-shrink-0 px-3 py-2 text-[12px]"
-              >
-                {promoLoading ? null : 'Применить'}
-              </Button>
-            </div>
-          )}
-          {promoError && <p className="text-destructive text-[12px] mt-1">{promoError}</p>}
-        </div>
-
-        {/* реферальный баланс */}
-        {referralBalance > 0 && (
-          <div className="bg-card-bg rounded-card p-4 mb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[14px] font-semibold text-text-primary">Реферальные баллы</p>
-                <p className="text-[13px] text-text-secondary mt-0.5">
-                  Доступно: {referralBalance.toLocaleString('ru-RU')} ₽
-                </p>
-              </div>
-              <button
-                onClick={toggleReferralBonus}
-                className={`w-12 h-7 rounded-full transition-colors duration-200 relative ${effectiveReferralBonus > 0 ? 'bg-accent' : 'bg-border-light'}`}
-              >
-                <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 ${effectiveReferralBonus > 0 ? 'left-6' : 'left-1'}`} />
-              </button>
-            </div>
-            {effectiveReferralBonus > 0 && (
-              <p className="text-accent text-[13px] mt-2">
-                −{effectiveReferralBonus.toLocaleString('ru-RU')} баллами
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* итоговая сумма */}
-        <div className="bg-card-bg rounded-card p-4 space-y-2">
-          <div className="flex justify-between text-[14px] text-text-secondary">
-            <span>Товары</span>
-            <Price value={sub} size="sm" />
-          </div>
-          <div className="flex justify-between text-[14px] text-text-secondary">
-            <span>Доставка</span>
-            <span className={isFreeDelivery ? 'text-green-500 font-medium' : ''}>
-              {isFreeDelivery ? 'Бесплатно' : <Price value={delivery} size="sm" />}
-            </span>
-          </div>
-          {!isFreeDelivery && (
-            <p className="text-[12px] text-text-secondary opacity-60">
-              Бесплатная доставка от <Price value={freeFrom} size="sm" />
-            </p>
-          )}
-          {promoDiscount > 0 && (
-            <div className="flex justify-between text-[14px] text-green-500">
-              <span>Промокод</span>
-              <span>−{promoDiscount.toLocaleString('ru-RU')} ₽</span>
-            </div>
-          )}
-          {effectiveReferralBonus > 0 && (
-            <div className="flex justify-between text-[14px] text-green-500">
-              <span>Реферальные баллы</span>
-              <span>−{effectiveReferralBonus.toLocaleString('ru-RU')} ₽</span>
-            </div>
-          )}
-          <div className="flex justify-between text-[17px] font-bold text-text-primary border-t border-border-light pt-2 mt-1">
-            <span>Итого</span>
-            <Price value={finalTotal} size="md" />
-          </div>
-        </div>
         </div>
       </div>
 
-      {/* кнопка оформить заказ — выше BottomNav */}
-      <div className="fixed left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
-        style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
-        <Button fullWidth onClick={() => navigate('/checkout')}>
-          Оформить заказ — <Price value={finalTotal} size="md" />
-        </Button>
+      {/* кнопка оформления в стиле макета */}
+      <div
+        className="fixed left-0 right-0 px-4 z-[60]"
+        style={{ bottom: 'calc(74px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <button
+          type="button"
+          className="w-full h-[55px] rounded-[18px] bg-[#0099FF] px-[18px] flex items-center justify-between active:opacity-90"
+          onClick={() => navigate('/checkout')}
+        >
+          <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">
+            {getItemsLabel(itemsTotal)}
+          </span>
+          <span className="text-[16px] font-semibold leading-[19px] text-white">К оформлению</span>
+          <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">
+            {formatRub(sub)}
+          </span>
+        </button>
       </div>
     </div>
   )
