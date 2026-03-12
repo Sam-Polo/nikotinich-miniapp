@@ -30,13 +30,13 @@ export default function CatalogPage() {
           <p className="text-text-secondary text-center mt-10">Категории не найдены</p>
         )}
 
-        {/* сетка категорий 2 колонки как на макете */}
+        {/* сетка категорий 2 колонки как на макете; фиксированная высота подписи, чтобы карточки не «прыгали» при переносе строки */}
         <div className="grid grid-cols-2 gap-3">
           {categories.map(cat => (
             <button
               key={cat.key}
               onClick={() => navigate(`/catalog/${cat.key}`)}
-              className="rounded-card overflow-hidden active:scale-[0.97] transition-transform"
+              className="rounded-card overflow-hidden active:scale-[0.97] transition-transform bg-card-bg flex flex-col"
             >
               <div className="aspect-square bg-[#F8F8F8] rounded-card overflow-hidden">
                 {cat.image ? (
@@ -52,8 +52,10 @@ export default function CatalogPage() {
                   </div>
                 )}
               </div>
-              <div className="px-3 py-2.5">
-                <p className="text-[14px] font-medium text-text-primary text-center">{cat.title}</p>
+              <div className="px-3 py-2.5 flex items-center justify-center min-h-[40px]">
+                <p className="text-[13px] font-medium text-text-primary text-center leading-snug">
+                  {cat.title}
+                </p>
               </div>
             </button>
           ))}

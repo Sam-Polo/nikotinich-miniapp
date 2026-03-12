@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cart'
 import { useUserStore } from '../store/user'
-import { createOrder } from '../api'
+import { createOrder, validatePromo } from '../api'
 import PageHeader from '../components/PageHeader'
 import BottomSheet from '../components/BottomSheet'
 
@@ -74,7 +74,7 @@ function validateAddress(value: string) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
-  const { items, subtotal, clearCart, promoApplied, referralBonusUsed } = useCartStore()
+  const { items, subtotal, clearCart, promoApplied, referralBonusUsed, applyPromo, clearPromo } = useCartStore()
   const { user, settings } = useUserStore()
 
   const [name, setName] = useState(user?.username || '')
@@ -84,21 +84,28 @@ export default function CheckoutPage() {
 
   const [sheetDataOpen, setSheetDataOpen] = useState(false)
   const [sheetAddressOpen, setSheetAddressOpen] = useState(false)
+  const [sheetCommentOpen, setSheetCommentOpen] = useState(false)
 
   const [draftName, setDraftName] = useState('')
   const [draftEmail, setDraftEmail] = useState('')
   const [draftPhone, setDraftPhone] = useState('')
   const [draftAddress, setDraftAddress] = useState('')
+  const [draftComment, setDraftComment] = useState('')
 
   const [draftNameError, setDraftNameError] = useState('')
   const [draftEmailError, setDraftEmailError] = useState('')
   const [draftPhoneError, setDraftPhoneError] = useState('')
   const [draftAddressError, setDraftAddressError] = useState('')
+  const [draftCommentError, setDraftCommentError] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [receiverError, setReceiverError] = useState('')
   const [addressSummaryError, setAddressSummaryError] = useState('')
+  const [promoInput, setPromoInput] = useState('')
+  const [promoError, setPromoError] = useState('')
+  const [promoLoading, setPromoLoading] = useState(false)
+  const [comment, setComment] = useState('')
 
   const deliveryFee = settings?.deliveryFee ?? 300
   const freeFrom = settings?.freeDeliveryFrom ?? 3500
@@ -142,6 +149,12 @@ export default function CheckoutPage() {
     setSheetAddressOpen(true)
   }
 
+  function openCommentSheet() {
+    setDraftComment(comment)
+    setDraftCommentError('')
+    setSheetCommentOpen(true)
+  }
+
   function saveReceiverData() {
     const nextNameError = validateFullName(draftName)
     const nextEmailError = validateEmail(draftEmail)
@@ -163,6 +176,12 @@ export default function CheckoutPage() {
     if (nextAddressError) return
     setAddress(draftAddress.trim())
     setSheetAddressOpen(false)
+  }
+
+  function saveCommentData() {
+    // комментарий не обязателен, просто сохраняем
+    setComment(draftComment.trim())
+    setSheetCommentOpen(false)
   }
 
   async function handleSubmit() {
@@ -197,8 +216,8 @@ export default function CheckoutPage() {
         totalRub: total,
         deliveryFee: delivery,
         promoCode: promoApplied?.code || undefined,
-        // email не изменяет профиль, но уходит в заказ в заметке для менеджера
-        note: `email: ${email.trim()}`,
+        // email и комментарий не изменяют профиль, но уходят в заказ в заметке для менеджера
+        note: [`email: ${email.trim()}`, comment.trim() && `comment: ${comment.trim()}`].filter(Boolean).join(' | '),
         referralBonusUsed: effectiveBonus > 0 ? effectiveBonus : undefined
       })
 
@@ -247,6 +266,55 @@ export default function CheckoutPage() {
           </div>
 
           <div>
+            <p className="text-[12px] font-bold leading-[120%] text-[#434343] px-1 mb-2">Промокод</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoInput}
+                onChange={(e) => { setPromoInput(e.target.value); setPromoError('') }}
+                placeholder="Например, SALE10"
+                className="flex-1 h-[44px] rounded-[12px] px-4 text-[16px] font-medium leading-[120%] text-[#343434] bg-[#F8F8F8] border outline-none border-transparent focus:border-[#000000]"
+              />
+              <button
+                type="button"
+                disabled={promoLoading || !promoInput.trim()}
+                onClick={async () => {
+                  const code = promoInput.trim().toUpperCase()
+                  if (!code) return
+                  setPromoLoading(true)
+                  setPromoError('')
+                  try {
+                    const slugs = items.map(i => i.product.slug)
+                    const res = await validatePromo(code, totalBeforeDiscount, slugs)
+                    if (!res.valid || res.discount <= 0) {
+                      clearPromo()
+                      setPromoError('Промокод не даёт скидки для этой корзины')
+                    } else {
+                      applyPromo({ code, discount: res.discount, productSlugs: res.productSlugs })
+                    }
+                  } catch (e: any) {
+                    clearPromo()
+                    setPromoError(e?.message || 'Не удалось применить промокод')
+                  } finally {
+                    setPromoLoading(false)
+                  }
+                }}
+                className="h-[44px] px-4 rounded-[12px] bg-[#0099FF] text-white text-[14px] font-semibold leading-[17px] active:opacity-90 disabled:opacity-50 flex-shrink-0"
+              >
+                {promoLoading ? 'Проверка...' : 'Применить'}
+              </button>
+            </div>
+            {promoApplied && !promoError && (
+              <p className="text-[13px] text-[#34C759] px-1 mt-1">
+                Скидка по промокоду: −{formatRub(promoDiscount)}
+              </p>
+            )}
+            {promoError && (
+              <p className="text-[13px] text-[#FF3B30] px-1 mt-1">{promoError}</p>
+            )}
+          </div>
+
+          <div>
             <p className="text-[12px] font-bold leading-[120%] text-[#434343] px-1 mb-2">Адрес доставки</p>
             <button
               type="button"
@@ -265,6 +333,24 @@ export default function CheckoutPage() {
             {addressSummaryError && (
               <p className="text-destructive text-[14px] px-1 mt-1">{addressSummaryError}</p>
             )}
+          </div>
+
+          <div>
+            <p className="text-[12px] font-bold leading-[120%] text-[#434343] px-1 mb-2">Комментарий к заказу</p>
+            <button
+              type="button"
+              onClick={openCommentSheet}
+              className="w-full h-[44px] rounded-[12px] bg-[#F8F8F8] px-3 flex items-center justify-between gap-3"
+            >
+              <span className="text-[16px] font-normal leading-[19px] text-[#434343] truncate">
+                {comment || 'Добавьте комментарий для курьера'}
+              </span>
+              <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9.20565 2.98391L12.3168 6.09488M1.25825 11.0024L0.650024 14.65L4.29783 14.0418C4.93157 13.9366 5.51653 13.6358 5.97084 13.1817L14.199 4.95315C14.4878 4.66437 14.65 4.2727 14.65 3.86432C14.65 3.45593 14.4878 3.06427 14.199 2.77548L12.526 1.10178C12.383 0.958569 12.2131 0.844956 12.0261 0.76744C11.8392 0.689924 11.6387 0.650024 11.4363 0.650024C11.2339 0.650024 11.0335 0.689924 10.8465 0.76744C10.6595 0.844956 10.4897 0.958569 10.3467 1.10178L2.11848 9.33028C1.66442 9.78436 1.36366 10.369 1.25825 11.0024Z" stroke="black" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </button>
           </div>
 
           <section className="rounded-[18px] bg-[#F8F8F8] p-[18px] space-y-4">
@@ -290,6 +376,16 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[13px] font-normal leading-[120%] text-[#626262]">
+                Доставка {isFree ? 'бесплатно' : formatRub(delivery)}
+              </span>
+              {!isFree && (
+                <span className="text-[13px] font-normal leading-[120%] text-[#626262]">
+                  входит в сумму заказа
+                </span>
+              )}
             </div>
             <div className="flex items-start justify-between gap-2">
               <span className="text-[14px] font-semibold leading-[120%] text-[#434343]">Итого</span>
@@ -371,6 +467,33 @@ export default function CheckoutPage() {
             <button
               type="button"
               onClick={saveAddressData}
+              className="mt-[18px] w-full h-[55px] rounded-[18px] bg-[#0099FF] text-white text-[16px] font-semibold leading-[19px] active:opacity-90"
+            >
+              Сохранить
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={sheetCommentOpen} onClose={() => setSheetCommentOpen(false)} snapHeight="60vh">
+        <div className="bg-white">
+          <div className="h-11 flex items-center justify-between px-4">
+            <span className="w-14" />
+            <h3 className="text-[17px] font-semibold leading-[22px] tracking-[-0.4px] text-[#343434]">Комментарий к заказу</h3>
+            <button type="button" className="text-[17px] font-normal leading-[22px] tracking-[-0.4px] text-[#00AAFF]" onClick={() => setSheetCommentOpen(false)}>
+              Готово
+            </button>
+          </div>
+          <div className="px-[14px] pt-4 pb-5 space-y-2">
+            <InputField
+              value={draftComment}
+              onChange={(v) => { setDraftComment(v); setDraftCommentError('') }}
+              placeholder="Например: позвоните за 10 минут до приезда"
+              error={draftCommentError}
+            />
+            <button
+              type="button"
+              onClick={saveCommentData}
               className="mt-[18px] w-full h-[55px] rounded-[18px] bg-[#0099FF] text-white text-[16px] font-semibold leading-[19px] active:opacity-90"
             >
               Сохранить
