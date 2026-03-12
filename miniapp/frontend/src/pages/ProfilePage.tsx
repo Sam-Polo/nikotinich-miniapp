@@ -10,15 +10,16 @@ import Price from '../components/Price'
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   new: 'Новый',
-  confirmed: 'Заказ в пути',
-  packed: 'Упакован',
+  confirmed: 'Подтверждён',
+  packed: 'Заказ в пути',
   completed: 'Получен',
   cancelled: 'Отменён'
 }
 
 function getOrderTitleByStatus(status: string) {
   const s = String(status || '').toLowerCase()
-  if (s === 'confirmed' || s === 'packed') return 'В пути'
+  if (s === 'confirmed') return 'Подтверждён'
+  if (s === 'packed') return 'Заказ в пути'
   if (s === 'completed') return 'Получен'
   if (s === 'cancelled') return 'Отменён'
   return 'Новый'

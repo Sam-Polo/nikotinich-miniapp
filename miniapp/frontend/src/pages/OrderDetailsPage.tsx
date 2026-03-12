@@ -8,6 +8,7 @@ import Spinner from '../components/Spinner'
 import Price from '../components/Price'
 import toast from 'react-hot-toast'
 import { useCartStore } from '../store/cart'
+import WebApp from '@twa-dev/sdk'
 
 function formatDateTime(value?: string) {
   if (!value) return ''
@@ -16,12 +17,13 @@ function formatDateTime(value?: string) {
     date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
 
-// username менеджера для кнопки «Поддержка» — опционально из .env
-const SUPPORT_TG = (import.meta.env.VITE_SUPPORT_TG_USERNAME as string | undefined)?.trim() || ''
+// chat id менеджера (telegram user id) для кнопки «Поддержка» — из .env
+const SUPPORT_TG_ID = (import.meta.env.VITE_SUPPORT_TG_ID as string | undefined)?.trim() || ''
 
 function getOrderStatusTitle(status?: string) {
   const s = String(status || '').toLowerCase()
-  if (s === 'confirmed' || s === 'packed') return 'Заказ в пути'
+  if (s === 'confirmed') return 'Заказ подтверждён'
+  if (s === 'packed') return 'Заказ в пути'
   if (s === 'completed') return 'Заказ получен'
   if (s === 'cancelled') return 'Заказ отменён'
   return 'Новый заказ'
@@ -97,9 +99,26 @@ export default function OrderDetailsPage() {
   }
 
   function handleSupport() {
-    if (!SUPPORT_TG) return
-    const url = SUPPORT_TG.startsWith('http') ? SUPPORT_TG : `https://t.me/${SUPPORT_TG.replace('@', '')}`
-    window.open(url, '_blank')
+    if (!SUPPORT_TG_ID) return
+    const raw = SUPPORT_TG_ID.trim()
+    // оставляем только цифры и возможный минус (на всякий случай)
+    const numericId = raw.replace(/[^0-9-]/g, '')
+    if (!numericId) return
+
+    const tgLink = `tg://user?id=${encodeURIComponent(numericId)}`
+
+    try {
+      // внутри Telegram WebApp — используем API клиента
+      if (WebApp?.openTelegramLink) {
+        WebApp.openTelegramLink(tgLink)
+        return
+      }
+    } catch {
+      // если что-то пошло не так — просто падаем в fallback ниже
+    }
+
+    // fallback: дать клиенту Telegram обработать tg:// ссылку
+    window.location.href = tgLink
   }
 
   async function handleRepeatOrder() {
@@ -158,7 +177,7 @@ export default function OrderDetailsPage() {
   const canRepeat = status === 'completed'
   const canCancel = status === 'new' || status === 'packed'
   const canReturn = status === 'confirmed' || status === 'completed'
-  const showSupport = !!SUPPORT_TG
+  const showSupport = !!SUPPORT_TG_ID
   const phone = normalizePhone(order.phone)
 
   return (
