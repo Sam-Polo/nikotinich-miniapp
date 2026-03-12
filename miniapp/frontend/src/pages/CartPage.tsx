@@ -230,7 +230,7 @@ export default function CartPage() {
   const hasSelection = selectedSlugs.size > 0
 
   const handleToggleSelectAll = () => {
-    setSelectedSlugs(prev => {
+    setSelectedSlugs(() => {
       if (allSelected) return new Set()
       return new Set(items.map(i => i.product.slug))
     })
