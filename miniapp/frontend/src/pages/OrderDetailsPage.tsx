@@ -27,6 +27,13 @@ function getOrderStatusTitle(status?: string) {
   return 'Новый заказ'
 }
 
+function normalizePhone(phone?: string) {
+  const value = String(phone || '').trim()
+  if (!value) return ''
+  if (value.includes('#ERROR') || value.startsWith('#')) return ''
+  return value
+}
+
 export default function OrderDetailsPage() {
   const navigate = useNavigate()
   const { orderId } = useParams<{ orderId: string }>()
@@ -152,6 +159,7 @@ export default function OrderDetailsPage() {
   const canCancel = status === 'new' || status === 'packed'
   const canReturn = status === 'confirmed' || status === 'completed'
   const showSupport = !!SUPPORT_TG
+  const phone = normalizePhone(order.phone)
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
@@ -192,20 +200,20 @@ export default function OrderDetailsPage() {
           )}
         </div>
 
-        <section className="mt-6 bg-card-bg rounded-card divide-y divide-border-light">
+        <section className="mt-6 bg-[#F8F8F8] rounded-[18px] divide-y divide-border-light">
           <div className="px-4 py-3 flex items-center justify-between gap-4">
             <span className="text-[14px] text-text-secondary">Адрес</span>
             <span className="text-[14px] text-text-primary text-right">{order.address || '—'}</span>
           </div>
           <div className="px-4 py-3 flex items-center justify-between gap-4">
             <span className="text-[14px] text-text-secondary">Получатель</span>
-            <span className="text-[14px] text-text-primary text-right">{order.customerName}{order.phone ? `, ${order.phone}` : ''}</span>
+            <span className="text-[14px] text-text-primary text-right">{order.customerName}{phone ? `, ${phone}` : ''}</span>
           </div>
         </section>
 
         <h2 className="mt-6 text-[20px] font-bold text-text-primary">Состав заказа</h2>
 
-        <section className="mt-3 bg-card-bg rounded-card p-4">
+        <section className="mt-3 bg-[#F8F8F8] rounded-[18px] p-4">
           <div className="space-y-3">
             {order.items.map((item: OrderItem, idx: number) => (
               <div key={`${item.slug}-${idx}`} className="flex gap-3">
@@ -241,7 +249,7 @@ export default function OrderDetailsPage() {
                 type="button"
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80 disabled:opacity-50"
+                className="h-12 rounded-[18px] bg-[#F8F8F8] text-[16px] font-semibold text-text-primary active:opacity-80 disabled:opacity-50"
               >
                 {cancelling ? 'Отмена...' : 'Отменить заказ'}
               </button>
@@ -250,7 +258,7 @@ export default function OrderDetailsPage() {
               <button
                 type="button"
                 onClick={handleSupport}
-                className="h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80"
+                className="h-12 rounded-[18px] bg-[#F8F8F8] text-[16px] font-semibold text-text-primary active:opacity-80"
               >
                 Вернуть заказ
               </button>
@@ -259,7 +267,7 @@ export default function OrderDetailsPage() {
               <button
                 type="button"
                 onClick={handleSupport}
-                className={`h-12 rounded-[14px] bg-card-bg text-[15px] font-semibold text-text-primary active:opacity-80 ${!(canCancel || canReturn) ? 'w-full' : ''}`}
+                className={`h-12 rounded-[18px] bg-[#F8F8F8] text-[16px] font-semibold text-text-primary active:opacity-80 ${!(canCancel || canReturn) ? 'w-full' : ''}`}
               >
                 Поддержка
               </button>
