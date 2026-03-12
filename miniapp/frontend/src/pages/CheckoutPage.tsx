@@ -16,9 +16,30 @@ function normalizePhone(value: string) {
 
 function formatPhone(value: string) {
   const digits = normalizePhone(value)
-  if (digits.length !== 11) return value
-  const normalized = digits[0] === '8' ? `7${digits.slice(1)}` : digits
-  return `+${normalized[0]} ${normalized.slice(1, 4)} ${normalized.slice(4, 7)}-${normalized.slice(7, 9)}-${normalized.slice(9, 11)}`
+  if (!digits) return ''
+
+  let d = digits
+  // приводим к формату, начинающемуся с 7
+  if (d[0] === '8') {
+    d = '7' + d.slice(1)
+  } else if (d[0] !== '7') {
+    d = '7' + d.slice(1)
+  }
+
+  let result = '+7'
+  if (d.length > 1) {
+    result += ' ' + d.slice(1, Math.min(4, d.length))
+  }
+  if (d.length > 4) {
+    result += ' ' + d.slice(4, Math.min(7, d.length))
+  }
+  if (d.length > 7) {
+    result += '-' + d.slice(7, Math.min(9, d.length))
+  }
+  if (d.length > 9) {
+    result += '-' + d.slice(9, Math.min(11, d.length))
+  }
+  return result
 }
 
 function validateFullName(value: string) {
@@ -76,6 +97,8 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [receiverError, setReceiverError] = useState('')
+  const [addressSummaryError, setAddressSummaryError] = useState('')
 
   const deliveryFee = settings?.deliveryFee ?? 300
   const freeFrom = settings?.freeDeliveryFrom ?? 3500
@@ -90,7 +113,10 @@ export default function CheckoutPage() {
 
   const receiverMeta = useMemo(() => {
     const phoneText = phone.trim() ? formatPhone(phone.trim()) : ''
-    return [email.trim(), phoneText].filter(Boolean).join('   ')
+    const parts = [email.trim(), phoneText].filter(Boolean)
+    if (parts.length <= 1) return parts.join('')
+    const gap = '\u00A0\u00A0\u00A0'
+    return parts.join(gap)
   }, [email, phone])
 
   useEffect(() => {
@@ -145,10 +171,13 @@ export default function CheckoutPage() {
     const phoneError = validatePhone(phone)
     const addressError = validateAddress(address)
     if (nameError || emailError || phoneError || addressError) {
-      setError(nameError || emailError || phoneError || addressError)
+      setReceiverError(nameError || emailError || phoneError || '')
+      setAddressSummaryError(addressError || '')
       return
     }
 
+    setReceiverError('')
+    setAddressSummaryError('')
     setError('')
     setLoading(true)
     try {
@@ -212,6 +241,9 @@ export default function CheckoutPage() {
                 <path d="M7.5 5L12.5 10L7.5 15" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
+            {receiverError && (
+              <p className="text-destructive text-[14px] px-1 mt-1">{receiverError}</p>
+            )}
           </div>
 
           <div>
@@ -230,6 +262,9 @@ export default function CheckoutPage() {
                 </svg>
               </span>
             </button>
+            {addressSummaryError && (
+              <p className="text-destructive text-[14px] px-1 mt-1">{addressSummaryError}</p>
+            )}
           </div>
 
           <section className="rounded-[18px] bg-[#F8F8F8] p-[18px] space-y-4">

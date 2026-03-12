@@ -33,7 +33,7 @@ export default function BottomSheet({ open, onClose, title, children, snapHeight
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+    <div className="fixed inset-0 z-[70] flex flex-col justify-end">
       {/* затемнение */}
       <div
         ref={overlayRef}
@@ -44,7 +44,7 @@ export default function BottomSheet({ open, onClose, title, children, snapHeight
       {/* шит */}
       <div
         ref={sheetRef}
-        className="relative bg-white rounded-t-3xl overflow-hidden flex flex-col will-change-transform"
+        className="relative bg-white rounded-t-3xl overflow-hidden flex flex-col will-change-transform bottom-sheet-enter"
         style={{ maxHeight: snapHeight, transform: dragY > 0 ? `translateY(${dragY}px)` : undefined }}
         onTouchStart={(e) => {
           if (e.touches.length !== 1) return
