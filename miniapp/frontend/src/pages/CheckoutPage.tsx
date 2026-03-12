@@ -266,13 +266,52 @@ export default function CheckoutPage() {
           </div>
 
           <div>
+            <p className="text-[12px] font-bold leading-[120%] text-[#434343] px-1 mb-2">Адрес доставки</p>
+            <button
+              type="button"
+              onClick={openAddressSheet}
+              className="w-full h-[44px] rounded-[12px] bg-[#F8F8F8] px-3 flex items-center justify-between gap-3"
+            >
+              <span className={`text-[16px] font-normal leading-[19px] truncate ${address ? 'text-[#434343]' : 'text-[#9FA2AA]'}`}>
+                {address || 'Укажите адрес'}
+              </span>
+              <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9.20565 2.98391L12.3168 6.09488M1.25825 11.0024L0.650024 14.65L4.29783 14.0418C4.93157 13.9366 5.51653 13.6358 5.97084 13.1817L14.199 4.95315C14.4878 4.66437 14.65 4.2727 14.65 3.86432C14.65 3.45593 14.4878 3.06427 14.199 2.77548L12.526 1.10178C12.383 0.958569 12.2131 0.844956 12.0261 0.76744C11.8392 0.689924 11.6387 0.650024 11.4363 0.650024C11.2339 0.650024 11.0335 0.689924 10.8465 0.76744C10.6595 0.844956 10.4897 0.958569 10.3467 1.10178L2.11848 9.33028C1.66442 9.78436 1.36366 10.369 1.25825 11.0024Z" stroke="black" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </button>
+            {addressSummaryError && (
+              <p className="text-destructive text-[14px] px-1 mt-1">{addressSummaryError}</p>
+            )}
+          </div>
+
+          <div>
+            <p className="text-[12px] font-bold leading-[120%] text-[#434343] px-1 mb-2">Комментарий к заказу</p>
+            <button
+              type="button"
+              onClick={openCommentSheet}
+              className="w-full h-[44px] rounded-[12px] bg-[#F8F8F8] px-3 flex items-center justify-between gap-3"
+            >
+              <span className={`text-[16px] font-normal leading-[19px] truncate ${comment ? 'text-[#434343]' : 'text-[#9FA2AA]'}`}>
+                {comment || 'Добавьте комментарий для курьера'}
+              </span>
+              <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9.20565 2.98391L12.3168 6.09488M1.25825 11.0024L0.650024 14.65L4.29783 14.0418C4.93157 13.9366 5.51653 13.6358 5.97084 13.1817L14.199 4.95315C14.4878 4.66437 14.65 4.2727 14.65 3.86432C14.65 3.45593 14.4878 3.06427 14.199 2.77548L12.526 1.10178C12.383 0.958569 12.2131 0.844956 12.0261 0.76744C11.8392 0.689924 11.6387 0.650024 11.4363 0.650024C11.2339 0.650024 11.0335 0.689924 10.8465 0.76744C10.6595 0.844956 10.4897 0.958569 10.3467 1.10178L2.11848 9.33028C1.66442 9.78436 1.36366 10.369 1.25825 11.0024Z" stroke="black" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </button>
+          </div>
+
+          <div>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={promoInput}
                 onChange={(e) => { setPromoInput(e.target.value); setPromoError('') }}
                 placeholder="PROMO"
-                className="flex-1 h-[44px] rounded-[12px] px-4 text-[16px] font-medium leading-[120%] text-[#343434] bg-white border border-[#E5E5EA] outline-none focus:border-[#000000]"
+                className="w-1/2 h-[44px] rounded-[12px] px-4 text-[16px] font-medium leading-[120%] text-[#343434] bg-white border border-[#D1D1D6] outline-none focus:border-[#8E8E93] transition-colors duration-150"
               />
               <button
                 type="button"
@@ -298,10 +337,10 @@ export default function CheckoutPage() {
                     setPromoLoading(false)
                   }
                 }}
-                className="h-[44px] w-[44px] rounded-[12px] bg-[#0099FF] text-white flex items-center justify-center active:opacity-90 disabled:opacity-50 flex-shrink-0"
+                className="h-[44px] px-1 text-[#0099FF] flex items-center justify-center active:opacity-90 disabled:opacity-50 flex-shrink-0"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 12.5L9.5 17L19 7.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
             </div>
@@ -313,45 +352,6 @@ export default function CheckoutPage() {
             {promoError && (
               <p className="text-[13px] text-[#FF3B30] px-1 mt-1">{promoError}</p>
             )}
-          </div>
-
-          <div>
-            <p className="text-[12px] font-bold leading-[120%] text-[#434343] px-1 mb-2">Адрес доставки</p>
-            <button
-              type="button"
-              onClick={openAddressSheet}
-              className="w-full h-[44px] rounded-[12px] bg-[#F8F8F8] px-3 flex items-center justify-between gap-3"
-            >
-              <span className="text-[16px] font-normal leading-[19px] text-[#434343] truncate">
-                {address || 'Укажите адрес'}
-              </span>
-              <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9.20565 2.98391L12.3168 6.09488M1.25825 11.0024L0.650024 14.65L4.29783 14.0418C4.93157 13.9366 5.51653 13.6358 5.97084 13.1817L14.199 4.95315C14.4878 4.66437 14.65 4.2727 14.65 3.86432C14.65 3.45593 14.4878 3.06427 14.199 2.77548L12.526 1.10178C12.383 0.958569 12.2131 0.844956 12.0261 0.76744C11.8392 0.689924 11.6387 0.650024 11.4363 0.650024C11.2339 0.650024 11.0335 0.689924 10.8465 0.76744C10.6595 0.844956 10.4897 0.958569 10.3467 1.10178L2.11848 9.33028C1.66442 9.78436 1.36366 10.369 1.25825 11.0024Z" stroke="black" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-            </button>
-            {addressSummaryError && (
-              <p className="text-destructive text-[14px] px-1 mt-1">{addressSummaryError}</p>
-            )}
-          </div>
-
-          <div>
-            <p className="text-[12px] font-bold leading-[120%] text-[#434343] px-1 mb-2">Комментарий к заказу</p>
-            <button
-              type="button"
-              onClick={openCommentSheet}
-              className="w-full h-[44px] rounded-[12px] bg-[#F8F8F8] px-3 flex items-center justify-between gap-3"
-            >
-              <span className="text-[16px] font-normal leading-[19px] text-[#434343] truncate">
-                {comment || 'Добавьте комментарий для курьера'}
-              </span>
-              <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9.20565 2.98391L12.3168 6.09488M1.25825 11.0024L0.650024 14.65L4.29783 14.0418C4.93157 13.9366 5.51653 13.6358 5.97084 13.1817L14.199 4.95315C14.4878 4.66437 14.65 4.2727 14.65 3.86432C14.65 3.45593 14.4878 3.06427 14.199 2.77548L12.526 1.10178C12.383 0.958569 12.2131 0.844956 12.0261 0.76744C11.8392 0.689924 11.6387 0.650024 11.4363 0.650024C11.2339 0.650024 11.0335 0.689924 10.8465 0.76744C10.6595 0.844956 10.4897 0.958569 10.3467 1.10178L2.11848 9.33028C1.66442 9.78436 1.36366 10.369 1.25825 11.0024Z" stroke="black" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-            </button>
           </div>
 
           <section className="rounded-[18px] bg-[#F8F8F8] p-[18px] space-y-4">
@@ -433,7 +433,7 @@ export default function CheckoutPage() {
             <InputField
               value={draftPhone}
               onChange={(v) => { setDraftPhone(v); setDraftPhoneError('') }}
-              placeholder="Укажите телефон"
+              placeholder="Телефон"
               error={draftPhoneError}
             />
             <button
@@ -487,7 +487,7 @@ export default function CheckoutPage() {
             <InputField
               value={draftComment}
               onChange={(v) => { setDraftComment(v); setDraftCommentError('') }}
-              placeholder="Например: позвоните за 10 минут до приезда"
+              placeholder=""
               error={draftCommentError}
             />
             <button
