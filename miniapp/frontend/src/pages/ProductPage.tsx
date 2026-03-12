@@ -119,8 +119,23 @@ export default function ProductPage() {
       .catch(() => setFamilyVariants([]))
   }, [product?.familyKey, product?.category, product?.slug])
 
-  if (loading) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><Spinner /></div>
-  if (!product) return <div className="flex flex-col min-h-full bg-bg-base"><PageHeader title="Никотиныч" subtitle="mini app" showBack /><p className="text-center text-text-secondary mt-20">Товар не найден</p></div>
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-full bg-bg-base">
+        <PageHeader title="Никотиныч" subtitle="mini app" showBack />
+        <Spinner />
+      </div>
+    )
+  }
+
+  if (!product) {
+    return (
+      <div className="flex flex-col min-h-full bg-bg-base">
+        <PageHeader title="Никотиныч" subtitle="mini app" showBack />
+        <p className="text-center text-text-secondary mt-20">Товар не найден</p>
+      </div>
+    )
+  }
 
   // захватываем после null-проверки чтобы TypeScript не терял тип в замыканиях
   const p = product
@@ -248,11 +263,7 @@ export default function ProductPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base" data-product-layout="sheet">
-      <PageHeader
-        title="Никотиныч"
-        subtitle="mini app"
-        showBack
-      />
+      <PageHeader title="Никотиныч" subtitle="mini app" showBack />
 
       {/* overlay и sheet через fixed, чтобы не зависеть от flex в TG WebView */}
       <div
@@ -265,179 +276,191 @@ export default function ProductPage() {
         className="fixed inset-x-0 bottom-0 top-14 bg-white rounded-t-[26px] overflow-hidden transition-transform duration-200 ease-out z-[56] flex flex-col"
         style={{ transform: `translateY(${sheetPresented ? sheetDragY : 120}%)` }}
       >
-          <div
-            className="h-[13px] flex items-center justify-center"
-            onTouchStart={handleSheetTouchStart}
-            onTouchMove={handleSheetTouchMove}
-            onTouchEnd={handleSheetTouchEnd}
-            onTouchCancel={handleSheetTouchEnd}
-          >
-            <span className="w-9 h-[3px] rounded-full bg-[#C5C5C5]" />
-          </div>
+        <div
+          className="h-[13px] flex items-center justify-center"
+          onTouchStart={handleSheetTouchStart}
+          onTouchMove={handleSheetTouchMove}
+          onTouchEnd={handleSheetTouchEnd}
+          onTouchCancel={handleSheetTouchEnd}
+        >
+          <span className="w-9 h-[3px] rounded-full bg-[#C5C5C5]" />
+        </div>
 
-          <div className={`min-h-0 flex-1 overflow-y-auto pb-36 transition-all duration-200 ${contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}>
-            <div className="bg-[#F8F8F8] relative">
-              <div
-                className="h-[310px] overflow-hidden relative"
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-              >
-                {images.length > 0 ? (
-                  <div className="w-full h-full overflow-hidden">
-                    <div
-                      className="flex h-full transition-transform duration-300 ease-out"
-                      style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
-                    >
-                      {images.map((src, idx) => (
-                        <div key={src + idx} className="w-full h-full flex-shrink-0 flex items-center justify-center">
-                          <img
-                            src={src}
-                            alt={p.title}
-                            className="w-[320px] h-[320px] object-contain mix-blend-multiply"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-text-secondary">
-                    Нет фото
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => toggleFav(p)}
-                  className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center"
-                >
-                  <svg width="28" height="28" viewBox="0 0 24 22" fill={isFav ? '#FF4545' : 'none'}>
-                    <path
-                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                      stroke="#FF4545"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                </button>
-
-                {images.length > 1 && (
-                  <div className="absolute bottom-[10px] left-1/2 -translate-x-1/2 h-5 px-1.5 rounded-full bg-[rgba(0,0,0,0.3)] backdrop-blur-[10px] flex items-center gap-[6px]">
-                    {images.map((_, idx) => (
-                      <span
-                        key={idx}
-                        className={`rounded-full bg-white transition-all ${idx === currentImageIndex ? 'w-2 h-2' : 'w-[3px] h-[3px] opacity-70'}`}
-                      />
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto pb-36 transition-all duration-200 ${
+            contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+          }`}
+        >
+          <div className="bg-[#F8F8F8] relative">
+            <div
+              className="h-[310px] overflow-hidden relative"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              {images.length > 0 ? (
+                <div className="w-full h-full overflow-hidden">
+                  <div
+                    className="flex h-full transition-transform duration-300 ease-out"
+                    style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+                  >
+                    {images.map((src, idx) => (
+                      <div
+                        key={src + idx}
+                        className="w-full h-full flex-shrink-0 flex items-center justify-center"
+                      >
+                        <img
+                          src={src}
+                          alt={p.title}
+                          className="w-[320px] h-[320px] object-contain mix-blend-multiply"
+                        />
+                      </div>
                     ))}
                   </div>
+                </div>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-text-secondary">
+                  Нет фото
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => toggleFav(p)}
+                className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center"
+              >
+                <svg width="28" height="28" viewBox="0 0 24 22" fill={isFav ? '#FF4545' : 'none'}>
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                    stroke="#FF4545"
+                    strokeWidth="1.5"
+                  />
+                </svg>
+              </button>
+
+              {images.length > 1 && (
+                <div className="absolute bottom-[10px] left-1/2 -translate-x-1/2 h-5 px-1.5 rounded-full bg-[rgba(0,0,0,0.3)] backdrop-blur-[10px] flex items-center gap-[6px]">
+                  {images.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`rounded-full bg-white transition-all ${
+                        idx === currentImageIndex ? 'w-2 h-2' : 'w-[3px] h-[3px] opacity-70'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="px-4 pt-6">
+            <div className="space-y-3 mb-5">
+              <h1 className="text-[20px] font-bold leading-[120%] text-[#434343]">{p.title}</h1>
+              <div className="flex items-center gap-2">
+                <Price value={displayPrice} size="lg" />
+                {hasDiscount && (
+                  <span className="text-[16px] text-[#8E8E93] line-through">
+                    {p.price_rub.toLocaleString('ru-RU')} ₽
+                  </span>
                 )}
               </div>
             </div>
 
-            <div className="px-4 pt-6">
-              <div className="space-y-3 mb-5">
-                <h1 className="text-[20px] font-bold leading-[120%] text-[#434343]">{p.title}</h1>
-                <div className="flex items-center gap-2">
-                  <Price value={displayPrice} size="lg" />
-                  {hasDiscount && (
-                    <span className="text-[16px] text-[#8E8E93] line-through">
-                      {p.price_rub.toLocaleString('ru-RU')} ₽
-                    </span>
-                  )}
-                </div>
+            {familyProducts.length > 1 && (
+              <div className="space-y-[18px] mb-5">
+                {puffsOptions.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1 text-[14px]">
+                      <span className="text-[#797979]">Кол-во затяжек:</span>
+                      {p.puffs != null && (
+                        <span className="text-[#595959]">
+                          {p.puffs.toLocaleString('ru-RU')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {puffsOptions.map((v) => {
+                        const isActive = p.puffs === v
+                        return (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => handlePuffsClick(v)}
+                            className={[
+                              'h-[34px] px-3 rounded-full text-[14px] font-normal leading-[22px] tracking-[-0.5px] transition-colors',
+                              isActive ? 'bg-[#434343] text-white' : 'bg-[#F8F8F8] text-[#434343]'
+                            ].join(' ')}
+                          >
+                            {v.toLocaleString('ru-RU')}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {flavors.length > 0 && p.flavor && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1 text-[14px]">
+                      <span className="text-[#797979]">Вкус:</span>
+                      <span className="text-[#595959]">{p.flavor}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {flavors.map((f) => {
+                        const isActive = f === p.flavor
+                        return (
+                          <button
+                            key={f}
+                            type="button"
+                            onClick={() => handleFlavorClick(f)}
+                            className={[
+                              'h-[34px] px-3 rounded-full text-[14px] font-normal leading-[22px] tracking-[-0.5px] transition-colors',
+                              isActive ? 'bg-[#434343] text-white' : 'bg-[#F8F8F8] text-[#434343]'
+                            ].join(' ')}
+                          >
+                            {f}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
+            )}
 
-              {familyProducts.length > 1 && (
-                <div className="space-y-[18px] mb-5">
-                  {puffsOptions.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1 text-[14px]">
-                        <span className="text-[#797979]">Кол-во затяжек:</span>
-                        {p.puffs != null && (
-                          <span className="text-[#595959]">{p.puffs.toLocaleString('ru-RU')}</span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {puffsOptions.map(v => {
-                          const isActive = p.puffs === v
-                          return (
-                            <button
-                              key={v}
-                              type="button"
-                              onClick={() => handlePuffsClick(v)}
-                              className={[
-                                'h-[34px] px-3 rounded-full text-[14px] font-normal leading-[22px] tracking-[-0.5px] transition-colors',
-                                isActive ? 'bg-[#434343] text-white' : 'bg-[#F8F8F8] text-[#434343]'
-                              ].join(' ')}
-                            >
-                              {v.toLocaleString('ru-RU')}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {flavors.length > 0 && p.flavor && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1 text-[14px]">
-                        <span className="text-[#797979]">Вкус:</span>
-                        <span className="text-[#595959]">{p.flavor}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {flavors.map(f => {
-                          const isActive = f === p.flavor
-                          return (
-                            <button
-                              key={f}
-                              type="button"
-                              onClick={() => handleFlavorClick(f)}
-                              className={[
-                                'h-[34px] px-3 rounded-full text-[14px] font-normal leading-[22px] tracking-[-0.5px] transition-colors',
-                                isActive ? 'bg-[#434343] text-white' : 'bg-[#F8F8F8] text-[#434343]'
-                              ].join(' ')}
-                            >
-                              {f}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {p.description && (
-                <div className="mb-4">
-                  <h2 className="text-[14px] font-bold leading-[120%] text-[#434343] mb-2">О товаре</h2>
-                  <p
-                    className={`text-[14px] font-normal leading-[130%] text-[#595959] ${
-                      !expanded ? 'line-clamp-3' : ''
-                    }`}
+            {p.description && (
+              <div className="mb-4">
+                <h2 className="text-[14px] font-bold leading-[120%] text-[#434343] mb-2">
+                  О товаре
+                </h2>
+                <p
+                  className={`text-[14px] font-normal leading-[130%] text-[#595959] ${
+                    !expanded ? 'line-clamp-3' : ''
+                  }`}
+                >
+                  {p.description}
+                </p>
+                {p.description.length > 120 && (
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((v) => !v)}
+                    className="text-accent text-[14px] mt-1"
                   >
-                    {p.description}
-                  </p>
-                  {p.description.length > 120 && (
-                    <button
-                      type="button"
-                      onClick={() => setExpanded((v) => !v)}
-                      className="text-accent text-[14px] mt-1"
-                    >
-                      {expanded ? 'Свернуть' : 'Дальше'}
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* сохраненный блок мета-данных, но в более мягком стиле */}
-              <div className="bg-[#F8F8F8] border border-[#EDEDED] rounded-[16px] p-3 space-y-2 mt-2">
-                {(brandTitle ?? p.brand) && (
-                  <Row label="Бренд" value={brandTitle ?? p.brand ?? ''} />
+                    {expanded ? 'Свернуть' : 'Дальше'}
+                  </button>
                 )}
-                {(lineTitle ?? p.line) && (
-                  <Row label="Линейка" value={lineTitle ?? p.line ?? ''} />
-                )}
-                {p.strength && <Row label="Крепость" value={formatStrength(p.strength)} />}
-                {p.article && <Row label="Артикул" value={formatArticleCode(p.article)} />}
               </div>
+            )}
+
+            {/* сохраненный блок мета-данных, но в более мягком стиле */}
+            <div className="bg-[#F8F8F8] border border-[#EDEDED] rounded-[16px] p-3 space-y-2 mt-2">
+              {(brandTitle ?? p.brand) && (
+                <Row label="Бренд" value={brandTitle ?? p.brand ?? ''} />
+              )}
+              {(lineTitle ?? p.line) && (
+                <Row label="Линейка" value={lineTitle ?? p.line ?? ''} />
+              )}
+              {p.strength && <Row label="Крепость" value={formatStrength(p.strength)} />}
+              {p.article && <Row label="Артикул" value={formatArticleCode(p.article)} />}
             </div>
           </div>
         </div>
@@ -466,7 +489,9 @@ export default function ProductPage() {
               >
                 −
               </button>
-              <span className="text-[16px] font-medium leading-[19px] text-[#595959]">{qty}</span>
+              <span className="text-[16px] font-medium leading-[19px] text-[#595959]">
+                {qty}
+              </span>
               <button
                 type="button"
                 className="w-5 h-5 flex items-center justify-center text-[#258CD1] text-[24px] leading-none active:opacity-70 disabled:opacity-50"
