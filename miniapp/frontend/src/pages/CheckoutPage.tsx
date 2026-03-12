@@ -332,14 +332,18 @@ export default function CheckoutPage() {
                     }
                   } catch (e: any) {
                     clearPromo()
-                    setPromoError(e?.message || 'Не удалось применить промокод')
+                    if (e?.message === 'invalid_code') {
+                      setPromoError('Промокод не найден или больше не действует')
+                    } else {
+                      setPromoError(e?.message || 'Не удалось применить промокод')
+                    }
                   } finally {
                     setPromoLoading(false)
                   }
                 }}
                 className="h-[44px] px-1 text-[#0099FF] flex items-center justify-center active:opacity-90 disabled:opacity-50 flex-shrink-0"
               >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                   <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>

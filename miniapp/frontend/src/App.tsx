@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import WebApp from '@twa-dev/sdk'
 import { trackVisit, upsertUser, getSettings } from './api'
@@ -66,6 +66,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
       <div className="flex flex-col min-h-full">
         <Routes>
@@ -86,6 +87,16 @@ export default function App() {
       </div>
     </BrowserRouter>
   )
+}
+
+function ScrollToTop() {
+  const location = useLocation()
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [location.pathname])
+
+  return null
 }
 
 // обёртка для экранов с нижней навигацией

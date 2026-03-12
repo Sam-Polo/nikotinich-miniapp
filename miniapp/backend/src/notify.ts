@@ -11,6 +11,13 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: '❌ Отменить'
 }
 
+// экранирование спецсимволов markdown в пользовательском вводе
+function escapeMarkdown(text: string | undefined | null): string {
+  if (!text) return ''
+  // для режима Markdown (не V2) нужно экранировать _, *, `, [
+  return String(text).replace(/[_*[`]/g, '\\$&')
+}
+
 // форматирование текста сообщения о заказе
 export function formatOrderMessage(order: {
   id: string
@@ -36,7 +43,7 @@ export function formatOrderMessage(order: {
   }
 
   const itemsText = order.items.map(i => {
-    const name = i.title || i.slug
+    const name = escapeMarkdown(i.title || i.slug)
     const price = i.priceRub ? ` — ₽${i.priceRub * i.qty}` : ''
     return `  • ${name} × ${i.qty}${price}`
   }).join('\n')
@@ -45,19 +52,19 @@ export function formatOrderMessage(order: {
     `📦 *Заказ #${order.id.slice(0, 8).toUpperCase()}*`,
     `Статус: ${statusLabel[status] ?? status}`,
     '',                                                                                          // абзац
-    `Имя: ${order.customerName}`,
-    order.phone ? `Телефон: ${order.phone}` : null,
-    order.address ? `Адрес: ${order.address}` : null,
+    `Имя: ${escapeMarkdown(order.customerName)}`,
+    order.phone ? `Телефон: ${escapeMarkdown(order.phone)}` : null,
+    order.address ? `Адрес: ${escapeMarkdown(order.address)}` : null,
     '',                                                                                          // абзац
     '*Состав:*',
     itemsText,
     '',                                                                                          // абзац
     '',                                                                                          // абзац (двойной отступ перед итогами)
-    order.promoCode ? `Промокод: ${order.promoCode}` : null,
+    order.promoCode ? `Промокод: ${escapeMarkdown(order.promoCode)}` : null,
     order.referralBonusUsed && order.referralBonusUsed > 0 ? `Реф. баллы: −₽${order.referralBonusUsed}` : null,
     order.deliveryFee > 0 ? `Доставка: ₽${order.deliveryFee}` : 'Доставка: Бесплатно',
     `💵 *Итого: ₽${order.totalRub}*`,
-    order.note ? `\nКомментарий: ${order.note}` : null
+    order.note ? `\nКомментарий: ${escapeMarkdown(order.note)}` : null
   ]
 
   // фильтруем только null (не пустые строки — они нужны как переносы)
