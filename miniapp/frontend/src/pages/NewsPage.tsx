@@ -1,22 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getContent } from '../api'
-import type { ContentItem } from '../api'
 import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
+import { useContentStore } from '../store/content'
 
 export default function NewsPage() {
-  const [items, setItems] = useState<ContentItem[]>([])
+  const contentItems = useContentStore((s) => s.contentItems)
+  const loadContent = useContentStore((s) => s.loadContent)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getContent()
-      .then(setItems)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+    loadContent().finally(() => setLoading(false))
+  }, [loadContent])
 
-  // верхняя лента — только элементы с флагом showInStories (новости и подборки)
+  const items = contentItems
   const topFeedItems = items.filter(i => i.showInStories)
   const newsItems = items.filter(i => i.type === 'news')
   const collections = items.filter(i => i.type === 'collection')

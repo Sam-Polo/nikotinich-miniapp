@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getContent, getContentReaction, getProducts, setContentReaction } from '../api'
+import { getContentReaction, getProducts, setContentReaction } from '../api'
 import type { ContentItem, ContentReaction, Product } from '../api'
 import PageHeader from '../components/PageHeader'
 import ProductCard from '../components/ProductCard'
@@ -8,41 +8,43 @@ import Spinner from '../components/Spinner'
 import ContentBody from '../components/ContentBody'
 import ContentReactions, { type UserReactionState } from '../components/ContentReactions'
 import { useUserStore } from '../store/user'
+import { useContentStore } from '../store/content'
 
 export default function CollectionDetailPage() {
   const { id } = useParams<{ id: string }>()
   const user = useUserStore((s) => s.user)
   const userId = user?.telegram_id
+  const loadContent = useContentStore((s) => s.loadContent)
+  const contentItems = useContentStore((s) => s.contentItems)
+  const updateItemCounts = useContentStore((s) => s.updateItemCounts)
 
   const [collection, setCollection] = useState<ContentItem | null>(null)
-  const [allItems, setAllItems] = useState<ContentItem[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [userReaction, setUserReaction] = useState<UserReactionState>({ like: 0, clap: 0, dislike: 0 })
 
-  const load = useCallback(async () => {
+  useEffect(() => {
     if (!id) return
-    try {
-      const list = await getContent()
-      setAllItems(list)
-      const col = list.find((i: ContentItem) => i.id === id && i.type === 'collection') ?? null
-      setCollection(col)
+    let cancelled = false
+    loadContent().then(async () => {
+      if (cancelled) return
+      const items = useContentStore.getState().contentItems
+      const col = items.find((i) => i.id === id && i.type === 'collection') ?? null
+      setCollection(col ?? null)
       if (col?.productSlugs?.length) {
-        const prods = await getProducts({ slugs: col.productSlugs })
-        setProducts(prods)
+        try {
+          const prods = await getProducts({ slugs: col.productSlugs })
+          if (!cancelled) setProducts(prods)
+        } catch {
+          if (!cancelled) setProducts([])
+        }
       } else {
         setProducts([])
       }
-    } catch {
-      setCollection(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [id])
-
-  useEffect(() => {
-    load()
-  }, [load])
+      if (!cancelled) setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [id, loadContent])
 
   // загрузка своей реакции при открытии подборки (чтобы подсветка сохранялась после возврата)
   useEffect(() => {
@@ -74,28 +76,28 @@ export default function CollectionDetailPage() {
       deltaDislike = -prev.dislike
       nextUser = { like: prev.like, clap: newClap, dislike: 0 }
     }
+    const newLikes = Math.max(0, (collection?.likes ?? 0) + deltaLike)
+    const newClaps = Math.max(0, (collection?.claps ?? 0) + deltaClap)
+    const newDislikes = Math.max(0, (collection?.dislikes ?? 0) + deltaDislike)
     setUserReaction(nextUser)
     setCollection((prevCol) => prevCol ? {
       ...prevCol,
-      likes: Math.max(0, (prevCol.likes ?? 0) + deltaLike),
-      claps: Math.max(0, (prevCol.claps ?? 0) + deltaClap),
-      dislikes: Math.max(0, (prevCol.dislikes ?? 0) + deltaDislike)
+      likes: newLikes,
+      claps: newClaps,
+      dislikes: newDislikes
     } : null)
-    setContentReaction(id, userId, reaction)
-      .then((res) => {
-        setCollection((prevCol) => prevCol ? { ...prevCol, likes: res.likes, claps: res.claps, dislikes: res.dislikes } : null)
-        setUserReaction(res.userReaction)
-      })
-      .catch(() => {
-        setUserReaction(prev)
-        setCollection((prevCol) => prevCol ? {
-          ...prevCol,
-          likes: (prevCol.likes ?? 0) - deltaLike,
-          claps: (prevCol.claps ?? 0) - deltaClap,
-          dislikes: (prevCol.dislikes ?? 0) - deltaDislike
-        } : null)
-      })
-  }, [id, userId, userReaction])
+    updateItemCounts(id, { likes: newLikes, claps: newClaps, dislikes: newDislikes })
+    // отправка на сервер в фоне; состояние не перезаписываем ответом — только локально, при ошибке откат
+    setContentReaction(id, userId, reaction).catch(() => {
+      setUserReaction(prev)
+      setCollection((prevCol) => prevCol ? {
+        ...prevCol,
+        likes: (prevCol.likes ?? 0) - deltaLike,
+        claps: (prevCol.claps ?? 0) - deltaClap,
+        dislikes: (prevCol.dislikes ?? 0) - deltaDislike
+      } : null)
+    })
+  }, [id, userId, userReaction, collection, updateItemCounts])
 
   if (loading) {
     return (
@@ -117,7 +119,7 @@ export default function CollectionDetailPage() {
     )
   }
 
-  const nextItems = allItems
+  const nextItems = contentItems
     .filter((i) => i.id !== collection.id)
     .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
     .slice(0, 4)

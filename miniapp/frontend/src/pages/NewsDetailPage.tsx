@@ -1,40 +1,38 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getContent, getContentReaction, setContentReaction } from '../api'
+import { getContentReaction, setContentReaction } from '../api'
 import type { ContentItem, ContentReaction } from '../api'
 import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
 import ContentBody from '../components/ContentBody'
 import ContentReactions, { type UserReactionState } from '../components/ContentReactions'
 import { useUserStore } from '../store/user'
+import { useContentStore } from '../store/content'
 
 export default function NewsDetailPage() {
   const { id } = useParams<{ id: string }>()
   const user = useUserStore((s) => s.user)
   const userId = user?.telegram_id
+  const loadContent = useContentStore((s) => s.loadContent)
+  const contentItems = useContentStore((s) => s.contentItems)
+  const updateItemCounts = useContentStore((s) => s.updateItemCounts)
 
   const [item, setItem] = useState<ContentItem | null>(null)
-  const [allItems, setAllItems] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [userReaction, setUserReaction] = useState<UserReactionState>({ like: 0, clap: 0, dislike: 0 })
 
-  const load = useCallback(async () => {
-    if (!id) return
-    try {
-      const list = await getContent()
-      setAllItems(list)
-      const found = list.find((i: ContentItem) => i.id === id && i.type === 'news') ?? null
-      setItem(found)
-    } catch {
-      setItem(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [id])
-
   useEffect(() => {
-    load()
-  }, [load])
+    if (!id) return
+    let cancelled = false
+    loadContent().then(() => {
+      if (cancelled) return
+      const items = useContentStore.getState().contentItems
+      const found = items.find((i) => i.id === id && i.type === 'news') ?? null
+      setItem(found ?? null)
+      setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [id, loadContent])
 
   // загрузка своей реакции при открытии статьи (чтобы подсветка сохранялась после возврата)
   useEffect(() => {
@@ -66,19 +64,19 @@ export default function NewsDetailPage() {
       deltaDislike = -prev.dislike
       nextUser = { like: prev.like, clap: newClap, dislike: 0 }
     }
+    const newLikes = Math.max(0, (item?.likes ?? 0) + deltaLike)
+    const newClaps = Math.max(0, (item?.claps ?? 0) + deltaClap)
+    const newDislikes = Math.max(0, (item?.dislikes ?? 0) + deltaDislike)
     setUserReaction(nextUser)
     setItem((prevItem) => prevItem ? {
       ...prevItem,
-      likes: Math.max(0, (prevItem.likes ?? 0) + deltaLike),
-      claps: Math.max(0, (prevItem.claps ?? 0) + deltaClap),
-      dislikes: Math.max(0, (prevItem.dislikes ?? 0) + deltaDislike)
+      likes: newLikes,
+      claps: newClaps,
+      dislikes: newDislikes
     } : null)
-    setContentReaction(id, userId, reaction)
-      .then((res) => {
-        setItem((prevItem) => prevItem ? { ...prevItem, likes: res.likes, claps: res.claps, dislikes: res.dislikes } : null)
-        setUserReaction(res.userReaction)
-      })
-      .catch(() => {
+    updateItemCounts(id, { likes: newLikes, claps: newClaps, dislikes: newDislikes })
+    // отправка на сервер в фоне; состояние не перезаписываем ответом — только локально, при ошибке откат
+    setContentReaction(id, userId, reaction).catch(() => {
         setUserReaction(prev)
         setItem((prevItem) => prevItem ? {
           ...prevItem,
@@ -87,7 +85,7 @@ export default function NewsDetailPage() {
           dislikes: (prevItem.dislikes ?? 0) - deltaDislike
         } : null)
       })
-  }, [id, userId, userReaction])
+  }, [id, userId, userReaction, item, updateItemCounts])
 
   if (loading) {
     return (
@@ -109,7 +107,7 @@ export default function NewsDetailPage() {
     )
   }
 
-  const nextItems = allItems
+  const nextItems = contentItems
     .filter((i) => i.id !== item.id)
     .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
     .slice(0, 4)
