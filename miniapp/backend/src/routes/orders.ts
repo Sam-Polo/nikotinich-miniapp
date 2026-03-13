@@ -175,7 +175,8 @@ router.post('/', async (req, res) => {
       slug: String(i.slug || ''),
       qty: Number(i.qty) || 1,
       title: i.title ? String(i.title) : undefined,
-      priceRub: i.priceRub !== undefined ? Number(i.priceRub) : undefined
+      priceRub: i.priceRub !== undefined ? Number(i.priceRub) : undefined,
+      article: i.article ? String(i.article) : undefined
     })),
     totalRub: Number(totalRub ?? 0),
     promoCode: promoCode ? String(promoCode) : undefined,

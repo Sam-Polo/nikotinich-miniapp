@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
 import Spinner from '../components/Spinner'
 import Price from '../components/Price'
+import BottomSheet from '../components/BottomSheet'
 
 function getOrderTitleByStatus(status: string) {
   const s = String(status || '').toLowerCase()
@@ -463,92 +464,99 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* модалка редактирования профиля */}
-      {profileModalOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-[180] flex items-end sm:items-center justify-center transition-opacity duration-200 opacity-100"
-          onClick={() => setProfileModalOpen(false)}
-        >
-          <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md p-5 pb-6 transform transition-transform duration-200 translate-y-0 sm:translate-y-0"
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 className="text-[18px] font-bold text-text-primary mb-4">Контактные данные</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[13px] text-text-secondary mb-1">Имя</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                  placeholder="Имя и фамилия"
-                  className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
-                />
-              </div>
-              <div>
-                <label className="block text-[13px] text-text-secondary mb-1">Телефон</label>
-                <div className="flex gap-2">
-                  <input
-                    type="tel"
-                    value={formatPhone(editPhone)}
-                    onChange={e => setEditPhone(e.target.value)}
-                    placeholder="+7 905 129-72-33"
-                    className="flex-1 bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
-                  />
-                  <button
-                    type="button"
-                    onClick={requestPhoneFromTelegram}
-                    disabled={phoneLoading}
-                    className="w-10 h-10 flex items-center justify-center bg-accent rounded-[10px] active:opacity-80 disabled:opacity-50 flex-shrink-0"
-                    title="получить номер из telegram"
-                  >
-                    {phoneLoading ? (
-                      <span className="text-white text-[12px]">...</span>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="4" y="2" width="16" height="20" rx="2" />
-                        <circle cx="12" cy="8" r="3" />
-                        <path d="M6 18c0-3.5 2.5-5 6-5s6 1.5 6 5" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-                {phoneError && <p className="text-destructive text-[12px] mt-1">{phoneError}</p>}
-              </div>
-              <div>
-                <label className="block text-[13px] text-text-secondary mb-1">Email</label>
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={e => setEditEmail(e.target.value)}
-                  placeholder="email@mail.ru"
-                  className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
-                />
-              </div>
+      {/* модалка редактирования профиля — через общий BottomSheet с анимацией */}
+      <BottomSheet
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        snapHeight="70vh"
+      >
+        <div className="px-4 pt-2 pb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[18px] font-bold text-text-primary">Контактные данные</h3>
+            <button
+              type="button"
+              onClick={() => setProfileModalOpen(false)}
+              className="text-[14px] text-text-secondary"
+            >
+              Закрыть
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[13px] text-text-secondary mb-1">Имя</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                placeholder="Имя и фамилия"
+                className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
+              />
             </div>
-            <div className="mt-5 space-y-2">
-              <Button
-                fullWidth
-                variant={saved ? 'secondary' : 'primary'}
-                loading={saving}
-                onClick={async () => {
-                  await handleSave()
-                  setProfileModalOpen(false)
-                }}
-              >
-                {saved ? '✓ сохранено' : 'Сохранить'}
-              </Button>
-              <button
-                type="button"
-                onClick={() => setProfileModalOpen(false)}
-                className="w-full text-center text-[14px] text-text-secondary mt-1"
-              >
-                Отмена
-              </button>
+            <div>
+              <label className="block text-[13px] text-text-secondary mb-1">Телефон</label>
+              <div className="flex gap-2">
+                <input
+                  type="tel"
+                  value={formatPhone(editPhone)}
+                  onChange={e => setEditPhone(e.target.value)}
+                  placeholder="+7 905 129-72-33"
+                  className="flex-1 bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
+                />
+                <button
+                  type="button"
+                  onClick={requestPhoneFromTelegram}
+                  disabled={phoneLoading}
+                  className="w-10 h-10 flex items-center justify-center bg-accent rounded-[10px] active:opacity-80 disabled:opacity-50 flex-shrink-0"
+                  title="получить номер из telegram"
+                >
+                  {phoneLoading ? (
+                    <span className="text-white text-[12px]">...</span>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="4" y="2" width="16" height="20" rx="2" />
+                      <circle cx="12" cy="8" r="3" />
+                      <path d="M6 18c0-3.5 2.5-5 6-5s6 1.5 6 5" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {phoneError && <p className="text-destructive text-[12px] mt-1">{phoneError}</p>}
+            </div>
+            <div>
+              <label className="block text-[13px] text-text-secondary mb-1">Email</label>
+              <input
+                type="email"
+                value={editEmail}
+                onChange={e => setEditEmail(e.target.value)}
+                placeholder="email@mail.ru"
+                className="w-full bg-bg-base rounded-[10px] px-3 py-2 text-[14px] text-text-primary outline-none border border-border-light focus:border-accent"
+              />
             </div>
           </div>
+
+          <div className="mt-5 space-y-2">
+            <Button
+              fullWidth
+              variant={saved ? 'secondary' : 'primary'}
+              loading={saving}
+              onClick={async () => {
+                await handleSave()
+                setProfileModalOpen(false)
+              }}
+            >
+              {saved ? '✓ сохранено' : 'Сохранить'}
+            </Button>
+            <button
+              type="button"
+              onClick={() => setProfileModalOpen(false)}
+              className="w-full text-center text-[14px] text-text-secondary mt-1"
+            >
+              Отмена
+            </button>
+          </div>
         </div>
-      )}
+      </BottomSheet>
     </div>
   )
 }
