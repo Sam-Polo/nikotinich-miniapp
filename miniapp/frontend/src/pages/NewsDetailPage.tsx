@@ -107,10 +107,10 @@ export default function NewsDetailPage() {
     )
   }
 
-  const nextItems = contentItems
-    .filter((i) => i.id !== item.id)
-    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
-    .slice(0, 4)
+  const nextNewsItems = contentItems
+    .filter((i) => i.id !== item.id && i.type === 'news')
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 2)
 
   const coverImage = item.imageUrl || (item.images && item.images[0])
 
@@ -175,37 +175,51 @@ export default function NewsDetailPage() {
           </div>
         </article>
 
-        {nextItems.length > 0 && (
-          <section className="mt-8 border-t border-[#F4F4F4] pt-5">
-            <h2 className="text-[16px] font-semibold text-[#343434] mb-3 text-center">Следующие статьи</h2>
-            <div className="space-y-3 px-4">
-              {nextItems.map((next) => (
+        {nextNewsItems.length > 0 && (
+          <section className="mt-8 border-t border-[#F4F4F4] pt-5 flex flex-col items-center gap-5">
+            <div className="px-5 flex flex-col items-center gap-2">
+              <h2 className="text-[16px] font-semibold text-[#343434] text-center">
+                Следующие статьи
+              </h2>
+            </div>
+            <div className="flex flex-col gap-3 px-4 w-full items-center">
+              {nextNewsItems.map((next) => (
                 <Link
                   key={next.id}
-                  to={next.type === 'collection' ? `/collection/${next.id}` : `/news/${next.id}`}
-                  className="block bg-card-bg rounded-card overflow-hidden shadow-sm"
+                  to={`/news/${next.id}`}
+                  className="w-full max-w-[361px] bg-white rounded-[22px] shadow-[0_4px_40px_rgba(0,0,0,0.06)] flex items-start gap-[14px] p-[10px]"
                 >
-                  {next.imageUrl || (next.images && next.images[0]) ? (
+                  <div className="flex-1 flex flex-col gap-[14px]">
+                    <div className="flex flex-col gap-2 px-[5px] pt-[10px] pb-0">
+                      <h3 className="text-[14px] font-bold text-[#343434] leading-[110%] line-clamp-2">
+                        {next.title}
+                      </h3>
+                      <div className="flex items-center gap-[6px] text-[12px] text-[#8D8D8D]">
+                        {next.publishedAt && (
+                          <span>
+                            {new Date(next.publishedAt).toLocaleDateString('ru-RU', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        )}
+                        {next.publishedAt && next.readMinutes != null && next.readMinutes > 0 && (
+                          <>
+                            <span className="w-[2px] h-[2px] rounded-full bg-[#8D8D8D]" />
+                            <span>{next.readMinutes} минут чтения</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {(next.imageUrl || (next.images && next.images[0])) && (
                     <img
                       src={next.imageUrl || next.images![0]}
                       alt={next.title}
-                      className="w-full aspect-video object-cover"
+                      className="w-[100px] h-[100px] rounded-[12px] object-cover flex-shrink-0"
                     />
-                  ) : (
-                    <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
-                      Нет фото
-                    </div>
                   )}
-                  <div className="p-3">
-                    <h3 className="text-[16px] font-semibold text-text-primary leading-snug">
-                      {next.title}
-                    </h3>
-                    {next.publishedAt && (
-                      <p className="text-[12px] text-text-secondary mt-1">
-                        {new Date(next.publishedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </p>
-                    )}
-                  </div>
                 </Link>
               ))}
             </div>
