@@ -142,7 +142,7 @@ export default function CategoryPage() {
           <>
             <p className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
-            <div className="grid grid-cols-1 gap-[10px]">
+            <div className="grid grid-cols-1 gap-[2px]">
               {brands.map(b => (
                 <button
                   key={b.key}
