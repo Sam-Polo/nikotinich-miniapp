@@ -114,6 +114,7 @@ export default function NewsDetailPage() {
     .slice(0, 2)
 
   const coverImage = item.imageUrl || (item.images && item.images[0])
+  const userReaction = userReactions[item.id] ?? { like: 0, clap: 0, dislike: 0 }
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">

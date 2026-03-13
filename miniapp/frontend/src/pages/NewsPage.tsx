@@ -33,6 +33,7 @@ export default function NewsPage() {
   const updateItemCounts = useContentStore((s) => s.updateItemCounts)
   const userReactions = useContentStore((s) => s.userReactions)
   const mergeUserReactions = useContentStore((s) => s.mergeUserReactions)
+  const setUserReactionInStore = useContentStore((s) => s.setUserReaction)
   const user = useUserStore((s) => s.user)
   const userId = user?.telegram_id
   const [loading, setLoading] = useState(true)
@@ -118,7 +119,7 @@ export default function NewsPage() {
       const newClaps = Math.max(0, (item.claps ?? 0) + deltaClap)
       const newDislikes = Math.max(0, (item.dislikes ?? 0) + deltaDislike)
 
-      setUserReactions(prev => ({ ...prev, [contentId]: nextUser }))
+      setUserReactionInStore(contentId, nextUser)
       updateItemCounts(contentId, { likes: newLikes, claps: newClaps, dislikes: newDislikes })
 
       try {
@@ -126,7 +127,7 @@ export default function NewsPage() {
         await setContentReaction(contentId, userId, reaction)
       } catch {
         // откат при ошибке
-        setUserReactions(prev => ({ ...prev, [contentId]: prevUser }))
+        setUserReactionInStore(contentId, prevUser)
         updateItemCounts(contentId, {
           likes: item.likes ?? 0,
           claps: item.claps ?? 0,
@@ -134,7 +135,7 @@ export default function NewsPage() {
         })
       }
     },
-    [items, updateItemCounts, userId, userReactions]
+    [items, updateItemCounts, userId, userReactions, setUserReactionInStore]
   )
 
   return (

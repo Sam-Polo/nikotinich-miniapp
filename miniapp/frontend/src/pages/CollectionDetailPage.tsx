@@ -126,6 +126,7 @@ export default function CollectionDetailPage() {
     .slice(0, 2)
 
   const coverImage = collection.imageUrl || (collection.images && collection.images[0])
+  const userReaction = userReactions[collection.id] ?? { like: 0, clap: 0, dislike: 0 }
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
