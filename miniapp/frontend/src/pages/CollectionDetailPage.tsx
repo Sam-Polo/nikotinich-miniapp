@@ -23,6 +23,7 @@ export default function CollectionDetailPage() {
   const [collection, setCollection] = useState<ContentItem | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [visibleProductsCount, setVisibleProductsCount] = useState(4)
 
   useEffect(() => {
     if (!id) return
@@ -127,6 +128,7 @@ export default function CollectionDetailPage() {
 
   const coverImage = collection.imageUrl || (collection.images && collection.images[0])
   const userReaction = userReactions[collection.id] ?? { like: 0, clap: 0, dislike: 0 }
+  const visibleProducts = products.slice(0, visibleProductsCount)
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
@@ -193,13 +195,29 @@ export default function CollectionDetailPage() {
 
         <div className="px-4 mt-6">
           <h2 className="text-[18px] font-bold text-text-primary mb-3">Товары в подборке</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {products.map((p) => (
-              <ProductCard key={p.slug} product={p} />
-            ))}
-          </div>
-          {products.length === 0 && (
+          {products.length === 0 ? (
             <p className="text-text-secondary text-center mt-10">В подборке пока нет товаров</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                {visibleProducts.map((p) => (
+                  <ProductCard key={p.slug} product={p} />
+                ))}
+              </div>
+              {visibleProductsCount < products.length && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    className="h-[44px] px-4 rounded-[12px] bg-[#F8F8F8] text-[14px] font-semibold text-text-primary active:opacity-80"
+                    onClick={() =>
+                      setVisibleProductsCount((prev) => Math.min(prev + 10, products.length))
+                    }
+                  >
+                    Больше товаров
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

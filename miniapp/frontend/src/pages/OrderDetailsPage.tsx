@@ -17,7 +17,9 @@ function formatDateTime(value?: string) {
     date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
 
-// chat id менеджера (telegram user id) для кнопки «Поддержка» — из .env
+// имя пользователя или id менеджера для кнопки «Поддержка» — из .env
+// приоритет: VITE_SUPPORT_TG_USERNAME (openTelegramLink) > VITE_SUPPORT_TG_ID (openLink с tg://)
+const SUPPORT_TG_USERNAME = (import.meta.env.VITE_SUPPORT_TG_USERNAME as string | undefined)?.trim().replace(/^@/, '') || ''
 const SUPPORT_TG_ID = (import.meta.env.VITE_SUPPORT_TG_ID as string | undefined)?.trim() || ''
 
 function getOrderStatusTitle(status?: string) {
@@ -99,32 +101,41 @@ export default function OrderDetailsPage() {
   }
 
   function handleSupport() {
+    // путь 1: username → openTelegramLink принимает только https://t.me/
+    if (SUPPORT_TG_USERNAME) {
+      const url = `https://t.me/${SUPPORT_TG_USERNAME}`
+      try {
+        WebApp.openTelegramLink(url)
+      } catch {
+        window.open(url, '_blank')
+      }
+      return
+    }
+
+    // путь 2: числовой id → openLink прокидывает tg:// в нативный клиент
     if (!SUPPORT_TG_ID) {
       toast.error('поддержка недоступна')
       return
     }
-    const raw = SUPPORT_TG_ID.trim()
-    // оставляем только цифры и возможный минус (на всякий случай)
-    const numericId = raw.replace(/[^0-9-]/g, '')
+    const numericId = SUPPORT_TG_ID.replace(/[^0-9-]/g, '')
     if (!numericId) {
       toast.error('id поддержки настроен неверно')
       return
     }
 
-    const tgLink = `tg://user?id=${encodeURIComponent(numericId)}`
+    const tgLink = `tg://user?id=${numericId}`
 
     try {
-      // внутри Telegram WebApp — используем API клиента
-      if (WebApp?.openTelegramLink) {
-        WebApp.openTelegramLink(tgLink)
+      // openLink (в отличие от openTelegramLink) передаёт tg:// в ОС
+      if (WebApp?.openLink) {
+        WebApp.openLink(tgLink)
         return
       }
     } catch {
-      // если что-то пошло не так — просто падаем в fallback ниже
+      // игнорируем — идём в fallback
     }
 
-    // fallback: дать клиенту Telegram обработать tg:// ссылку
-    window.location.href = tgLink
+    window.open(tgLink, '_blank')
   }
 
   async function handleRepeatOrder() {
