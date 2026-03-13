@@ -271,7 +271,7 @@ export default function CategoryPage() {
           <button
             type="button"
             onClick={() => { navigate('/'); setBrandsSheet(false) }}
-            className="mt-2 text-[16px] font-semibold text-accent"
+            className="mt-2 text-[14px] font-semibold text-accent"
           >
             Вернуться в каталог
           </button>
@@ -297,7 +297,7 @@ export default function CategoryPage() {
           <button
             type="button"
             onClick={() => { navigate('/'); setLinesSheet(false) }}
-            className="mt-2 text-[16px] font-semibold text-accent"
+            className="mt-2 text-[14px] font-semibold text-accent"
           >
             Вернуться в каталог
           </button>
@@ -314,14 +314,14 @@ export default function CategoryPage() {
             <div className="flex flex-col items-center">
               <button
                 type="button"
-                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[16px] font-semibold text-[#B0B5C0]"
+                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[14px] font-semibold text-[#B0B5C0]"
               >
                 Выберите бренд
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[16px] font-semibold text-accent"
+                className="mt-2 text-[14px] font-semibold text-accent"
               >
                 Вернуться в каталог
               </button>
@@ -352,14 +352,14 @@ export default function CategoryPage() {
             <div className="flex flex-col items-center">
               <button
                 type="button"
-                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[16px] font-semibold text-[#B0B5C0]"
+                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[14px] font-semibold text-[#B0B5C0]"
               >
                 Выберите линейку
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[16px] font-semibold text-accent"
+                className="mt-2 text-[14px] font-semibold text-accent"
               >
                 Вернуться в каталог
               </button>

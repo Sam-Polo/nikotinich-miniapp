@@ -9,6 +9,21 @@ import ContentReactions from '../components/ContentReactions'
 import { useUserStore } from '../store/user'
 import { useContentStore, type UserReactionState } from '../store/content'
 
+function bodyPreview(body?: string, maxLen = 150) {
+  if (!body) return ''
+  const plain = body
+    .replace(/\{\{img\d+\}\}/gi, ' ')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+    .replace(/[*_`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (plain.length <= maxLen) return plain
+  return `${plain.slice(0, maxLen).trimEnd()}...`
+}
+
 export default function NewsDetailPage() {
   const { id } = useParams<{ id: string }>()
   const user = useUserStore((s) => s.user)
@@ -188,7 +203,7 @@ export default function NewsDetailPage() {
               {nextItems.map((next) => (
                 <Link
                   key={next.id}
-                  to={`/news/${next.id}`}
+                  to={next.type === 'collection' ? `/collection/${next.id}` : `/news/${next.id}`}
                   className="w-full max-w-[361px] bg-white rounded-[22px] shadow-[0_4px_40px_rgba(0,0,0,0.06)] flex items-start gap-[14px] p-[10px]"
                 >
                   <div className="flex-1 flex flex-col gap-[14px]">
@@ -213,6 +228,11 @@ export default function NewsDetailPage() {
                           </>
                         )}
                       </div>
+                      {next.body && (
+                        <p className="text-[13px] text-[#8D8D8D] leading-[130%] line-clamp-2">
+                          {bodyPreview(next.body, 80)}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {(next.imageUrl || (next.images && next.images[0])) && (
