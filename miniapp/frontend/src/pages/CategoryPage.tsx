@@ -142,7 +142,7 @@ export default function CategoryPage() {
           <>
             <p className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-[10px]">
               {brands.map(b => (
                 <button
                   key={b.key}
@@ -173,7 +173,7 @@ export default function CategoryPage() {
         {step === 'line' && !loading && lines.length > 0 && (
           <>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите линейку</h1>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-[10px]">
               {lines.map(l => (
                 <button
                   key={l.key}
