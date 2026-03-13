@@ -6,9 +6,9 @@ import PageHeader from '../components/PageHeader'
 import ProductCard from '../components/ProductCard'
 import Spinner from '../components/Spinner'
 import ContentBody from '../components/ContentBody'
-import ContentReactions, { type UserReactionState } from '../components/ContentReactions'
+import ContentReactions from '../components/ContentReactions'
 import { useUserStore } from '../store/user'
-import { useContentStore } from '../store/content'
+import { useContentStore, type UserReactionState } from '../store/content'
 
 export default function CollectionDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -17,11 +17,12 @@ export default function CollectionDetailPage() {
   const loadContent = useContentStore((s) => s.loadContent)
   const contentItems = useContentStore((s) => s.contentItems)
   const updateItemCounts = useContentStore((s) => s.updateItemCounts)
+  const userReactions = useContentStore((s) => s.userReactions)
+  const setUserReactionInStore = useContentStore((s) => s.setUserReaction)
 
   const [collection, setCollection] = useState<ContentItem | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [userReaction, setUserReaction] = useState<UserReactionState>({ like: 0, clap: 0, dislike: 0 })
 
   useEffect(() => {
     if (!id) return
@@ -50,13 +51,13 @@ export default function CollectionDetailPage() {
   useEffect(() => {
     if (!collection?.id || !userId) return
     getContentReaction(collection.id, userId)
-      .then((data) => setUserReaction(data.userReaction))
+      .then((data) => setUserReactionInStore(collection.id, data.userReaction))
       .catch(() => {})
-  }, [collection?.id, userId])
+  }, [collection?.id, userId, setUserReactionInStore])
 
   const handleReaction = useCallback((reaction: ContentReaction) => {
-    if (!id || !userId) return
-    const prev = userReaction
+    if (!id || !userId || !collection) return
+    const prev = userReactions[collection.id] ?? { like: 0, clap: 0, dislike: 0 }
     let nextUser: UserReactionState
     let deltaLike = 0, deltaClap = 0, deltaDislike = 0
     if (reaction === 'dislike') {
@@ -76,10 +77,10 @@ export default function CollectionDetailPage() {
       deltaDislike = -prev.dislike
       nextUser = { like: prev.like, clap: newClap, dislike: 0 }
     }
-    const newLikes = Math.max(0, (collection?.likes ?? 0) + deltaLike)
-    const newClaps = Math.max(0, (collection?.claps ?? 0) + deltaClap)
-    const newDislikes = Math.max(0, (collection?.dislikes ?? 0) + deltaDislike)
-    setUserReaction(nextUser)
+    const newLikes = Math.max(0, (collection.likes ?? 0) + deltaLike)
+    const newClaps = Math.max(0, (collection.claps ?? 0) + deltaClap)
+    const newDislikes = Math.max(0, (collection.dislikes ?? 0) + deltaDislike)
+    setUserReactionInStore(collection.id, nextUser)
     setCollection((prevCol) => prevCol ? {
       ...prevCol,
       likes: newLikes,
@@ -89,7 +90,7 @@ export default function CollectionDetailPage() {
     updateItemCounts(id, { likes: newLikes, claps: newClaps, dislikes: newDislikes })
     // отправка на сервер в фоне; состояние не перезаписываем ответом — только локально, при ошибке откат
     setContentReaction(id, userId, reaction).catch(() => {
-      setUserReaction(prev)
+      setUserReactionInStore(collection.id, prev)
       setCollection((prevCol) => prevCol ? {
         ...prevCol,
         likes: (prevCol.likes ?? 0) - deltaLike,
@@ -97,7 +98,7 @@ export default function CollectionDetailPage() {
         dislikes: (prevCol.dislikes ?? 0) - deltaDislike
       } : null)
     })
-  }, [id, userId, userReaction, collection, updateItemCounts])
+  }, [id, userId, collection, userReactions, updateItemCounts, setUserReactionInStore])
 
   if (loading) {
     return (
@@ -122,7 +123,7 @@ export default function CollectionDetailPage() {
   const nextItems = contentItems
     .filter((i) => i.id !== collection.id)
     .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
-    .slice(0, 4)
+    .slice(0, 2)
 
   const coverImage = collection.imageUrl || (collection.images && collection.images[0])
 
@@ -195,36 +196,50 @@ export default function CollectionDetailPage() {
         )}
 
         {nextItems.length > 0 && (
-          <section className="mt-8">
-            <h2 className="text-[18px] font-bold text-text-primary mb-3">Следующие статьи</h2>
-            <div className="space-y-3">
+          <section className="mt-8 border-t border-[#F4F4F4] pt-5 flex flex-col items-center gap-5">
+            <div className="px-5 flex flex-col items-center gap-2">
+              <h2 className="text-[16px] font-semibold text-[#343434] text-center">
+                Следующие статьи
+              </h2>
+            </div>
+            <div className="flex flex-col gap-3 px-4 w-full items-center">
               {nextItems.map((next) => (
                 <Link
                   key={next.id}
                   to={next.type === 'collection' ? `/collection/${next.id}` : `/news/${next.id}`}
-                  className="block bg-card-bg rounded-card overflow-hidden shadow-sm"
+                  className="w-full max-w-[361px] bg-white rounded-[22px] shadow-[0_4px_40px_rgba(0,0,0,0.06)] flex items-start gap-[14px] p-[10px]"
                 >
-                  {next.imageUrl || (next.images && next.images[0]) ? (
+                  <div className="flex-1 flex flex-col gap-[14px]">
+                    <div className="flex flex-col gap-2 px-[5px] pt-[10px] pb-0">
+                      <h3 className="text-[14px] font-bold text-[#343434] leading-[110%] line-clamp-2">
+                        {next.title}
+                      </h3>
+                      <div className="flex items-center gap-[6px] text-[12px] text-[#8D8D8D]">
+                        {next.publishedAt && (
+                          <span>
+                            {new Date(next.publishedAt).toLocaleDateString('ru-RU', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        )}
+                        {next.publishedAt && next.readMinutes != null && next.readMinutes > 0 && (
+                          <>
+                            <span className="w-[2px] h-[2px] rounded-full bg-[#8D8D8D]" />
+                            <span>{next.readMinutes} минут чтения</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {(next.imageUrl || (next.images && next.images[0])) && (
                     <img
                       src={next.imageUrl || next.images![0]}
                       alt={next.title}
-                      className="w-full aspect-video object-cover"
+                      className="w-[100px] h-[100px] rounded-[12px] object-cover flex-shrink-0"
                     />
-                  ) : (
-                    <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
-                      Нет фото
-                    </div>
                   )}
-                  <div className="p-3">
-                    <h3 className="text-[16px] font-semibold text-text-primary leading-snug">
-                      {next.title}
-                    </h3>
-                    {next.publishedAt && (
-                      <p className="text-[12px] text-text-secondary mt-1">
-                        {new Date(next.publishedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </p>
-                    )}
-                  </div>
                 </Link>
               ))}
             </div>

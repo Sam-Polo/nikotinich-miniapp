@@ -5,9 +5,9 @@ import type { ContentItem, ContentReaction } from '../api'
 import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
 import ContentBody from '../components/ContentBody'
-import ContentReactions, { type UserReactionState } from '../components/ContentReactions'
+import ContentReactions from '../components/ContentReactions'
 import { useUserStore } from '../store/user'
-import { useContentStore } from '../store/content'
+import { useContentStore, type UserReactionState } from '../store/content'
 
 export default function NewsDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -16,10 +16,11 @@ export default function NewsDetailPage() {
   const loadContent = useContentStore((s) => s.loadContent)
   const contentItems = useContentStore((s) => s.contentItems)
   const updateItemCounts = useContentStore((s) => s.updateItemCounts)
+  const userReactions = useContentStore((s) => s.userReactions)
+  const setUserReactionInStore = useContentStore((s) => s.setUserReaction)
 
   const [item, setItem] = useState<ContentItem | null>(null)
   const [loading, setLoading] = useState(true)
-  const [userReaction, setUserReaction] = useState<UserReactionState>({ like: 0, clap: 0, dislike: 0 })
 
   useEffect(() => {
     if (!id) return
@@ -38,13 +39,13 @@ export default function NewsDetailPage() {
   useEffect(() => {
     if (!item?.id || !userId) return
     getContentReaction(item.id, userId)
-      .then((data) => setUserReaction(data.userReaction))
+      .then((data) => setUserReactionInStore(item.id, data.userReaction))
       .catch(() => {})
-  }, [item?.id, userId])
+  }, [item?.id, userId, setUserReactionInStore])
 
   const handleReaction = useCallback(async (reaction: ContentReaction) => {
-    if (!id || !userId) return
-    const prev = userReaction
+    if (!id || !userId || !item) return
+    const prev = userReactions[item.id] ?? { like: 0, clap: 0, dislike: 0 }
     let nextUser: UserReactionState
     let deltaLike = 0, deltaClap = 0, deltaDislike = 0
     if (reaction === 'dislike') {
@@ -64,10 +65,10 @@ export default function NewsDetailPage() {
       deltaDislike = -prev.dislike
       nextUser = { like: prev.like, clap: newClap, dislike: 0 }
     }
-    const newLikes = Math.max(0, (item?.likes ?? 0) + deltaLike)
-    const newClaps = Math.max(0, (item?.claps ?? 0) + deltaClap)
-    const newDislikes = Math.max(0, (item?.dislikes ?? 0) + deltaDislike)
-    setUserReaction(nextUser)
+    const newLikes = Math.max(0, (item.likes ?? 0) + deltaLike)
+    const newClaps = Math.max(0, (item.claps ?? 0) + deltaClap)
+    const newDislikes = Math.max(0, (item.dislikes ?? 0) + deltaDislike)
+    setUserReactionInStore(item.id, nextUser)
     setItem((prevItem) => prevItem ? {
       ...prevItem,
       likes: newLikes,
@@ -77,7 +78,7 @@ export default function NewsDetailPage() {
     updateItemCounts(id, { likes: newLikes, claps: newClaps, dislikes: newDislikes })
     // отправка на сервер в фоне; состояние не перезаписываем ответом — только локально, при ошибке откат
     setContentReaction(id, userId, reaction).catch(() => {
-        setUserReaction(prev)
+        setUserReactionInStore(item.id, prev)
         setItem((prevItem) => prevItem ? {
           ...prevItem,
           likes: (prevItem.likes ?? 0) - deltaLike,
@@ -85,7 +86,7 @@ export default function NewsDetailPage() {
           dislikes: (prevItem.dislikes ?? 0) - deltaDislike
         } : null)
       })
-  }, [id, userId, userReaction, item, updateItemCounts])
+  }, [id, userId, item, userReactions, updateItemCounts, setUserReactionInStore])
 
   if (loading) {
     return (
@@ -107,9 +108,9 @@ export default function NewsDetailPage() {
     )
   }
 
-  const nextNewsItems = contentItems
-    .filter((i) => i.id !== item.id && i.type === 'news')
-    .sort(() => Math.random() - 0.5)
+  const nextItems = contentItems
+    .filter((i) => i.id !== item.id)
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
     .slice(0, 2)
 
   const coverImage = item.imageUrl || (item.images && item.images[0])
@@ -175,7 +176,7 @@ export default function NewsDetailPage() {
           </div>
         </article>
 
-        {nextNewsItems.length > 0 && (
+        {nextItems.length > 0 && (
           <section className="mt-8 border-t border-[#F4F4F4] pt-5 flex flex-col items-center gap-5">
             <div className="px-5 flex flex-col items-center gap-2">
               <h2 className="text-[16px] font-semibold text-[#343434] text-center">
@@ -183,7 +184,7 @@ export default function NewsDetailPage() {
               </h2>
             </div>
             <div className="flex flex-col gap-3 px-4 w-full items-center">
-              {nextNewsItems.map((next) => (
+              {nextItems.map((next) => (
                 <Link
                   key={next.id}
                   to={`/news/${next.id}`}

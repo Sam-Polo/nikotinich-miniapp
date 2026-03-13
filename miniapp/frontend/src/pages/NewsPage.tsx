@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
-import ContentReactions, { type UserReactionState } from '../components/ContentReactions'
-import { useContentStore } from '../store/content'
+import ContentReactions from '../components/ContentReactions'
+import { useContentStore, type UserReactionState } from '../store/content'
 import { useUserStore } from '../store/user'
 import type { ContentReaction } from '../api'
 
@@ -31,10 +31,11 @@ export default function NewsPage() {
   const contentItems = useContentStore((s) => s.contentItems)
   const loadContent = useContentStore((s) => s.loadContent)
   const updateItemCounts = useContentStore((s) => s.updateItemCounts)
+  const userReactions = useContentStore((s) => s.userReactions)
+  const mergeUserReactions = useContentStore((s) => s.mergeUserReactions)
   const user = useUserStore((s) => s.user)
   const userId = user?.telegram_id
   const [loading, setLoading] = useState(true)
-  const [userReactions, setUserReactions] = useState<Record<string, UserReactionState>>({})
 
   useEffect(() => {
     loadContent().finally(() => setLoading(false))
@@ -72,9 +73,7 @@ export default function NewsPage() {
           }
         })
 
-        if (Object.keys(next).length > 0) {
-          setUserReactions(prev => ({ ...prev, ...next }))
-        }
+        mergeUserReactions(next)
       } catch {
         // игнорируем ошибки загрузки реакций, лента всё равно продолжит работать
       }
@@ -85,7 +84,7 @@ export default function NewsPage() {
     return () => {
       cancelled = true
     }
-  }, [userId, items, newsItems, collections])
+  }, [userId, items, newsItems, collections, mergeUserReactions])
 
   const handleReaction = useCallback(
     async (contentId: string, reaction: ContentReaction) => {

@@ -1,7 +1,6 @@
 import type { MouseEvent } from 'react'
 import type { ContentReaction } from '../api'
-
-export type UserReactionState = { like: number; clap: number; dislike: number }
+import type { UserReactionState } from '../store/content'
 
 type Props = {
   contentId: string
