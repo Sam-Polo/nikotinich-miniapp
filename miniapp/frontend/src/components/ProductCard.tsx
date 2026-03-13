@@ -121,7 +121,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
             </div>
           ) : (
             <button
-              className="mt-2 w-full h-9 rounded-lg bg-[#F8F8F8] text-[14px] text-text-primary font-medium active:opacity-70 flex-shrink-0"
+              className="mt-2 w-full h-9 rounded-[10px] bg-[#F8F8F8] text-[14px] text-text-primary font-medium active:opacity-70 flex-shrink-0 px-0"
               onClick={handleAdd}
             >
               В корзину

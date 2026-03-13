@@ -175,12 +175,12 @@ export default function CategoryPage() {
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите линейку</h1>
             <div className="grid grid-cols-1 gap-0">
               {lines.map(l => (
-                <button
+              <button
                   key={l.key}
                   onClick={() => handleLineSelect(l.key)}
                   className="bg-card-bg rounded-card overflow-hidden text-left active:scale-[0.98] transition-transform"
                 >
-                  <div className="flex items-center gap-4 p-4">
+                  <div className="flex items-center gap-4 px-4 py-3">
                     <div
                       className={`w-16 h-16 rounded-[10px] bg-[#F8F8F8] flex-shrink-0 overflow-hidden ${
                         selectedLine === l.key ? 'ring-2 ring-accent' : ''
@@ -311,30 +311,30 @@ export default function CategoryPage() {
             style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 8px)' }}
         >
           {!selectedBrand ? (
-            <div className="flex flex-col items-center">
-              <button
+          <div className="flex flex-col items-center">
+            <button
                 type="button"
-                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[14px] font-semibold text-[#B0B5C0]"
+                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[15px] font-semibold text-[#B0B5C0]"
               >
                 Выберите бренд
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[14px] font-semibold text-accent"
+                className="mt-2 text-[15px] font-semibold text-accent"
               >
                 Вернуться в каталог
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center">
-              <Button fullWidth onClick={handleBrandProceed}>
+          <div className="flex flex-col items-center">
+              <Button fullWidth className="text-[15px]" onClick={handleBrandProceed}>
                 Продолжить
               </Button>
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[16px] font-semibold text-accent"
+                className="mt-2 text-[15px] font-semibold text-accent"
               >
                 Вернуться в каталог
               </button>
@@ -349,30 +349,30 @@ export default function CategoryPage() {
             style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 8px)' }}
         >
           {!selectedLine ? (
-            <div className="flex flex-col items-center">
-              <button
+          <div className="flex flex-col items-center">
+            <button
                 type="button"
-                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[14px] font-semibold text-[#B0B5C0]"
+                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[15px] font-semibold text-[#B0B5C0]"
               >
                 Выберите линейку
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[14px] font-semibold text-accent"
+                className="mt-2 text-[15px] font-semibold text-accent"
               >
                 Вернуться в каталог
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center">
-              <Button fullWidth onClick={handleLineProceed}>
+          <div className="flex flex-col items-center">
+              <Button fullWidth className="text-[15px]" onClick={handleLineProceed}>
                 Продолжить
               </Button>
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[16px] font-semibold text-accent"
+                className="mt-2 text-[15px] font-semibold text-accent"
               >
                 Вернуться в каталог
               </button>

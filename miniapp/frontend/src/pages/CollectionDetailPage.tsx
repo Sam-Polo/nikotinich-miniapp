@@ -132,20 +132,13 @@ export default function CollectionDetailPage() {
     <div className="flex flex-col min-h-full bg-bg-base">
       <PageHeader title="Никотиныч" subtitle="mini app" showBack />
 
-      <div className="flex-1 px-4 pt-4 pb-24">
-        <article className="bg-card-bg rounded-card overflow-hidden shadow-sm mb-6">
-          {coverImage ? (
-            <img src={coverImage} alt={collection.title} className="w-full aspect-video object-cover" />
-          ) : (
-            <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
-              Нет фото
-            </div>
-          )}
-          <div className="p-4">
-            <h1 className="text-[20px] font-bold text-text-primary mb-2 leading-snug">
+      <div className="flex-1 pt-4 pb-24">
+        <article className="w-full">
+          <div className="px-5 pb-4">
+            <h1 className="text-[26px] font-bold leading-[110%] text-[#343434] mb-5">
               {collection.title}
             </h1>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-text-secondary mb-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-[#8D8D8D] mb-4">
               {collection.publishedAt && (
                 <span>
                   {new Date(collection.publishedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -153,7 +146,7 @@ export default function CollectionDetailPage() {
               )}
               {collection.readMinutes != null && collection.readMinutes > 0 && (
                 <>
-                  {collection.publishedAt && <span>·</span>}
+                  {collection.publishedAt && <span>•</span>}
                   <span>{collection.readMinutes} мин чтения</span>
                 </>
               )}
@@ -168,11 +161,23 @@ export default function CollectionDetailPage() {
               onReaction={handleReaction}
               compact
             />
-            {collection.body && (
-              <div className="mt-4">
-                <ContentBody body={collection.body} images={collection.images} />
-              </div>
-            )}
+          </div>
+
+          {coverImage ? (
+            <img src={coverImage} alt={collection.title} className="w-full h-auto max-h-[320px] object-cover" />
+          ) : (
+            <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
+              Нет фото
+            </div>
+          )}
+
+          {collection.body && (
+            <div className="px-5 pt-4">
+              <ContentBody body={collection.body} images={collection.images} />
+            </div>
+          )}
+
+          <div className="px-5 pt-3">
             <ContentReactions
               contentId={collection.id}
               userId={userId}
@@ -186,15 +191,17 @@ export default function CollectionDetailPage() {
           </div>
         </article>
 
-        <h2 className="text-[18px] font-bold text-text-primary mb-3">Товары в подборке</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {products.map((p) => (
-            <ProductCard key={p.slug} product={p} />
-          ))}
+        <div className="px-4 mt-6">
+          <h2 className="text-[18px] font-bold text-text-primary mb-3">Товары в подборке</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {products.map((p) => (
+              <ProductCard key={p.slug} product={p} />
+            ))}
+          </div>
+          {products.length === 0 && (
+            <p className="text-text-secondary text-center mt-10">В подборке пока нет товаров</p>
+          )}
         </div>
-        {products.length === 0 && (
-          <p className="text-text-secondary text-center mt-10">В подборке пока нет товаров</p>
-        )}
 
         {nextItems.length > 0 && (
           <section className="mt-8 border-t border-[#F4F4F4] pt-5 flex flex-col items-center gap-5">

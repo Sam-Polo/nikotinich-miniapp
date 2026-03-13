@@ -161,11 +161,13 @@ export default function NewsPage() {
                 <Link
                   key={item.id}
                   to={item.type === 'collection' ? `/collection/${item.id}` : `/news/${item.id}`}
-                  className="flex-shrink-0 w-[170px] bg-accent rounded-card p-4 text-white block active:opacity-90"
+                  className="flex-shrink-0 w-[170px] bg-accent rounded-card p-4 text-white flex flex-col justify-between active:opacity-90"
                 >
-                  <p className="font-bold text-[15px] leading-tight mb-2">{item.title}</p>
-                  {item.body && <p className="text-[13px] opacity-85 mb-3 line-clamp-2">{item.body}</p>}
-                  <span className="text-[13px] font-semibold underline">Смотреть</span>
+                  <div className="flex-1 flex flex-col">
+                    <p className="font-bold text-[15px] leading-tight mb-2">{item.title}</p>
+                    {item.body && <p className="text-[13px] opacity-85 line-clamp-2">{item.body}</p>}
+                  </div>
+                  <span className="mt-3 text-[13px] font-semibold underline">Смотреть</span>
                 </Link>
               ))}
             </div>

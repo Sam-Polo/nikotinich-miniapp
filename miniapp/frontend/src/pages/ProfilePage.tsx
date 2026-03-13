@@ -466,11 +466,11 @@ export default function ProfilePage() {
       {/* модалка редактирования профиля */}
       {profileModalOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-[180] flex items-end sm:items-center justify-center"
+          className="fixed inset-0 bg-black/40 z-[180] flex items-end sm:items-center justify-center transition-opacity duration-200 opacity-100"
           onClick={() => setProfileModalOpen(false)}
         >
           <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md p-5 pb-6"
+            className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md p-5 pb-6 transform transition-transform duration-200 translate-y-0 sm:translate-y-0"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-[18px] font-bold text-text-primary mb-4">Контактные данные</h3>
