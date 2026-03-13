@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import type { ContentReaction } from '../api'
 
 export type UserReactionState = { like: number; clap: number; dislike: number }
@@ -29,7 +30,9 @@ export default function ContentReactions({
   compact,
   showDislike = false
 }: Props) {
-  const handleClick = (reaction: ContentReaction) => {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>, reaction: ContentReaction) => {
+    event.preventDefault()
+    event.stopPropagation()
     if (!userId) return
     onReaction(reaction)
   }
@@ -38,7 +41,7 @@ export default function ContentReactions({
     <button
       type="button"
       disabled={!userId}
-      onClick={() => handleClick(reaction)}
+      onClick={(event) => handleClick(event, reaction)}
       className={`inline-flex items-center justify-center gap-1.5 rounded-full min-w-[44px] min-h-[36px] px-3 py-1.5 text-[14px] transition-colors duration-150 ease-out disabled:opacity-50 disabled:pointer-events-none ${
         userActive > 0 ? 'bg-accent text-white' : 'bg-[#E5E5EA] text-text-secondary'
       }`}

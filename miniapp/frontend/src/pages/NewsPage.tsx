@@ -45,6 +45,48 @@ export default function NewsPage() {
   const newsItems = items.filter(i => i.type === 'news')
   const collections = items.filter(i => i.type === 'collection')
 
+  useEffect(() => {
+    if (!userId || items.length === 0) return
+    let cancelled = false
+
+    const loadReactions = async () => {
+      try {
+        const { getContentReaction } = await import('../api')
+        const ids = Array.from(
+          new Set([
+            ...newsItems.map(i => i.id),
+            ...collections.map(i => i.id)
+          ])
+        )
+
+        const results = await Promise.allSettled(
+          ids.map(id => getContentReaction(id, userId))
+        )
+
+        if (cancelled) return
+
+        const next: Record<string, UserReactionState> = {}
+        results.forEach((res, index) => {
+          if (res.status === 'fulfilled') {
+            next[ids[index]] = res.value.userReaction
+          }
+        })
+
+        if (Object.keys(next).length > 0) {
+          setUserReactions(prev => ({ ...prev, ...next }))
+        }
+      } catch {
+        // игнорируем ошибки загрузки реакций, лента всё равно продолжит работать
+      }
+    }
+
+    loadReactions()
+
+    return () => {
+      cancelled = true
+    }
+  }, [userId, items, newsItems, collections])
+
   const handleReaction = useCallback(
     async (contentId: string, reaction: ContentReaction) => {
       if (!userId) return
