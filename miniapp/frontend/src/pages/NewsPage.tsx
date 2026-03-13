@@ -4,6 +4,26 @@ import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
 import { useContentStore } from '../store/content'
 
+function bodyPreview(body?: string, maxLen = 150) {
+  if (!body) return ''
+  const plain = body
+    // убираем маркеры встроенных картинок
+    .replace(/\{\{img\d+\}\}/gi, ' ')
+    // markdown заголовки/списки
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    // markdown ссылки [text](url) -> text
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+    // жирный/курсив/инлайн-код
+    .replace(/[*_`~]/g, '')
+    // нормализуем пробелы
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (plain.length <= maxLen) return plain
+  return `${plain.slice(0, maxLen).trimEnd()}...`
+}
+
 export default function NewsPage() {
   const contentItems = useContentStore((s) => s.contentItems)
   const loadContent = useContentStore((s) => s.loadContent)
@@ -52,7 +72,7 @@ export default function NewsPage() {
           </div>
         )}
 
-        {/* новости и подборки в ленте — только карточка (фото + заголовок + превью), по клику открывается полное описание */}
+        {/* новости и подборки в ленте — карточки */}
         <div className="px-4 space-y-4">
           {newsItems.map(item => (
             <Link key={item.id} to={`/news/${item.id}`} className="block bg-card-bg rounded-card overflow-hidden shadow-sm">
@@ -88,11 +108,17 @@ export default function NewsPage() {
                     </>
                   )}
                 </div>
-                {item.body && (
-                  <p className="text-[14px] text-text-secondary leading-relaxed line-clamp-3">
-                    {item.body}
-                  </p>
-                )}
+                {item.body && <p className="text-[14px] text-text-secondary leading-relaxed line-clamp-3">{bodyPreview(item.body)}</p>}
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center gap-1.5 rounded-full min-h-[34px] px-3 py-1.5 text-[14px] bg-[#F8F8F8] text-[#343434]">
+                    <span>❤️</span>
+                    <span>{item.likes ?? 0}</span>
+                  </span>
+                  <span className="inline-flex items-center justify-center gap-1.5 rounded-full min-h-[34px] px-3 py-1.5 text-[14px] bg-[#F8F8F8] text-[#343434]">
+                    <span>👍</span>
+                    <span>{item.claps ?? 0}</span>
+                  </span>
+                </div>
               </div>
             </Link>
           ))}
@@ -132,11 +158,17 @@ export default function NewsPage() {
                     </>
                   )}
                 </div>
-                {col.body && (
-                  <p className="text-[14px] text-text-secondary leading-relaxed line-clamp-3">
-                    {col.body}
-                  </p>
-                )}
+                {col.body && <p className="text-[14px] text-text-secondary leading-relaxed line-clamp-3">{bodyPreview(col.body)}</p>}
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center gap-1.5 rounded-full min-h-[34px] px-3 py-1.5 text-[14px] bg-[#F8F8F8] text-[#343434]">
+                    <span>❤️</span>
+                    <span>{col.likes ?? 0}</span>
+                  </span>
+                  <span className="inline-flex items-center justify-center gap-1.5 rounded-full min-h-[34px] px-3 py-1.5 text-[14px] bg-[#F8F8F8] text-[#343434]">
+                    <span>👍</span>
+                    <span>{col.claps ?? 0}</span>
+                  </span>
+                </div>
               </div>
             </Link>
           ))}
