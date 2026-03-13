@@ -8,14 +8,6 @@ import Button from '../components/Button'
 import Spinner from '../components/Spinner'
 import Price from '../components/Price'
 
-const ORDER_STATUS_LABELS: Record<string, string> = {
-  new: 'Новый',
-  confirmed: 'Подтверждён',
-  packed: 'Заказ в пути',
-  completed: 'Получен',
-  cancelled: 'Отменён'
-}
-
 function getOrderTitleByStatus(status: string) {
   const s = String(status || '').toLowerCase()
   if (s === 'confirmed') return 'Подтверждён'
@@ -434,12 +426,7 @@ export default function ProfilePage() {
                           ))}
                         </div>
 
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className="text-[12px] text-[#626262]">
-                            {ORDER_STATUS_LABELS[order.status] || ORDER_STATUS_LABELS.new}
-                          </span>
-                          <Price value={order.totalRub} size="sm" />
-                        </div>
+                        {/* нижний статус и цена убраны по требованию — статус уже в заголовке */}
                       </button>
                     )
                   })}

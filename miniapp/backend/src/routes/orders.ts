@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { randomBytes } from 'node:crypto'
 import { SHEET_ID } from '../config.js'
 import { readSheet, ensureSheet, appendRow, getAuth, updateRange, getSheetTitles } from '../sheets-utils.js'
-import { sendOrderNotification } from '../notify.js'
+import { sendOrderNotification, editOrderMessage } from '../notify.js'
 import { google } from 'googleapis'
 import { logger } from '../logger.js'
 
@@ -234,7 +234,7 @@ router.put('/:id/cancel', async (req, res) => {
   if (!userId) return res.status(400).json({ error: 'userId_required' })
 
   try {
-    const rows = await readSheet(SHEET_ID, `${SHEET_NAME}!A1:N2000`)
+    const rows = await readSheet(SHEET_ID, `${SHEET_NAME}!A1:Q2000`)
     if (rows.length < 2) return res.status(404).json({ error: 'order_not_found' })
 
     const header = rows[0].map((h: string) => h.trim().toLowerCase())
@@ -242,7 +242,13 @@ router.put('/:id/cancel', async (req, res) => {
     const idIdx = idx('id')
     const userIdIdx = idx('user_id')
     const statusIdx = idx('status')
-    if (idIdx === -1 || userIdIdx === -1 || statusIdx === -1) {
+    const itemsIdx = idx('items_json')
+    const totalIdx = idx('total_rub')
+    const promoIdx = idx('promo_code')
+    const deliveryIdx = idx('delivery_fee')
+    const noteIdx = idx('note')
+    const msgIdIdx = idx('tg_message_id')
+    if (idIdx === -1 || userIdIdx === -1 || statusIdx === -1 || itemsIdx === -1 || totalIdx === -1 || deliveryIdx === -1) {
       return res.status(500).json({ error: 'sheet_format_error' })
     }
 
@@ -261,10 +267,47 @@ router.put('/:id/cancel', async (req, res) => {
     const fullRow = header.map((_, i) => String(row[i] ?? ''))
     fullRow[statusIdx] = 'cancelled'
     const sheetRow = rowIndex + 1
-    await updateRange(SHEET_ID, `${SHEET_NAME}!A${sheetRow}:N${sheetRow}`, [fullRow])
+    await updateRange(SHEET_ID, `${SHEET_NAME}!A${sheetRow}:Q${sheetRow}`, [fullRow])
 
     logger.info({ orderId, userId }, 'заказ отменён пользователем')
     res.json({ success: true, status: 'cancelled' })
+
+    // пытаемся обновить сообщение бота в канале (не блокируем ответ пользователю)
+    try {
+      const get = (n: string) => {
+        const i = idx(n)
+        return i === -1 ? '' : String(fullRow[i] ?? '').trim()
+      }
+
+      let items: any[] = []
+      try {
+        const parsed = JSON.parse(get('items_json') || '[]')
+        if (Array.isArray(parsed)) items = parsed
+      } catch {
+        items = []
+      }
+
+      const msgId = msgIdIdx !== -1 ? String(fullRow[msgIdIdx] ?? '').trim() : ''
+      if (msgId) {
+        const orderForNotify = {
+          id: get('id'),
+          userId: get('user_id') || undefined,
+          customerName: get('customer_name'),
+          phone: get('phone') || undefined,
+          address: get('address') || undefined,
+          items,
+          totalRub: Number(get('total_rub')) || 0,
+          promoCode: get('promo_code') || undefined,
+          deliveryFee: Number(get('delivery_fee')) || 0,
+          status: 'cancelled',
+          note: get('note') || undefined,
+          referralBonusUsed: undefined
+        }
+        await editOrderMessage(msgId, orderForNotify, 'cancelled')
+      }
+    } catch (e: any) {
+      logger.warn({ error: e?.message, orderId }, 'не удалось обновить сообщение бота при отмене заказа')
+    }
   } catch (e: any) {
     logger.error({ error: e?.message, orderId, userId }, 'ошибка отмены заказа')
     res.status(500).json({ error: 'server_error' })

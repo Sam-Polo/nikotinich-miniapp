@@ -204,7 +204,8 @@ export default function CheckoutPage() {
         slug: i.product.slug,
         qty: i.qty,
         title: i.product.title,
-        priceRub: i.product.display_price
+        priceRub: i.product.display_price,
+        article: i.product.article
       }))
 
       const result = await createOrder({
@@ -216,8 +217,8 @@ export default function CheckoutPage() {
         totalRub: total,
         deliveryFee: delivery,
         promoCode: promoApplied?.code || undefined,
-        // email и комментарий не изменяют профиль, но уходят в заказ в заметке для менеджера
-        note: [`email: ${email.trim()}`, comment.trim() && `comment: ${comment.trim()}`].filter(Boolean).join(' | '),
+        // email и комментарий не изменяют профиль, а уходят в заказ в заметке для менеджера
+        note: comment.trim() || undefined,
         referralBonusUsed: effectiveBonus > 0 ? effectiveBonus : undefined
       })
 

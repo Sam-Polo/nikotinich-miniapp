@@ -25,7 +25,7 @@ export function formatOrderMessage(order: {
   customerName: string
   phone?: string
   address?: string
-  items: { slug: string; qty: number; title?: string; priceRub?: number }[]
+  items: { slug: string; qty: number; title?: string; priceRub?: number; article?: string }[]
   totalRub: number
   promoCode?: string
   deliveryFee: number
@@ -44,8 +44,9 @@ export function formatOrderMessage(order: {
 
   const itemsText = order.items.map(i => {
     const name = escapeMarkdown(i.title || i.slug)
+    const article = i.article ? ` [${escapeMarkdown(i.article)}]` : ''
     const price = i.priceRub ? ` — ₽${i.priceRub * i.qty}` : ''
-    return `  • ${name} × ${i.qty}${price}`
+    return `  • ${name}${article} × ${i.qty}${price}`
   }).join('\n')
 
   let lines = [
