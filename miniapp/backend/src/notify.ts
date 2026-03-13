@@ -18,6 +18,14 @@ function escapeMarkdown(text: string | undefined | null): string {
   return String(text).replace(/[_*[`]/g, '\\$&')
 }
 
+// формат артикула в единый вид 0000
+function formatArticleCode(article: string | undefined): string {
+  if (!article) return ''
+  const digits = String(article).replace(/\D/g, '')
+  if (!digits) return ''
+  return digits.slice(-4).padStart(4, '0')
+}
+
 // форматирование текста сообщения о заказе
 export function formatOrderMessage(order: {
   id: string
@@ -44,7 +52,8 @@ export function formatOrderMessage(order: {
 
   const itemsText = order.items.map(i => {
     const name = escapeMarkdown(i.title || i.slug)
-    const article = i.article ? ` [${escapeMarkdown(i.article)}]` : ''
+    const articleCode = formatArticleCode(i.article)
+    const article = articleCode ? ` [${articleCode}]` : ''
     const price = i.priceRub ? ` — ₽${i.priceRub * i.qty}` : ''
     return `  • ${name}${article} × ${i.qty}${price}`
   }).join('\n')
@@ -126,8 +135,13 @@ export async function editOrderMessage(
   messageId: string,
   order: Parameters<typeof formatOrderMessage>[0],
   newStatus: string
-): Promise<void> {
-  if (!BOT_TOKEN || !ORDERS_CHANNEL_ID) return
+): Promise<boolean> {
+  if (!BOT_TOKEN || !ORDERS_CHANNEL_ID) return false
+  const normalizedMsgId = String(messageId || '').replace(/\D/g, '')
+  if (!normalizedMsgId) {
+    logger.warn({ messageId, orderId: order.id }, 'некорректный message_id для обновления сообщения')
+    return false
+  }
 
   const text = formatOrderMessage(order, newStatus)
   const reply_markup = buildKeyboard(order.id, newStatus)
@@ -138,16 +152,47 @@ export async function editOrderMessage(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: ORDERS_CHANNEL_ID,
-        message_id: Number(messageId),
+        message_id: Number(normalizedMsgId),
         text,
         reply_markup
       })
     })
     const data = await res.json() as any
     if (!data.ok) {
-      logger.warn({ error: data.description, messageId }, 'не удалось обновить сообщение в канале')
+      const desc = String(data.description || '')
+      // telegram может вернуть "message is not modified" — это не ошибка бизнес-логики
+      if (desc.toLowerCase().includes('message is not modified')) return true
+      logger.warn({ error: data.description, messageId: normalizedMsgId, orderId: order.id }, 'не удалось обновить сообщение в канале')
+      return false
     }
+    return true
   } catch (e: any) {
-    logger.warn({ error: e?.message, messageId }, 'ошибка обновления сообщения в канале')
+    logger.warn({ error: e?.message, messageId: normalizedMsgId, orderId: order.id }, 'ошибка обновления сообщения в канале')
+    return false
+  }
+}
+
+// fallback-уведомление: отправляем отдельное сообщение о смене статуса, если edit не сработал
+export async function sendOrderStatusFallbackNotification(orderId: string, newStatus: string): Promise<void> {
+  if (!BOT_TOKEN || !ORDERS_CHANNEL_ID) return
+  const statusLabel: Record<string, string> = {
+    new: '🆕 Новый',
+    confirmed: '✅ Подтверждён',
+    packed: '📦 Упаковывается',
+    completed: '✔️ Выполнен',
+    cancelled: '❌ Отменён'
+  }
+  const text = `🔄 Статус заказа #${orderId.slice(0, 8).toUpperCase()} изменён: ${statusLabel[newStatus] ?? newStatus}`
+  try {
+    await fetch(`${TG_API}/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: ORDERS_CHANNEL_ID,
+        text
+      })
+    })
+  } catch (e: any) {
+    logger.warn({ error: e?.message, orderId, newStatus }, 'не удалось отправить fallback-уведомление о смене статуса')
   }
 }

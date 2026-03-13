@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { randomBytes } from 'node:crypto'
 import { SHEET_ID } from '../config.js'
 import { readSheet, ensureSheet, appendRow, getAuth, updateRange, getSheetTitles } from '../sheets-utils.js'
-import { sendOrderNotification, editOrderMessage } from '../notify.js'
+import { sendOrderNotification, editOrderMessage, sendOrderStatusFallbackNotification } from '../notify.js'
 import { google } from 'googleapis'
 import { logger } from '../logger.js'
 
@@ -304,7 +304,12 @@ router.put('/:id/cancel', async (req, res) => {
           note: get('note') || undefined,
           referralBonusUsed: undefined
         }
-        await editOrderMessage(msgId, orderForNotify, 'cancelled')
+        const updated = await editOrderMessage(msgId, orderForNotify, 'cancelled')
+        if (!updated) {
+          await sendOrderStatusFallbackNotification(orderForNotify.id, 'cancelled')
+        }
+      } else {
+        await sendOrderStatusFallbackNotification(orderId, 'cancelled')
       }
     } catch (e: any) {
       logger.warn({ error: e?.message, orderId }, 'не удалось обновить сообщение бота при отмене заказа')
