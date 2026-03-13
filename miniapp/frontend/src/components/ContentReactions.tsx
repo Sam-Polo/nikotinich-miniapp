@@ -60,11 +60,11 @@ export default function ContentReactions({
 
   return (
     <div className="border-t border-border-light pt-4 mt-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-[14px] font-semibold text-text-primary">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <p className="text-[16px] font-semibold text-text-primary">
           Как вам статья?
         </p>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap justify-center">
           {pill('like', likes, userReaction.like, 'Нравится', true)}
           {pill('clap', claps, userReaction.clap, 'Класс', true)}
           {showDislike && pill('dislike', dislikes, userReaction.dislike, 'Не нравится', false)}

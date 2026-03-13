@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
+import ContentReactions, { type UserReactionState } from '../components/ContentReactions'
 import { useContentStore } from '../store/content'
+import { useUserStore } from '../store/user'
+import type { ContentReaction } from '../api'
 
 function bodyPreview(body?: string, maxLen = 150) {
   if (!body) return ''
@@ -27,7 +30,11 @@ function bodyPreview(body?: string, maxLen = 150) {
 export default function NewsPage() {
   const contentItems = useContentStore((s) => s.contentItems)
   const loadContent = useContentStore((s) => s.loadContent)
+  const updateItemCounts = useContentStore((s) => s.updateItemCounts)
+  const user = useUserStore((s) => s.user)
+  const userId = user?.telegram_id
   const [loading, setLoading] = useState(true)
+  const [userReactions, setUserReactions] = useState<Record<string, UserReactionState>>({})
 
   useEffect(() => {
     loadContent().finally(() => setLoading(false))
@@ -37,6 +44,57 @@ export default function NewsPage() {
   const topFeedItems = items.filter(i => i.showInStories)
   const newsItems = items.filter(i => i.type === 'news')
   const collections = items.filter(i => i.type === 'collection')
+
+  const handleReaction = useCallback(
+    async (contentId: string, reaction: ContentReaction) => {
+      if (!userId) return
+      const prevUser = userReactions[contentId] ?? { like: 0, clap: 0, dislike: 0 }
+      const item = items.find(i => i.id === contentId)
+      if (!item) return
+
+      let nextUser: UserReactionState = prevUser
+      let deltaLike = 0, deltaClap = 0, deltaDislike = 0
+
+      if (reaction === 'dislike') {
+        const newDislike = prevUser.dislike ? 0 : 1
+        deltaLike = -prevUser.like
+        deltaClap = -prevUser.clap
+        deltaDislike = newDislike - prevUser.dislike
+        nextUser = { like: 0, clap: 0, dislike: newDislike }
+      } else if (reaction === 'like') {
+        const newLike = prevUser.like ? 0 : 1
+        deltaLike = newLike - prevUser.like
+        deltaDislike = -prevUser.dislike
+        nextUser = { like: newLike, clap: prevUser.clap, dislike: 0 }
+      } else {
+        const newClap = prevUser.clap ? 0 : 1
+        deltaClap = newClap - prevUser.clap
+        deltaDislike = -prevUser.dislike
+        nextUser = { like: prevUser.like, clap: newClap, dislike: 0 }
+      }
+
+      const newLikes = Math.max(0, (item.likes ?? 0) + deltaLike)
+      const newClaps = Math.max(0, (item.claps ?? 0) + deltaClap)
+      const newDislikes = Math.max(0, (item.dislikes ?? 0) + deltaDislike)
+
+      setUserReactions(prev => ({ ...prev, [contentId]: nextUser }))
+      updateItemCounts(contentId, { likes: newLikes, claps: newClaps, dislikes: newDislikes })
+
+      try {
+        const { setContentReaction } = await import('../api')
+        await setContentReaction(contentId, userId, reaction)
+      } catch {
+        // откат при ошибке
+        setUserReactions(prev => ({ ...prev, [contentId]: prevUser }))
+        updateItemCounts(contentId, {
+          likes: item.likes ?? 0,
+          claps: item.claps ?? 0,
+          dislikes: item.dislikes ?? 0
+        })
+      }
+    },
+    [items, updateItemCounts, userId, userReactions]
+  )
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
@@ -101,23 +159,19 @@ export default function NewsPage() {
                       <span>{item.readMinutes} мин</span>
                     </>
                   )}
-                  {((item.likes ?? 0) > 0 || (item.claps ?? 0) > 0) && (
-                    <>
-                      <span>·</span>
-                      <span>❤ {(item.likes ?? 0)} · 👏 {(item.claps ?? 0)}</span>
-                    </>
-                  )}
                 </div>
                 {item.body && <p className="text-[14px] text-text-secondary leading-relaxed line-clamp-3">{bodyPreview(item.body)}</p>}
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center gap-1.5 rounded-full min-h-[34px] px-3 py-1.5 text-[14px] bg-[#F8F8F8] text-[#343434]">
-                    <span>❤️</span>
-                    <span>{item.likes ?? 0}</span>
-                  </span>
-                  <span className="inline-flex items-center justify-center gap-1.5 rounded-full min-h-[34px] px-3 py-1.5 text-[14px] bg-[#F8F8F8] text-[#343434]">
-                    <span>👍</span>
-                    <span>{item.claps ?? 0}</span>
-                  </span>
+                <div className="mt-3">
+                  <ContentReactions
+                    contentId={item.id}
+                    userId={userId}
+                    likes={item.likes ?? 0}
+                    claps={item.claps ?? 0}
+                    dislikes={item.dislikes ?? 0}
+                    userReaction={userReactions[item.id] ?? { like: 0, clap: 0, dislike: 0 }}
+                    onReaction={(reaction) => handleReaction(item.id, reaction)}
+                    compact
+                  />
                 </div>
               </div>
             </Link>
@@ -151,23 +205,19 @@ export default function NewsPage() {
                       <span>{col.readMinutes} мин</span>
                     </>
                   )}
-                  {((col.likes ?? 0) > 0 || (col.claps ?? 0) > 0) && (
-                    <>
-                      <span>·</span>
-                      <span>❤ {(col.likes ?? 0)} · 👏 {(col.claps ?? 0)}</span>
-                    </>
-                  )}
                 </div>
                 {col.body && <p className="text-[14px] text-text-secondary leading-relaxed line-clamp-3">{bodyPreview(col.body)}</p>}
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center gap-1.5 rounded-full min-h-[34px] px-3 py-1.5 text-[14px] bg-[#F8F8F8] text-[#343434]">
-                    <span>❤️</span>
-                    <span>{col.likes ?? 0}</span>
-                  </span>
-                  <span className="inline-flex items-center justify-center gap-1.5 rounded-full min-h-[34px] px-3 py-1.5 text-[14px] bg-[#F8F8F8] text-[#343434]">
-                    <span>👍</span>
-                    <span>{col.claps ?? 0}</span>
-                  </span>
+                <div className="mt-3">
+                  <ContentReactions
+                    contentId={col.id}
+                    userId={userId}
+                    likes={col.likes ?? 0}
+                    claps={col.claps ?? 0}
+                    dislikes={col.dislikes ?? 0}
+                    userReaction={userReactions[col.id] ?? { like: 0, clap: 0, dislike: 0 }}
+                    onReaction={(reaction) => handleReaction(col.id, reaction)}
+                    compact
+                  />
                 </div>
               </div>
             </Link>

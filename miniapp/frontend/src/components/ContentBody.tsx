@@ -13,7 +13,7 @@ function formatTextBlock(text: string): React.ReactNode {
       out.push(
         <ListTag
           key={out.length}
-          className={listOrdered ? 'list-decimal list-inside text-text-primary text-[14px] leading-relaxed my-2 space-y-1' : 'list-none text-text-primary text-[14px] leading-relaxed my-2 space-y-1 pl-0'}
+          className={listOrdered ? 'list-decimal list-inside text-[16px] leading-[140%] text-[#4D4D4D] my-2 space-y-1' : 'list-none text-[16px] leading-[140%] text-[#4D4D4D] my-2 space-y-1 pl-0'}
         >
           {listItems.map((item, i) => (
             <li key={i}>
@@ -40,7 +40,7 @@ function formatTextBlock(text: string): React.ReactNode {
         if (idx > 0) parts.push(<React.Fragment key={key++}>{formatInline(rest.slice(0, idx))}</React.Fragment>)
         const url = link[2].trim()
         parts.push(
-          <a key={key++} href={url} target="_blank" rel="noopener noreferrer" className="text-accent underline">
+          <a key={key++} href={url} target="_blank" rel="noopener noreferrer" className="text-accent">
             {formatInline(link[1])}
           </a>
         )
@@ -70,10 +70,10 @@ function formatTextBlock(text: string): React.ReactNode {
     const t = line.trim()
     if (t.startsWith('## ')) {
       flushList()
-      out.push(<h2 key={out.length} className="text-[18px] font-bold text-text-primary mt-4 mb-2">{formatInline(t.slice(3))}</h2>)
+      out.push(<h2 key={out.length} className="text-[20px] font-semibold leading-[120%] text-[#343434] mt-4 mb-2">{formatInline(t.slice(3))}</h2>)
     } else if (t.startsWith('# ')) {
       flushList()
-      out.push(<h1 key={out.length} className="text-[20px] font-bold text-text-primary mt-4 mb-2">{formatInline(t.slice(2))}</h1>)
+      out.push(<h1 key={out.length} className="text-[20px] font-semibold leading-[120%] text-[#343434] mt-4 mb-2">{formatInline(t.slice(2))}</h1>)
     } else if (/^\d+\.\s/.test(t)) {
       if (!listOrdered && listItems.length > 0) flushList()
       listOrdered = true
@@ -84,7 +84,7 @@ function formatTextBlock(text: string): React.ReactNode {
       listItems.push(t.slice(2))
     } else if (t.length > 0) {
       flushList()
-      out.push(<p key={out.length} className="text-text-secondary text-[14px] leading-relaxed my-2">{formatInline(t)}</p>)
+      out.push(<p key={out.length} className="text-[16px] leading-[140%] text-[#4D4D4D] my-2">{formatInline(t)}</p>)
     } else {
       flushList()
       out.push(<br key={out.length} />)

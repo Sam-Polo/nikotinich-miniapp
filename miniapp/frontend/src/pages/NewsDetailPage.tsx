@@ -156,7 +156,7 @@ export default function NewsDetailPage() {
           )}
 
           {item.body && (
-            <div className="px-5 pt-5">
+            <div className="px-5 pt-4">
               <ContentBody body={item.body} images={item.images} />
             </div>
           )}

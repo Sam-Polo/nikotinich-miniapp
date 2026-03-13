@@ -99,11 +99,17 @@ export default function OrderDetailsPage() {
   }
 
   function handleSupport() {
-    if (!SUPPORT_TG_ID) return
+    if (!SUPPORT_TG_ID) {
+      toast.error('поддержка недоступна')
+      return
+    }
     const raw = SUPPORT_TG_ID.trim()
     // оставляем только цифры и возможный минус (на всякий случай)
     const numericId = raw.replace(/[^0-9-]/g, '')
-    if (!numericId) return
+    if (!numericId) {
+      toast.error('id поддержки настроен неверно')
+      return
+    }
 
     const tgLink = `tg://user?id=${encodeURIComponent(numericId)}`
 
