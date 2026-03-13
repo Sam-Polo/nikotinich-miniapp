@@ -149,7 +149,7 @@ export default function CategoryPage() {
                   onClick={() => handleBrandSelect(b.key)}
                   className="bg-card-bg rounded-card overflow-hidden text-left active:scale-[0.98] transition-transform"
                 >
-                  <div className="flex items-center gap-4 p-4">
+                  <div className="flex items-center gap-4 px-4 py-3">
                     <div
                       className={`w-16 h-16 rounded-[10px] bg-[#F8F8F8] flex-shrink-0 overflow-hidden ${
                         selectedBrand === b.key ? 'ring-2 ring-accent' : ''
