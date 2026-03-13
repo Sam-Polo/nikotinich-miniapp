@@ -1,11 +1,11 @@
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCategories } from '../api'
 import type { Category } from '../api'
 import { useFavoritesStore } from '../store/favorites'
 import { useCartStore } from '../store/cart'
 import PageHeader from '../components/PageHeader'
+import { useCatalogStore } from '../store/catalog'
 
 function formatRub(value: number) {
   return `${value.toLocaleString('ru-RU')} ₽`
@@ -85,11 +85,18 @@ export default function FavoritesPage() {
   const cartQty = totalItems()
   const cartSum = subtotal()
 
+  const catalogCategories = useCatalogStore((s) => s.categories)
+  const loadCategories = useCatalogStore((s) => s.loadCategories)
+
   useEffect(() => {
-    getCategories()
-      .then(setCategories)
-      .catch(() => {})
-  }, [])
+    if (catalogCategories.length === 0) {
+      loadCategories()
+    }
+  }, [catalogCategories.length, loadCategories])
+
+  useEffect(() => {
+    setCategories(catalogCategories as Category[])
+  }, [catalogCategories])
 
   useEffect(() => {
     if (!showAddedToast) return

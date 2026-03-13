@@ -98,13 +98,16 @@ function parseProductRows(rows: string[][], categoryName: string) {
 
   const header = rows[0].map((h: string) => h.trim().toLowerCase())
   const idx = (n: string) => header.indexOf(n)
+  const articleIdx = header.findIndex((h) =>
+    ['article', 'артикул', 'sku', 'арт', 'код'].includes(h)
+  )
   const products = []
 
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i]
     if (!r || r.length === 0) continue
 
-    const get = (n: string) => String(r[idx(n)] ?? '').trim()
+    const get = (n: string) => String(idx(n) === -1 ? '' : r[idx(n)] ?? '').trim()
     const activeVal = get('active').toLowerCase()
     const active = activeVal === 'true' || activeVal === '1' || activeVal === 'yes'
     if (!active) continue
@@ -143,7 +146,7 @@ function parseProductRows(rows: string[][], categoryName: string) {
       brand: get('brand') || undefined,
       line: get('line') || undefined,
       strength: get('strength') || undefined,
-      article: get('article') || undefined,
+      article: articleIdx !== -1 ? String(r[articleIdx] ?? '').trim() || undefined : undefined,
       stock,
       familyKey,
       flavor,

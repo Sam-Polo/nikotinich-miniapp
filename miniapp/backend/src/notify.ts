@@ -140,7 +140,6 @@ export async function editOrderMessage(
         chat_id: ORDERS_CHANNEL_ID,
         message_id: Number(messageId),
         text,
-        parse_mode: 'Markdown',
         reply_markup
       })
     })

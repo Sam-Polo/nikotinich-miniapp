@@ -1,21 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCategories } from '../api'
-import type { Category } from '../api'
 import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
+import { useCatalogStore } from '../store/catalog'
 
 export default function CatalogPage() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
+  const categories = useCatalogStore((s) => s.categories)
+  const loading = useCatalogStore((s) => s.loading && !s.loaded && s.categories.length === 0)
+  const loadCategories = useCatalogStore((s) => s.loadCategories)
   const navigate = useNavigate()
 
   useEffect(() => {
-    getCategories()
-      .then(setCategories)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+    loadCategories()
+  }, [loadCategories])
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
