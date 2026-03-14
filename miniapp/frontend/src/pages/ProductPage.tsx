@@ -219,6 +219,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     )
   }
 
+  // в полноэкранном режиме до загрузки показываем скелетон страницы
   if (!embedded && !product) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
@@ -228,24 +229,14 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     )
   }
 
-  // без product дальше не рендерим (embedded или ещё загрузка) — сужаем тип для TS
-  if (!product) {
-    return (
-      <div className="flex flex-col min-h-full bg-bg-base">
-        {!embedded && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
-        <ProductSheetSkeleton />
-      </div>
-    )
-  }
-
   const p = product
-  const displayPrice = p.display_price ?? 0
-  const hasDiscount = !!p.discount_price_rub
-  const images = p.images && p.images.length > 0 ? p.images : []
-  const stock = p.stock
-  const canAddMore = stock == null || (qty < (stock ?? 0))
+  const displayPrice = p?.display_price ?? 0
+  const hasDiscount = !!p?.discount_price_rub
+  const images = p?.images && p.images.length > 0 ? p.images : []
+  const stock = p?.stock
+  const canAddMore = p ? stock == null || (qty < (stock ?? 0)) : false
 
-  const familyProducts: Product[] = p.familyKey
+  const familyProducts: Product[] = p?.familyKey
     ? [p, ...familyVariants.filter(v => v.slug !== p.slug)]
     : []
 
@@ -299,6 +290,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   }
 
   function handleAdd() {
+    if (!p) return
     if (stock != null && stock <= 0) return
     addItem(p)
     setShowAddedToast(true)
@@ -330,6 +322,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   }
 
   function navigateWithTransition(targetSlug: string) {
+    if (!p) return
     if (targetSlug === p.slug || switchingVariant) return
     setSwitchingVariant(true)
     setContentVisible(false)
@@ -341,6 +334,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   }
 
   function handleFlavorClick(flavor: string) {
+    if (!p) return
     if (!p.familyKey || flavor === p.flavor) return
     const candidates = familyProducts.filter(fp => fp.flavor === flavor)
     if (!candidates.length) return
@@ -353,6 +347,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   }
 
   function handlePuffsClick(puffs: number) {
+    if (!p) return
     if (!p.familyKey || !p.flavor || puffs === p.puffs) return
     // ищем вариант ТОЛЬКО в рамках текущего вкуса
     const target = familyProducts.find(fp => fp.flavor === p.flavor && fp.puffs === puffs)
