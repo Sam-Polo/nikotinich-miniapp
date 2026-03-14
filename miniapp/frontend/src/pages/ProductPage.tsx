@@ -229,14 +229,24 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     )
   }
 
-  const p = product
-  const displayPrice = p?.display_price ?? 0
-  const hasDiscount = !!p?.discount_price_rub
-  const images = p?.images && p.images.length > 0 ? p.images : []
-  const stock = p?.stock
-  const canAddMore = p ? stock == null || (qty < (stock ?? 0)) : false
+  // без product не рендерим контент (embedded или загрузка) — сужаем тип для TS
+  if (!product) {
+    return (
+      <div className="flex flex-col min-h-full bg-bg-base">
+        {!embedded && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
+        <ProductSheetSkeleton />
+      </div>
+    )
+  }
 
-  const familyProducts: Product[] = p?.familyKey
+  const p = product
+  const displayPrice = p.display_price ?? 0
+  const hasDiscount = !!p.discount_price_rub
+  const images = p.images && p.images.length > 0 ? p.images : []
+  const stock = p.stock
+  const canAddMore = stock == null || (qty < (stock ?? 0))
+
+  const familyProducts: Product[] = p.familyKey
     ? [p, ...familyVariants.filter(v => v.slug !== p.slug)]
     : []
 
