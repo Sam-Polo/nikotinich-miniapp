@@ -659,19 +659,16 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
             </div>
           </div>
         ) : (
-          <Button
-            fullWidth
+          <button
+            type="button"
             onClick={handleAdd}
-            className="justify-between bg-[#0099FF] hover:bg-[#0099FF]/90 active:opacity-90"
+            className="w-full h-[55px] rounded-[18px] bg-[#0099FF] px-[18px] flex items-center justify-between text-white text-[16px] font-semibold leading-[19px] active:opacity-90"
           >
             <span>Добавить в корзину</span>
-            <span className="inline-flex items-baseline text-white opacity-90">
-              <span className="text-[14px] font-semibold leading-[100%]">
-                {displayPrice.toLocaleString('ru-RU')}
-              </span>
-              <span className="ml-1 text-[14px] font-semibold leading-[100%]">₽</span>
+            <span className="opacity-90">
+              {displayPrice.toLocaleString('ru-RU')} ₽
             </span>
-          </Button>
+          </button>
         )}
       </div>
       )}

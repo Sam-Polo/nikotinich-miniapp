@@ -136,9 +136,26 @@ export default function CategoryPage() {
 
   const showHeader = !brandsSheet && !linesSheet
 
+  // «Назад» — на шаг назад по цепочке: товары → линейка/бренд → бренд → главная
+  function handleBack() {
+    if (step === 'products') {
+      setStep(lines.length > 0 ? 'line' : 'brand')
+      setProducts([])
+    } else if (step === 'line') {
+      setStep('brand')
+      setSelectedLine(null)
+      setLines([])
+      setBrandConfirmed(false)
+    } else {
+      navigate('/')
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
-      {showHeader && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
+      {showHeader && (
+        <PageHeader title="Никотиныч" subtitle="mini app" showBack onBack={handleBack} />
+      )}
 
       <div className="flex-1 flex flex-col min-h-0 px-4 pt-4 pb-36">
         {/* хлебные крошки — только на экране товаров */}

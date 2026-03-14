@@ -4,11 +4,13 @@ type Props = {
   title: string
   subtitle?: string
   showBack?: boolean
+  /** если задан — вызывается по клику «Назад» вместо navigate(-1) */
+  onBack?: () => void
   right?: React.ReactNode
 }
 
 // заголовок страницы в стиле Figma-макетов
-export default function PageHeader({ title, subtitle, showBack = false, right }: Props) {
+export default function PageHeader({ title, subtitle, showBack = false, onBack, right }: Props) {
   const navigate = useNavigate()
 
   return (
@@ -18,7 +20,7 @@ export default function PageHeader({ title, subtitle, showBack = false, right }:
         <div className="min-w-[72px] flex items-center">
           {showBack ? (
             <button
-              onClick={() => navigate(-1)}
+              onClick={onBack ?? (() => navigate(-1))}
               className="flex items-center gap-1 text-accent text-[14px] font-normal"
             >
               <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
