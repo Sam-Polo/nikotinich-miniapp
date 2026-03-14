@@ -67,7 +67,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
+      <Toaster
+        position="top-center"
+        toastOptions={{ duration: 2000, className: 'animate-toast-in' }}
+      />
       <div className="flex flex-col min-h-full">
         <Routes>
           {/* все экраны с нижней навигацией — навигация всегда видна */}
@@ -99,11 +102,21 @@ function ScrollToTop() {
   return null
 }
 
+// анимация появления при смене страницы
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const location = useLocation()
+  return (
+    <div key={location.key} className="animate-page-in flex flex-col min-h-full">
+      {children}
+    </div>
+  )
+}
+
 // обёртка для экранов с нижней навигацией
 function WithNav({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {children}
+      <PageTransition>{children}</PageTransition>
       <BottomNav />
     </>
   )

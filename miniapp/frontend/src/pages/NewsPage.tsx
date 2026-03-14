@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
-import Spinner from '../components/Spinner'
+import { NewsListSkeleton } from '../components/Skeleton'
 import ContentReactions from '../components/ContentReactions'
 import { useContentStore, type UserReactionState } from '../store/content'
 import { useUserStore } from '../store/user'
@@ -147,21 +147,22 @@ export default function NewsPage() {
           <h1 className="text-[28px] font-bold text-text-primary mb-4">Новости</h1>
         </div>
 
-        {loading && <Spinner />}
+        {loading && <NewsListSkeleton />}
 
         {!loading && items.length === 0 && (
           <p className="text-text-secondary text-center mt-10">Скоро здесь будет контент</p>
         )}
 
         {/* верхняя лента — только в разделе новостей; по клику открывается полная страница */}
-        {topFeedItems.length > 0 && (
+        {!loading && topFeedItems.length > 0 && (
           <div className="mb-5">
             <div className="flex gap-3 px-4 overflow-x-auto scrollbar-hide pb-2">
-              {topFeedItems.map(item => (
+              {topFeedItems.map((item, i) => (
                 <Link
                   key={item.id}
                   to={item.type === 'collection' ? `/collection/${item.id}` : `/news/${item.id}`}
-                  className="flex-shrink-0 w-[170px] bg-accent rounded-card p-4 text-white flex flex-col justify-between active:opacity-90"
+                  className="animate-stagger-in flex-shrink-0 w-[170px] bg-accent rounded-card p-4 text-white flex flex-col justify-between active:opacity-90 transition-opacity duration-150"
+                  style={{ ['--stagger-i' as string]: `${i * 40}ms` }}
                 >
                   <div className="flex-1 flex flex-col">
                     <p className="font-bold text-[15px] leading-tight mb-2">{item.title}</p>
@@ -175,14 +176,21 @@ export default function NewsPage() {
         )}
 
         {/* новости и подборки в ленте — карточки */}
+        {!loading && (
         <div className="px-4 space-y-4">
-          {newsItems.map(item => (
-            <Link key={item.id} to={`/news/${item.id}`} className="block bg-card-bg rounded-card overflow-hidden shadow-sm">
+          {newsItems.map((item, i) => (
+            <Link
+              key={item.id}
+              to={`/news/${item.id}`}
+              className="animate-stagger-in block bg-card-bg rounded-card overflow-hidden shadow-sm active:opacity-95 transition-opacity duration-150"
+              style={{ ['--stagger-i' as string]: `${i * 50}ms` }}
+            >
               {item.imageUrl ? (
                 <img
                   src={item.imageUrl}
                   alt={item.title}
-                  className="w-full aspect-video object-cover"
+                  className="w-full aspect-video object-cover opacity-0 transition-opacity duration-200 data-[loaded]:opacity-100"
+                  onLoad={(e) => e.currentTarget.setAttribute('data-loaded', '')}
                 />
               ) : (
                 <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
@@ -222,13 +230,19 @@ export default function NewsPage() {
           ))}
 
           {/* подборки в ленте — только карточка, без мини-каталога; полный вид и товары внутри подборки */}
-          {collections.map(col => (
-            <Link key={col.id} to={`/collection/${col.id}`} className="block bg-card-bg rounded-card overflow-hidden shadow-sm">
+          {collections.map((col, i) => (
+            <Link
+              key={col.id}
+              to={`/collection/${col.id}`}
+              className="animate-stagger-in block bg-card-bg rounded-card overflow-hidden shadow-sm active:opacity-95 transition-opacity duration-150"
+              style={{ ['--stagger-i' as string]: `${(newsItems.length + i) * 50}ms` }}
+            >
               {col.imageUrl ? (
                 <img
                   src={col.imageUrl}
                   alt={col.title}
-                  className="w-full aspect-video object-cover"
+                  className="w-full aspect-video object-cover opacity-0 transition-opacity duration-200 data-[loaded]:opacity-100"
+                  onLoad={(e) => e.currentTarget.setAttribute('data-loaded', '')}
                 />
               ) : (
                 <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
@@ -267,6 +281,7 @@ export default function NewsPage() {
             </Link>
           ))}
         </div>
+        )}
       </div>
     </div>
   )

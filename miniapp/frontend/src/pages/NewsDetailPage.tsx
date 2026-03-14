@@ -165,7 +165,12 @@ export default function NewsDetailPage() {
           </div>
 
           {coverImage ? (
-            <img src={coverImage} alt={item.title} className="w-full h-auto max-h-[320px] object-cover" />
+            <img
+              src={coverImage}
+              alt={item.title}
+              className="w-full h-auto max-h-[320px] object-cover opacity-0 transition-opacity duration-200 data-[loaded]:opacity-100"
+              onLoad={(e) => e.currentTarget.setAttribute('data-loaded', '')}
+            />
           ) : (
             <div className="w-full aspect-video bg-bg-base flex items-center justify-center text-text-secondary text-[14px]">
               Нет фото

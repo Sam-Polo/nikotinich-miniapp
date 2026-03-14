@@ -7,7 +7,7 @@ import ProductCard from '../components/ProductCard'
 import BottomSheet from '../components/BottomSheet'
 import SelectionList from '../components/SelectionList'
 import Button from '../components/Button'
-import Spinner from '../components/Spinner'
+import { ProductGridSkeleton } from '../components/Skeleton'
 
 // шаги выбора фильтра
 type Step = 'brand' | 'line' | 'products'
@@ -206,23 +206,33 @@ export default function CategoryPage() {
               {lineTitle || brandTitle || resolvedCategoryTitle}
             </h1>
 
-            {loading && <Spinner />}
+            {loading && <ProductGridSkeleton />}
 
             {!loading && products.length === 0 && (
               <p className="text-text-secondary text-center mt-10">Товары не найдены</p>
             )}
 
-            {!loading && (
+            {!loading && products.length > 0 && (
               <div className="grid grid-cols-2 gap-3">
-                {products.map(p => (
-                  <ProductCard key={p.slug} product={p} />
+                {products.map((p, i) => (
+                  <div
+                    key={p.slug}
+                    className="animate-stagger-in"
+                    style={{ ['--stagger-i' as string]: `${i * 45}ms` }}
+                  >
+                    <ProductCard product={p} />
+                  </div>
                 ))}
               </div>
             )}
           </>
         )}
 
-        {loading && step !== 'products' && <Spinner />}
+        {loading && step !== 'products' && (
+          <div className="flex justify-center py-10">
+            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
 
         {/* кнопки фильтра (всегда видны при наличии данных) */}
         {step === 'products' && !loading && (

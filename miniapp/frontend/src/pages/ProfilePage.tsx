@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
 import Spinner from '../components/Spinner'
 import Price from '../components/Price'
+import { OrderListSkeleton } from '../components/Skeleton'
 import BottomSheet from '../components/BottomSheet'
 
 function getOrderTitleByStatus(status: string) {
@@ -369,9 +370,7 @@ export default function ProfilePage() {
               <h2 className="text-[20px] font-bold leading-[120%] text-[#343434]">История заказов</h2>
 
               {ordersLoading && (
-                <div className="pt-6">
-                  <Spinner />
-                </div>
+                <OrderListSkeleton />
               )}
 
               {!ordersLoading && orders.length === 0 && (
@@ -385,7 +384,7 @@ export default function ProfilePage() {
 
               {!ordersLoading && orders.length > 0 && (
                 <div className="mt-4 space-y-5">
-                  {orders.map(order => {
+                  {orders.map((order, i) => {
                     const previewItems = order.items.slice(0, 2)
                     const orderTitle = getOrderTitleByStatus(order.status)
                     const dateLabel = formatOrderDate(order.createdAt)
@@ -394,7 +393,8 @@ export default function ProfilePage() {
                         key={order.id}
                         type="button"
                         onClick={() => navigate(`/order/${order.id}`)}
-                        className="w-full text-left bg-[#F8F8F8] rounded-[18px] p-[18px] active:opacity-85 transition-opacity"
+                        className="animate-stagger-in w-full text-left bg-[#F8F8F8] rounded-[18px] p-[18px] active:scale-[0.99] transition-transform duration-150 ease-out"
+                        style={{ ['--stagger-i' as string]: `${i * 45}ms` }}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">

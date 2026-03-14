@@ -52,6 +52,67 @@
     }
   }
 
+  /* появление страницы при смене роута */
+  .animate-page-in {
+    animation: pageIn 0.22s ease-out forwards;
+  }
+
+  @keyframes pageIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* появление элемента списка с задержкой (--stagger-i: 50ms и т.д.) */
+  .animate-stagger-in {
+    opacity: 0;
+    animation: staggerIn 0.28s ease-out forwards;
+    animation-delay: var(--stagger-i, 0ms);
+  }
+
+  @keyframes staggerIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* пульс сердца при добавлении в избранное */
+  .heart-bump {
+    animation: heartBump 0.35s ease-out;
+  }
+
+  @keyframes heartBump {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+
+  /* появление тоста */
+  .animate-toast-in {
+    animation: toastIn 0.2s ease-out;
+  }
+
+  @keyframes toastIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   /* скрыть скроллбар, оставить скролл */
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

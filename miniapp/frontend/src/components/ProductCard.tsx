@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import type { Product } from '../api'
 import { useCartStore } from '../store/cart'
@@ -17,6 +18,18 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
   const qty = useCartStore(s => s.getQty(product.slug))
   const isFav = useFavoritesStore(s => s.isFavorite(product.slug))
   const toggleFav = useFavoritesStore(s => s.toggle)
+  const [heartBump, setHeartBump] = useState(false)
+  const prevFavRef = useRef(isFav)
+
+  // анимация «пульс» при добавлении в избранное
+  useEffect(() => {
+    if (isFav && !prevFavRef.current) {
+      setHeartBump(true)
+      const t = setTimeout(() => setHeartBump(false), 350)
+      return () => clearTimeout(t)
+    }
+    prevFavRef.current = isFav
+  }, [isFav])
 
   const displayPrice = product.display_price
   const hasDiscount = !!product.discount_price_rub
@@ -43,7 +56,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
 
   return (
     <div
-      className="bg-card-bg rounded-card overflow-hidden cursor-pointer active:opacity-80 transition-opacity"
+      className="bg-card-bg rounded-card overflow-hidden cursor-pointer active:opacity-90 transition-opacity duration-150"
       onClick={() => navigate(`/product/${product.slug}`)}
     >
       {/* изображение */}
@@ -52,8 +65,9 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
           <img
             src={product.images[0]}
             alt={product.title}
-            className="w-full h-full object-contain p-2 mix-blend-multiply"
+            className="w-full h-full object-contain p-2 mix-blend-multiply opacity-0 transition-opacity duration-200 data-[loaded]:opacity-100"
             loading="lazy"
+            onLoad={(e) => e.currentTarget.setAttribute('data-loaded', '')}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-text-secondary text-xs">
@@ -62,7 +76,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
         )}
         {/* кнопка избранного */}
         <button
-          className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center active:scale-90 transition-transform"
+          className={`absolute top-2 right-2 w-7 h-7 flex items-center justify-center active:scale-90 transition-transform duration-150 ${heartBump ? 'heart-bump' : ''}`}
           onClick={(e) => { e.stopPropagation(); toggleFav(product) }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -121,7 +135,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
             </div>
           ) : (
             <button
-              className="mt-2 w-full h-9 rounded-[10px] bg-[#F8F8F8] text-[14px] text-text-primary font-medium active:opacity-70 flex-shrink-0 px-0"
+              className="mt-2 w-full h-9 -mx-3 rounded-none bg-[#F8F8F8] text-[14px] text-text-primary font-medium active:scale-[0.98] transition-transform duration-100 flex-shrink-0 px-0"
               onClick={handleAdd}
             >
               В корзину
