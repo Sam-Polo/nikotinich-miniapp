@@ -72,12 +72,13 @@ function AddedToCartToast({ durationMs }: AddedToCartToastProps) {
 
 export default function FavoritesPage() {
   const { items, toggle } = useFavoritesStore()
+  const cartItems = useCartStore(s => s.items)
   const addItem = useCartStore(s => s.addItem)
-  const getQty = useCartStore(s => s.getQty)
   const updateQty = useCartStore(s => s.updateQty)
   const totalItems = useCartStore(s => s.totalItems)
   const subtotal = useCartStore(s => s.subtotal)
   const navigate = useNavigate()
+  const getQty = (slug: string) => cartItems.find(i => i.product.slug === slug)?.qty ?? 0
   const [categories, setCategories] = useState<Category[]>([])
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
   const [showAddedToast, setShowAddedToast] = useState(false)

@@ -73,9 +73,18 @@ function AddedToCartToast({ durationMs }: AddedToCartToastProps) {
   )
 }
 
-export default function ProductPage() {
-  const { slug = '' } = useParams<{ slug: string }>()
+type ProductPageProps = {
+  /** встроенный режим: шит поверх страницы без смены роута (например в каталоге) */
+  embedded?: boolean
+  slugProp?: string
+  onClose?: () => void
+  onVariantChange?: (slug: string) => void
+}
+
+export default function ProductPage({ embedded, slugProp, onClose, onVariantChange }: ProductPageProps = {}) {
+  const { slug: slugFromParams = '' } = useParams<{ slug: string }>()
   const navigate = useNavigate()
+  const slug = embedded && slugProp ? slugProp : slugFromParams
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(false)
@@ -200,7 +209,7 @@ export default function ProductPage() {
       .catch(() => setFamilyVariants([]))
   }, [product?.familyKey, product?.category, product?.slug])
 
-  if (!loading && !product) {
+  if (!embedded && !loading && !product) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
         <PageHeader title="Никотиныч" subtitle="mini app" showBack />
@@ -209,8 +218,7 @@ export default function ProductPage() {
     )
   }
 
-  // после скелетона/не найден: показываем контент только при наличии product
-  if (!product) {
+  if (!embedded && !product) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
         <PageHeader title="Никотиныч" subtitle="mini app" showBack />
@@ -292,6 +300,10 @@ export default function ProductPage() {
   function closeSheet() {
     setSheetPresented(false)
     window.setTimeout(() => {
+      if (embedded && onClose) {
+        onClose()
+        return
+      }
       if (navState?.fromCatalog && navState?.categoryKey) {
         navigate(`/catalog/${navState.categoryKey}`, {
           state: {
@@ -307,9 +319,13 @@ export default function ProductPage() {
   }
 
   function navigateWithTransition(targetSlug: string) {
-    if (targetSlug === p.slug || switchingVariant) return
+    if (targetSlug === p?.slug || switchingVariant) return
     setSwitchingVariant(true)
     setContentVisible(false)
+    if (embedded && onVariantChange) {
+      onVariantChange(targetSlug)
+      return
+    }
     navigate(`/product/${targetSlug}`)
   }
 
@@ -360,9 +376,9 @@ export default function ProductPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base" data-product-layout="sheet">
-      <PageHeader title="Никотиныч" subtitle="mini app" showBack />
+      {!embedded && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
 
-      {/* overlay и sheet через fixed, чтобы не зависеть от flex в TG WebView */}
+      {/* overlay и sheet через fixed */}
       <div
         className="fixed inset-0 bg-black/40 transition-opacity duration-200 z-[55]"
         style={{ opacity: sheetPresented ? 1 : 0 }}
@@ -371,7 +387,7 @@ export default function ProductPage() {
       />
 
       <div
-        className={`fixed inset-x-0 bottom-0 top-14 bg-white rounded-t-[26px] overflow-hidden z-[56] flex flex-col ${
+        className={`fixed inset-x-0 bottom-0 ${embedded ? 'top-0' : 'top-14'} bg-white rounded-t-[26px] overflow-hidden z-[56] flex flex-col ${
           sheetDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         }`}
         style={{ transform: `translateY(${sheetPresented ? sheetDragY : 120}%)` }}
@@ -393,7 +409,12 @@ export default function ProductPage() {
         >
           {loading ? (
             <ProductSheetSkeleton />
-          ) : p ? (
+          ) : !p ? (
+            <div className="px-4 py-10 text-center">
+              <p className="text-text-secondary mb-4">Товар не найден</p>
+              <Button variant="secondary" onClick={closeSheet}>Закрыть</Button>
+            </div>
+          ) : (
           <>
           <div className="bg-[#F8F8F8] relative">
             <div
@@ -569,7 +590,7 @@ export default function ProductPage() {
             </div>
           </div>
           </>
-          ) : null}
+          )}
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import BottomSheet from '../components/BottomSheet'
 import SelectionList from '../components/SelectionList'
 import Button from '../components/Button'
 import { ProductGridSkeleton, BrandListSkeleton, LineListSkeleton } from '../components/Skeleton'
+import ProductPage from './ProductPage'
 
 // шаги выбора фильтра
 type Step = 'brand' | 'line' | 'products'
@@ -32,6 +33,7 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true)
   const [brandsSheet, setBrandsSheet] = useState(false)
   const [linesSheet, setLinesSheet] = useState(false)
+  const [selectedProductSlug, setSelectedProductSlug] = useState<string | null>(null)
   const [resolvedCategoryTitle, setResolvedCategoryTitle] = useState<string>(categoryKey.replace(/_/g, ' '))
   const restoredCatalogRef = useRef(false)
 
@@ -200,11 +202,18 @@ export default function CategoryPage() {
           </div>
         )}
 
-        {/* линейки — скелетон при загрузке, иначе список */}
-        {step === 'line' && loading && (
+        {/* линейки — скелетон только пока ждём загрузку линеек (не при загрузке товаров) */}
+        {step === 'line' && !loading && lines.length === 0 && selectedBrand && (
           <div key="line-skeleton" className="animate-step-in">
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите линейку</h1>
             <LineListSkeleton />
+          </div>
+        )}
+        {/* при выборе линейки и нажатии «Продолжить» грузим товары — показываем скелетон сетки товаров */}
+        {step === 'line' && loading && (
+          <div key="line-loading-products" className="animate-step-in">
+            <h1 className="text-[24px] font-bold text-text-primary mb-4">{lineTitle || brandTitle || resolvedCategoryTitle}</h1>
+            <ProductGridSkeleton />
           </div>
         )}
         {step === 'line' && !loading && lines.length > 0 && (
@@ -260,17 +269,7 @@ export default function CategoryPage() {
                   >
                     <ProductCard
                       product={p}
-                      onProductClick={(slug) =>
-                        navigate(`/product/${slug}`, {
-                          state: {
-                            fromCatalog: true,
-                            categoryKey,
-                            step: 'products',
-                            selectedBrand,
-                            selectedLine
-                          }
-                        })
-                      }
+                      onProductClick={(slug) => setSelectedProductSlug(slug)}
                     />
                   </div>
                 ))}
@@ -435,6 +434,16 @@ export default function CategoryPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* карточка товара — боттом-шит поверх списка без смены роута */}
+      {selectedProductSlug && (
+        <ProductPage
+          embedded
+          slugProp={selectedProductSlug}
+          onClose={() => setSelectedProductSlug(null)}
+          onVariantChange={(s) => setSelectedProductSlug(s)}
+        />
       )}
     </div>
   )
