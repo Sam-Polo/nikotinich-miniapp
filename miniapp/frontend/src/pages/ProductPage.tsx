@@ -227,14 +227,24 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     )
   }
 
+  // без product дальше не рендерим (embedded или ещё загрузка) — сужаем тип для TS
+  if (!product) {
+    return (
+      <div className="flex flex-col min-h-full bg-bg-base">
+        {!embedded && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
+        <ProductSheetSkeleton />
+      </div>
+    )
+  }
+
   const p = product
-  const displayPrice = p?.display_price ?? 0
-  const hasDiscount = !!p?.discount_price_rub
-  const images = p?.images && p.images.length > 0 ? p.images : []
-  const stock = p?.stock
+  const displayPrice = p.display_price ?? 0
+  const hasDiscount = !!p.discount_price_rub
+  const images = p.images && p.images.length > 0 ? p.images : []
+  const stock = p.stock
   const canAddMore = stock == null || (qty < (stock ?? 0))
 
-  const familyProducts: Product[] = p?.familyKey
+  const familyProducts: Product[] = p.familyKey
     ? [p, ...familyVariants.filter(v => v.slug !== p.slug)]
     : []
 
@@ -246,11 +256,11 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     )
   )
 
-  const puffsOptions = p?.flavor
+  const puffsOptions = p.flavor
     ? Array.from(
         new Set(
           familyProducts
-            .filter(fp => fp.flavor === p!.flavor && fp.puffs != null)
+            .filter(fp => fp.flavor === p.flavor && fp.puffs != null)
             .map(fp => fp.puffs as number)
         )
       ).sort((a, b) => a - b)
@@ -319,7 +329,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   }
 
   function navigateWithTransition(targetSlug: string) {
-    if (targetSlug === p?.slug || switchingVariant) return
+    if (targetSlug === p.slug || switchingVariant) return
     setSwitchingVariant(true)
     setContentVisible(false)
     if (embedded && onVariantChange) {
