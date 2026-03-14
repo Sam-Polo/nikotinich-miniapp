@@ -92,7 +92,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   const [lineTitle, setLineTitle] = useState<string | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [familyVariants, setFamilyVariants] = useState<Product[]>([])
-  const [sheetPresented, setSheetPresented] = useState(false)
+  const [sheetPresented, setSheetPresented] = useState(() => !!(embedded && slugProp))
   const [sheetDragY, setSheetDragY] = useState(0)
   const [sheetDragging, setSheetDragging] = useState(false)
   const [contentVisible, setContentVisible] = useState(false)
@@ -397,7 +397,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
       />
 
       <div
-        className={`fixed inset-x-0 bottom-0 ${embedded ? 'top-0' : 'top-14'} bg-white rounded-t-[26px] overflow-hidden z-[56] flex flex-col ${
+        className={`fixed inset-x-0 bottom-0 top-14 bg-white rounded-t-[26px] overflow-hidden z-[56] flex flex-col ${
           sheetDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         }`}
         style={{ transform: `translateY(${sheetPresented ? sheetDragY : 120}%)` }}

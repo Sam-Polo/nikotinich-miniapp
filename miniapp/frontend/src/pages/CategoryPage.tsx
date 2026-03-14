@@ -7,7 +7,7 @@ import ProductCard from '../components/ProductCard'
 import BottomSheet from '../components/BottomSheet'
 import SelectionList from '../components/SelectionList'
 import Button from '../components/Button'
-import { ProductGridSkeleton, BrandListSkeleton, LineListSkeleton } from '../components/Skeleton'
+import { ProductGridSkeleton, BrandListSkeleton, LineListSkeleton, Skeleton } from '../components/Skeleton'
 import ProductPage from './ProductPage'
 
 // шаги выбора фильтра
@@ -34,7 +34,8 @@ export default function CategoryPage() {
   const [brandsSheet, setBrandsSheet] = useState(false)
   const [linesSheet, setLinesSheet] = useState(false)
   const [selectedProductSlug, setSelectedProductSlug] = useState<string | null>(null)
-  const [resolvedCategoryTitle, setResolvedCategoryTitle] = useState<string>(categoryKey.replace(/_/g, ' '))
+  const [resolvedCategoryTitle, setResolvedCategoryTitle] = useState<string>('')
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false)
   const restoredCatalogRef = useRef(false)
 
   // восстановление шага/фильтров при возврате из карточки товара (один раз за вход на страницу)
@@ -60,9 +61,10 @@ export default function CategoryPage() {
     getCategories()
       .then(cats => {
         const cat = cats.find(c => c.key === categoryKey)
-        if (cat?.title) setResolvedCategoryTitle(cat.title)
+        setResolvedCategoryTitle(cat?.title ?? categoryKey.replace(/_/g, ' '))
+        setCategoriesLoaded(true)
       })
-      .catch(() => {})
+      .catch(() => setCategoriesLoaded(true))
   }, [categoryKey])
 
   // загрузка брендов при открытии категории
@@ -132,7 +134,7 @@ export default function CategoryPage() {
   const brandTitle = brands.find(b => b.key === selectedBrand)?.title
   const lineTitle = lines.find(l => l.key === selectedLine)?.title
 
-  const showHeader = step === 'products' && !loading && !brandsSheet && !linesSheet
+  const showHeader = !brandsSheet && !linesSheet
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">
@@ -165,14 +167,18 @@ export default function CategoryPage() {
         {/* бренды — скелетон при загрузке, иначе список */}
         {step === 'brand' && loading && (
           <div key="brand-skeleton" className="animate-step-in">
-            <p className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</p>
+            <p className="text-accent text-[13px] font-medium">
+              {categoriesLoaded ? resolvedCategoryTitle : <Skeleton className="h-4 w-24 rounded inline-block align-middle" />}
+            </p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
             <BrandListSkeleton />
           </div>
         )}
         {step === 'brand' && !loading && brands.length > 0 && (
           <div key="brand" className="animate-step-in">
-            <p className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</p>
+            <p className="text-accent text-[13px] font-medium">
+              {categoriesLoaded ? resolvedCategoryTitle : <Skeleton className="h-4 w-24 rounded inline-block align-middle" />}
+            </p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
             <div className="grid grid-cols-1 gap-0">
               {brands.map((b, i) => (
@@ -199,6 +205,23 @@ export default function CategoryPage() {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* хлебные крошки на шаге линейки: Категория / Бренд (названия, не ключи) */}
+        {step === 'line' && (brandTitle || (categoriesLoaded && resolvedCategoryTitle)) && (
+          <div className="flex items-center gap-1 mb-3">
+            {categoriesLoaded && resolvedCategoryTitle ? (
+              <span className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</span>
+            ) : !categoriesLoaded ? (
+              <Skeleton className="h-4 w-24 rounded inline-block align-middle" />
+            ) : null}
+            {brandTitle && (categoriesLoaded && resolvedCategoryTitle || !categoriesLoaded) && (
+              <span className="text-text-secondary text-[13px]">/</span>
+            )}
+            {brandTitle && (
+              <span className="text-accent text-[13px] font-medium">{brandTitle}</span>
+            )}
           </div>
         )}
 
