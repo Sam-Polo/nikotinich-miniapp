@@ -205,11 +205,12 @@ export default function NewsDetailPage() {
               </h2>
             </div>
             <div className="flex flex-col gap-3 px-4 w-full items-center">
-              {nextItems.map((next) => (
+              {nextItems.map((next, i) => (
                 <Link
                   key={next.id}
                   to={next.type === 'collection' ? `/collection/${next.id}` : `/news/${next.id}`}
-                  className="w-full max-w-[361px] bg-white rounded-[22px] shadow-[0_4px_40px_rgba(0,0,0,0.06)] flex items-start gap-[14px] p-[10px]"
+                  className="animate-stagger-in w-full max-w-[361px] bg-white rounded-[22px] shadow-[0_4px_40px_rgba(0,0,0,0.06)] flex items-start gap-[14px] p-[10px] active:opacity-90 transition-opacity duration-150"
+                  style={{ ['--stagger-i' as string]: `${i * 50}ms` }}
                 >
                   <div className="flex-1 flex flex-col gap-[14px]">
                     <div className="flex flex-col gap-2 px-[5px] pt-[10px] pb-0">

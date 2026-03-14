@@ -52,15 +52,25 @@
     }
   }
 
-  /* появление страницы при смене роута */
+  /* появление страницы при смене роута (только opacity — transform ломает position: fixed у потомков) */
   .animate-page-in {
     animation: pageIn 0.22s ease-out forwards;
   }
 
   @keyframes pageIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* смена шага внутри страницы (бренды → линейки → товары) */
+  .animate-step-in {
+    animation: stepIn 0.2s ease-out forwards;
+  }
+
+  @keyframes stepIn {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(8px);
     }
     to {
       opacity: 1;

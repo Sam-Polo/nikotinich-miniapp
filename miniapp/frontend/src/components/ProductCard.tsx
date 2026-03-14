@@ -134,12 +134,14 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
               </div>
             </div>
           ) : (
-            <button
-              className="mt-2 w-full h-9 -mx-3 rounded-none bg-[#F8F8F8] text-[14px] text-text-primary font-medium active:scale-[0.98] transition-transform duration-100 flex-shrink-0 px-0"
-              onClick={handleAdd}
-            >
-              В корзину
-            </button>
+            <div className="-mx-3 mt-2">
+              <button
+                className="w-full h-9 rounded-[10px] bg-[#F8F8F8] text-[14px] text-text-primary font-medium active:scale-[0.98] transition-transform duration-100 flex-shrink-0"
+                onClick={handleAdd}
+              >
+                В корзину
+              </button>
+            </div>
           )
         )}
       </div>

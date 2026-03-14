@@ -25,19 +25,38 @@ export function CatalogGridSkeleton() {
   )
 }
 
-// карточки списка новостей
+// карточки списка новостей: горизонтальная лента сверху + вертикальная лента (как в разделе Новости)
 export function NewsListSkeleton() {
   return (
-    <div className="space-y-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-card-bg rounded-card overflow-hidden shadow-sm p-4">
-          <Skeleton className="h-5 w-2/3 rounded mb-2" />
-          <Skeleton className="h-3 w-full rounded mb-1" />
-          <Skeleton className="h-3 w-full rounded mb-1" />
-          <Skeleton className="h-3 w-1/2 rounded" />
+    <>
+      {/* горизонтальная лента (как topFeedItems) */}
+      <div className="mb-5">
+        <div className="flex gap-3 px-4 overflow-hidden pb-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex-shrink-0 w-[170px] rounded-card overflow-hidden bg-[#F0F0F0] flex flex-col p-4">
+              <Skeleton className="h-5 w-3/4 rounded mb-2" />
+              <Skeleton className="h-3 w-full rounded mb-1" />
+              <Skeleton className="h-3 w-2/3 rounded mt-auto" />
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      </div>
+      {/* основная лента — карточки с картинкой сверху */}
+      <div className="px-4 space-y-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-card-bg rounded-card overflow-hidden shadow-sm">
+            <Skeleton className="w-full aspect-video rounded-t-card rounded-b-none" />
+            <div className="p-4">
+              <Skeleton className="h-5 w-2/3 rounded mb-2" />
+              <Skeleton className="h-3 w-1/2 rounded mb-2" />
+              <Skeleton className="h-3 w-full rounded mb-1" />
+              <Skeleton className="h-3 w-full rounded mb-1" />
+              <Skeleton className="h-3 w-3/4 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 

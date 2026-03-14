@@ -139,15 +139,16 @@ export default function CategoryPage() {
 
         {/* бренды — одна колонка, стиль как у категорий (карточка с картинкой и названием) */}
         {step === 'brand' && !loading && brands.length > 0 && (
-          <>
+          <div key="brand" className="animate-step-in">
             <p className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
             <div className="grid grid-cols-1 gap-0">
-              {brands.map(b => (
+              {brands.map((b, i) => (
                 <button
                   key={b.key}
                   onClick={() => handleBrandSelect(b.key)}
-                  className="bg-card-bg rounded-card overflow-hidden text-left active:scale-[0.98] transition-transform"
+                  className="animate-stagger-in bg-card-bg rounded-card overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
+                  style={{ ['--stagger-i' as string]: `${i * 40}ms` }}
                 >
                   <div className="flex items-center gap-4 px-4 py-3">
                     <div
@@ -166,19 +167,20 @@ export default function CategoryPage() {
                 </button>
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {/* линейки — одна колонка, тот же стиль карточек */}
         {step === 'line' && !loading && lines.length > 0 && (
-          <>
+          <div key="line" className="animate-step-in">
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите линейку</h1>
             <div className="grid grid-cols-1 gap-0">
-              {lines.map(l => (
+              {lines.map((l, i) => (
               <button
                   key={l.key}
                   onClick={() => handleLineSelect(l.key)}
-                  className="bg-card-bg rounded-card overflow-hidden text-left active:scale-[0.98] transition-transform"
+                  className="animate-stagger-in bg-card-bg rounded-card overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
+                  style={{ ['--stagger-i' as string]: `${i * 40}ms` }}
                 >
                   <div className="flex items-center gap-4 px-4 py-3">
                     <div
@@ -197,11 +199,11 @@ export default function CategoryPage() {
                 </button>
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {step === 'products' && (
-          <>
+          <div key="products" className="animate-step-in">
             <h1 className="text-[24px] font-bold text-text-primary mb-4">
               {lineTitle || brandTitle || resolvedCategoryTitle}
             </h1>
@@ -225,7 +227,7 @@ export default function CategoryPage() {
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
 
         {loading && step !== 'products' && (
