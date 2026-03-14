@@ -240,13 +240,13 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   }
 
   const p = product
-  const displayPrice = p.display_price ?? 0
-  const hasDiscount = !!p.discount_price_rub
-  const images = p.images && p.images.length > 0 ? p.images : []
-  const stock = p.stock
-  const canAddMore = stock == null || (qty < (stock ?? 0))
+  const displayPrice = p?.display_price ?? 0
+  const hasDiscount = !!p?.discount_price_rub
+  const images = p?.images && p.images.length > 0 ? p.images : []
+  const stock = p?.stock
+  const canAddMore = p ? stock == null || (qty < (stock ?? 0)) : false
 
-  const familyProducts: Product[] = p.familyKey
+  const familyProducts: Product[] = p && p.familyKey
     ? [p, ...familyVariants.filter(v => v.slug !== p.slug)]
     : []
 
@@ -258,11 +258,12 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     )
   )
 
-  const puffsOptions = p.flavor
+  const currentFlavor = p?.flavor ?? null
+  const puffsOptions = currentFlavor
     ? Array.from(
         new Set(
           familyProducts
-            .filter(fp => fp.flavor === p.flavor && fp.puffs != null)
+            .filter(fp => fp.flavor === currentFlavor && fp.puffs != null)
             .map(fp => fp.puffs as number)
         )
       ).sort((a, b) => a - b)
