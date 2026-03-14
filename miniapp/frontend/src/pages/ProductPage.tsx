@@ -286,17 +286,18 @@ export default function ProductPage() {
   }
 
   const location = useLocation()
-  const fromCatalog = (location.state as { fromCatalog?: boolean; categoryKey?: string; step?: string; selectedBrand?: string | null; selectedLine?: string | null }) | undefined
+  type LocationState = { fromCatalog?: boolean; categoryKey?: string; step?: string; selectedBrand?: string | null; selectedLine?: string | null }
+  const navState = location.state as LocationState | undefined
 
   function closeSheet() {
     setSheetPresented(false)
     window.setTimeout(() => {
-      if (fromCatalog?.fromCatalog && fromCatalog?.categoryKey) {
-        navigate(`/catalog/${fromCatalog.categoryKey}`, {
+      if (navState?.fromCatalog && navState?.categoryKey) {
+        navigate(`/catalog/${navState.categoryKey}`, {
           state: {
-            step: fromCatalog.step ?? 'products',
-            selectedBrand: fromCatalog.selectedBrand ?? null,
-            selectedLine: fromCatalog.selectedLine ?? null
+            step: navState.step ?? 'products',
+            selectedBrand: navState.selectedBrand ?? null,
+            selectedLine: navState.selectedLine ?? null
           }
         })
       } else {
