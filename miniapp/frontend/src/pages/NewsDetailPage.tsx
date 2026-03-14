@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { getContentReaction, setContentReaction } from '../api'
 import type { ContentItem, ContentReaction } from '../api'
 import PageHeader from '../components/PageHeader'
-import Spinner from '../components/Spinner'
 import ContentBody from '../components/ContentBody'
+import { ContentDetailSkeleton } from '../components/Skeleton'
 import ContentReactions from '../components/ContentReactions'
 import { useUserStore } from '../store/user'
 import { useContentStore, type UserReactionState } from '../store/content'
@@ -107,9 +107,7 @@ export default function NewsDetailPage() {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
         <PageHeader title="Никотиныч" subtitle="mini app" showBack />
-        <div className="flex-1 flex items-center justify-center">
-          <Spinner />
-        </div>
+        <ContentDetailSkeleton />
       </div>
     )
   }

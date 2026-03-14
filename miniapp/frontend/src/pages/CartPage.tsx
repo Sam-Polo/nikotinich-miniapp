@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore, type CartItem } from '../store/cart'
 import PageHeader from '../components/PageHeader'
@@ -256,21 +255,20 @@ export default function CartPage() {
     setSelectedSlugs(new Set())
   }
 
+  const [undoToastItem, setUndoToastItem] = useState<CartItem | null>(null)
+
+  useEffect(() => {
+    if (!undoToastItem) return
+    const t = window.setTimeout(() => setUndoToastItem(null), UNDO_TOAST_MS)
+    return () => window.clearTimeout(t)
+  }, [undoToastItem])
+
   function handleRemoveWithUndo(slug: string) {
     const item = items.find(i => i.product.slug === slug)
     if (!item) return
 
     removeItem(slug)
-
-    toast.custom((t) => (
-      <UndoRemoveToast
-        durationMs={UNDO_TOAST_MS}
-        onUndo={() => {
-          addItem(item.product, item.qty)
-          toast.dismiss(t.id)
-        }}
-      />
-    ), { duration: UNDO_TOAST_MS, position: 'bottom-center' })
+    setUndoToastItem(item)
   }
 
   if (items.length === 0) {
@@ -349,6 +347,22 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+
+      {/* тост «Товар удалён» над кнопкой оформления */}
+      {undoToastItem && (
+        <div
+          className="animate-toast-in fixed left-4 right-4 z-[65] flex justify-center"
+          style={{ bottom: 'calc(141px + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <UndoRemoveToast
+            durationMs={UNDO_TOAST_MS}
+            onUndo={() => {
+              addItem(undoToastItem.product, undoToastItem.qty)
+              setUndoToastItem(null)
+            }}
+          />
+        </div>
+      )}
 
       {/* кнопка оформления в стиле макета */}
       <div

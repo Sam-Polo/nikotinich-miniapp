@@ -29,14 +29,17 @@ export function CatalogGridSkeleton() {
 export function NewsListSkeleton() {
   return (
     <>
-      {/* горизонтальная лента (как topFeedItems) */}
+      {/* горизонтальная лента — как реальные карточки: w-[170px], rounded-card, p-4, акцентный оттенок */}
       <div className="mb-5">
         <div className="flex gap-3 px-4 overflow-hidden pb-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex-shrink-0 w-[170px] rounded-card overflow-hidden bg-[#F0F0F0] flex flex-col p-4">
-              <Skeleton className="h-5 w-3/4 rounded mb-2" />
-              <Skeleton className="h-3 w-full rounded mb-1" />
-              <Skeleton className="h-3 w-2/3 rounded mt-auto" />
+            <div
+              key={i}
+              className="flex-shrink-0 w-[170px] rounded-card p-4 flex flex-col justify-between bg-[#007AFF]/15 animate-pulse"
+            >
+              <div className="rounded-[8px] bg-[#007AFF]/25 h-5 w-3/4 mb-2" />
+              <div className="rounded-[8px] bg-[#007AFF]/20 h-3 w-full mb-1" />
+              <div className="rounded-[8px] bg-[#007AFF]/25 h-3 w-2/3 mt-auto" />
             </div>
           ))}
         </div>
@@ -72,6 +75,48 @@ export function ContentBlockSkeleton() {
   )
 }
 
+// страница деталей заказа: заголовок, адрес, состав
+export function OrderDetailsSkeleton() {
+  return (
+    <div className="flex-1 px-4 pt-4 pb-24 animate-step-in" style={{ ['--stagger-i' as string]: '0ms' }}>
+      <Skeleton className="h-7 w-1/2 rounded mb-6" />
+      <div className="bg-[#F8F8F8] rounded-[18px] p-4 space-y-3 mb-4">
+        <Skeleton className="h-4 w-full rounded" />
+        <Skeleton className="h-4 w-3/4 rounded" />
+      </div>
+      <div className="bg-[#F8F8F8] rounded-[18px] p-4 space-y-3">
+        <Skeleton className="h-4 w-1/3 rounded mb-2" />
+        <Skeleton className="h-14 w-full rounded" />
+        <Skeleton className="h-14 w-full rounded" />
+      </div>
+    </div>
+  )
+}
+
+// страница новости/подборки: заголовок, обложка, текст
+export function ContentDetailSkeleton() {
+  return (
+    <div className="flex-1 pt-4 pb-24">
+      <article className="w-full">
+        <div className="px-5 pb-4">
+          <Skeleton className="h-8 w-4/5 rounded mb-4" />
+          <Skeleton className="h-4 w-1/3 rounded mb-4" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-20 rounded-full" />
+            <Skeleton className="h-9 w-20 rounded-full" />
+          </div>
+        </div>
+        <Skeleton className="w-full aspect-video max-h-[320px] rounded-none" />
+        <div className="px-5 pt-4 space-y-2">
+          <Skeleton className="h-4 w-full rounded" />
+          <Skeleton className="h-4 w-full rounded" />
+          <Skeleton className="h-4 w-4/5 rounded" />
+        </div>
+      </article>
+    </div>
+  )
+}
+
 // список карточек заказов в профиле
 export function OrderListSkeleton() {
   return (
@@ -87,6 +132,43 @@ export function OrderListSkeleton() {
         </div>
       ))}
     </div>
+  )
+}
+
+// скелетон контента внутри bottom sheet карточки товара (блок изображения + текст)
+export function ProductSheetSkeleton() {
+  return (
+    <>
+      <div className="bg-[#F8F8F8]">
+        <Skeleton className="h-[310px] w-full rounded-none" />
+      </div>
+      <div className="px-4 pt-6 animate-step-in" style={{ ['--stagger-i' as string]: '0ms' }}>
+        <div className="space-y-3 mb-5">
+          <Skeleton className="h-6 w-4/5 rounded" />
+          <Skeleton className="h-7 w-1/3 rounded" />
+        </div>
+        <div className="space-y-2 mb-5">
+          <Skeleton className="h-4 w-1/4 rounded" />
+          <div className="flex flex-wrap gap-1">
+            <Skeleton className="h-[34px] w-20 rounded-full" />
+            <Skeleton className="h-[34px] w-24 rounded-full" />
+            <Skeleton className="h-[34px] w-20 rounded-full" />
+          </div>
+        </div>
+        <div className="space-y-2 mb-5">
+          <Skeleton className="h-4 w-16 rounded" />
+          <div className="flex flex-wrap gap-1">
+            <Skeleton className="h-[34px] w-28 rounded-full" />
+            <Skeleton className="h-[34px] w-24 rounded-full" />
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          <Skeleton className="h-4 w-full rounded" />
+          <Skeleton className="h-4 w-full rounded" />
+          <Skeleton className="h-4 w-2/3 rounded" />
+        </div>
+      </div>
+    </>
   )
 }
 

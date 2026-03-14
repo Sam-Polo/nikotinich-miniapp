@@ -72,6 +72,7 @@ function AddedToCartToast({ durationMs }: AddedToCartToastProps) {
 
 export default function FavoritesPage() {
   const { items, toggle } = useFavoritesStore()
+  const cartItems = useCartStore(s => s.items)
   const addItem = useCartStore(s => s.addItem)
   const getQty = useCartStore(s => s.getQty)
   const updateQty = useCartStore(s => s.updateQty)
@@ -296,7 +297,7 @@ export default function FavoritesPage() {
 
       {showAddedToast && (
         <div
-          className="fixed left-4 right-4 z-[65] flex justify-center pointer-events-none"
+          className="animate-toast-in fixed left-4 right-4 z-[65] flex justify-center pointer-events-none"
           style={{ bottom: 'calc(141px + env(safe-area-inset-bottom, 0px))' }}
         >
           <AddedToCartToast durationMs={ADD_TOAST_MS} />

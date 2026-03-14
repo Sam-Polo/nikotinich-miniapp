@@ -8,6 +8,7 @@ import PageHeader from '../components/PageHeader'
 import Spinner from '../components/Spinner'
 import Button from '../components/Button'
 import Price from '../components/Price'
+import { ProductSheetSkeleton } from '../components/Skeleton'
 
 // крепость с большой буквы
 function formatStrength(s?: string) {
@@ -126,6 +127,14 @@ export default function ProductPage() {
     }
   }, [slug])
 
+  // открываем sheet сразу при наличии slug (пока грузится — внутри скелетон)
+  useEffect(() => {
+    if (slug && !sheetPresentedRef.current) {
+      setSheetPresented(true)
+      sheetPresentedRef.current = true
+    }
+  }, [slug])
+
   useEffect(() => {
     if (loading || sheetPresentedRef.current) return
     const raf = window.requestAnimationFrame(() => {
@@ -192,16 +201,7 @@ export default function ProductPage() {
       .catch(() => setFamilyVariants([]))
   }, [product?.familyKey, product?.category, product?.slug])
 
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-full bg-bg-base">
-        <PageHeader title="Никотиныч" subtitle="mini app" showBack />
-        <Spinner />
-      </div>
-    )
-  }
-
-  if (!product) {
+  if (!loading && !product) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
         <PageHeader title="Никотиныч" subtitle="mini app" showBack />
@@ -210,15 +210,14 @@ export default function ProductPage() {
     )
   }
 
-  // захватываем после null-проверки чтобы TypeScript не терял тип в замыканиях
   const p = product
-  const displayPrice = p.display_price
-  const hasDiscount = !!p.discount_price_rub
-  const images = p.images && p.images.length > 0 ? p.images : []
-  const stock = p.stock
-  const canAddMore = stock == null || qty < stock
+  const displayPrice = p?.display_price ?? 0
+  const hasDiscount = !!p?.discount_price_rub
+  const images = p?.images && p.images.length > 0 ? p.images : []
+  const stock = p?.stock
+  const canAddMore = stock == null || (qty < (stock ?? 0))
 
-  const familyProducts: Product[] = p.familyKey
+  const familyProducts: Product[] = p?.familyKey
     ? [p, ...familyVariants.filter(v => v.slug !== p.slug)]
     : []
 
@@ -230,11 +229,11 @@ export default function ProductPage() {
     )
   )
 
-  const puffsOptions = p.flavor
+  const puffsOptions = p?.flavor
     ? Array.from(
         new Set(
           familyProducts
-            .filter(fp => fp.flavor === p.flavor && fp.puffs != null)
+            .filter(fp => fp.flavor === p!.flavor && fp.puffs != null)
             .map(fp => fp.puffs as number)
         )
       ).sort((a, b) => a - b)
@@ -364,14 +363,13 @@ export default function ProductPage() {
 
         <div
           className={`relative min-h-0 flex-1 overflow-y-auto pb-36 transition-all duration-200 ${
-            contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+            loading ? 'opacity-100' : contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
           }`}
         >
-          {loading && (
-            <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] flex items-center justify-center">
-              <Spinner />
-            </div>
-          )}
+          {loading ? (
+            <ProductSheetSkeleton />
+          ) : p ? (
+          <>
           <div className="bg-[#F8F8F8] relative">
             <div
               className="h-[310px] overflow-hidden relative"
@@ -545,6 +543,8 @@ export default function ProductPage() {
               {p.article && <Row label="Артикул" value={formatArticleCode(p.article)} />}
             </div>
           </div>
+          </>
+          ) : null}
         </div>
       </div>
 
@@ -557,6 +557,7 @@ export default function ProductPage() {
         </div>
       )}
 
+      {p && (
       <div
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light px-4 py-3 z-[60]"
         style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
@@ -605,6 +606,7 @@ export default function ProductPage() {
           </Button>
         )}
       </div>
+      )}
     </div>
   )
 }

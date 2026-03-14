@@ -4,8 +4,8 @@ import { getUserOrders, getProducts, cancelOrder } from '../api'
 import type { Order, OrderItem, Product } from '../api'
 import { useUserStore } from '../store/user'
 import PageHeader from '../components/PageHeader'
-import Spinner from '../components/Spinner'
 import Price from '../components/Price'
+import { OrderDetailsSkeleton } from '../components/Skeleton'
 import toast from 'react-hot-toast'
 import { useCartStore } from '../store/cart'
 import WebApp from '@twa-dev/sdk'
@@ -174,9 +174,7 @@ export default function OrderDetailsPage() {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
         <PageHeader title="Никотиныч" subtitle="mini app" showBack />
-        <div className="flex-1 flex items-center justify-center">
-          <Spinner />
-        </div>
+        <OrderDetailsSkeleton />
       </div>
     )
   }
