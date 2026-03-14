@@ -418,7 +418,7 @@ export default function CheckoutPage() {
           <div className="h-11 flex items-center justify-between px-4">
             <span className="w-14" />
             <h3 className="text-[17px] font-semibold leading-[22px] tracking-[-0.4px] text-[#343434]">Данные получателя</h3>
-            <button type="button" className="text-[17px] font-normal leading-[22px] tracking-[-0.4px] text-[#00AAFF]" onClick={() => setSheetDataOpen(false)}>
+            <button type="button" className="text-[17px] font-normal leading-[22px] tracking-[-0.4px] text-[#00AAFF]" onClick={saveReceiverData}>
               Готово
             </button>
           </div>
@@ -457,7 +457,7 @@ export default function CheckoutPage() {
           <div className="h-11 flex items-center justify-between px-4">
             <span className="w-14" />
             <h3 className="text-[17px] font-semibold leading-[22px] tracking-[-0.4px] text-[#343434]">Адрес доставки</h3>
-            <button type="button" className="text-[17px] font-normal leading-[22px] tracking-[-0.4px] text-[#00AAFF]" onClick={() => setSheetAddressOpen(false)}>
+            <button type="button" className="text-[17px] font-normal leading-[22px] tracking-[-0.4px] text-[#00AAFF]" onClick={saveAddressData}>
               Готово
             </button>
           </div>
@@ -484,7 +484,7 @@ export default function CheckoutPage() {
           <div className="h-11 flex items-center justify-between px-4">
             <span className="w-14" />
             <h3 className="text-[17px] font-semibold leading-[22px] tracking-[-0.4px] text-[#343434]">Комментарий к заказу</h3>
-            <button type="button" className="text-[17px] font-normal leading-[22px] tracking-[-0.4px] text-[#00AAFF]" onClick={() => setSheetCommentOpen(false)}>
+            <button type="button" className="text-[17px] font-normal leading-[22px] tracking-[-0.4px] text-[#00AAFF]" onClick={saveCommentData}>
               Готово
             </button>
           </div>

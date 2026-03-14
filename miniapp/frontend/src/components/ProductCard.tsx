@@ -9,10 +9,13 @@ import Price from './Price'
 type Props = {
   product: Product
   showAddButton?: boolean
+  /** при переходе из каталога (категория→бренд→линейка→товары) сохраняем контекст для возврата */
+  onProductClick?: (slug: string) => void
 }
 
-export default function ProductCard({ product, showAddButton = true }: Props) {
+export default function ProductCard({ product, showAddButton = true, onProductClick }: Props) {
   const navigate = useNavigate()
+  const goToProduct = onProductClick ?? ((slug: string) => navigate(`/product/${slug}`))
   const addItem = useCartStore(s => s.addItem)
   const updateQty = useCartStore(s => s.updateQty)
   const qty = useCartStore(s => s.getQty(product.slug))
@@ -57,7 +60,7 @@ export default function ProductCard({ product, showAddButton = true }: Props) {
   return (
     <div
       className="bg-card-bg rounded-card overflow-hidden cursor-pointer active:opacity-90 transition-opacity duration-150"
-      onClick={() => navigate(`/product/${product.slug}`)}
+      onClick={() => goToProduct(product.slug)}
     >
       {/* изображение */}
       <div className="relative aspect-square bg-[#F8F8F8]">

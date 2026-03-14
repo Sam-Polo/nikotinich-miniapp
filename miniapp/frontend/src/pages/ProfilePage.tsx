@@ -472,13 +472,6 @@ export default function ProfilePage() {
         <div className="px-4 pt-2 pb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[18px] font-bold text-text-primary">Контактные данные</h3>
-            <button
-              type="button"
-              onClick={() => setProfileModalOpen(false)}
-              className="text-[14px] text-text-secondary"
-            >
-              Закрыть
-            </button>
           </div>
 
           <div className="space-y-4">

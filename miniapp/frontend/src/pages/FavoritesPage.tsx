@@ -253,17 +253,17 @@ export default function FavoritesPage() {
                         <div className="w-full h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between">
                           <button
                             type="button"
-                            className="w-5 h-5 flex items-center justify-center text-[#595959] text-[24px] leading-none active:opacity-70"
+                            className="w-5 h-5 flex items-center justify-center text-[#595959] text-[24px] leading-none active:opacity-70 active:scale-90 transition-transform duration-100"
                             onClick={handleDec}
                           >
                             −
                           </button>
-                          <span className="text-[16px] font-medium leading-[19px] text-[#595959] min-w-[24px] text-center">
+                          <span className="text-[16px] font-medium leading-[19px] text-[#595959] min-w-[24px] text-center select-none">
                             {qty}
                           </span>
                           <button
                             type="button"
-                            className="w-5 h-5 flex items-center justify-center text-[#258CD1] text-[24px] leading-none active:opacity-70 disabled:opacity-50"
+                            className="w-5 h-5 flex items-center justify-center text-[#258CD1] text-[24px] leading-none active:opacity-70 active:scale-90 transition-transform duration-100 disabled:opacity-50"
                             onClick={handleInc}
                             disabled={!canAddMore}
                           >
@@ -305,7 +305,7 @@ export default function FavoritesPage() {
 
       {cartQty > 0 && (
         <div
-          className="fixed left-0 right-0 px-4 z-[60]"
+          className="animate-toast-in fixed left-0 right-0 px-4 z-[60]"
           style={{ bottom: 'calc(74px + env(safe-area-inset-bottom, 0px))' }}
         >
           <button

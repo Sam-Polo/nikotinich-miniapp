@@ -9,6 +9,34 @@ export function Skeleton({ className = '' }: { className?: string }) {
   )
 }
 
+// список брендов (одна колонка, карточка с картинкой и названием)
+export function BrandListSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-0">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="bg-card-bg rounded-card overflow-hidden p-4 flex items-center gap-4">
+          <Skeleton className="w-16 h-16 rounded-[10px] flex-shrink-0" />
+          <Skeleton className="h-5 flex-1 max-w-[180px] rounded" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// список линеек (как бренды)
+export function LineListSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-0">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="bg-card-bg rounded-card overflow-hidden p-4 flex items-center gap-4">
+          <Skeleton className="w-16 h-16 rounded-[10px] flex-shrink-0" />
+          <Skeleton className="h-5 flex-1 max-w-[180px] rounded" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // сетка категорий каталога (2 колонки)
 export function CatalogGridSkeleton() {
   return (
@@ -29,13 +57,13 @@ export function CatalogGridSkeleton() {
 export function NewsListSkeleton() {
   return (
     <>
-      {/* горизонтальная лента — как реальные карточки: w-[170px], rounded-card, p-4, акцентный оттенок */}
+      {/* горизонтальная лента — размер как у реальных карточек: 170×148px, rounded-card, p-4 */}
       <div className="mb-5">
         <div className="flex gap-3 px-4 overflow-hidden pb-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="flex-shrink-0 w-[170px] rounded-card p-4 flex flex-col justify-between bg-[#007AFF]/15 animate-pulse"
+              className="flex-shrink-0 w-[170px] h-[148px] rounded-card p-4 flex flex-col justify-between bg-[#007AFF]/15 animate-pulse"
             >
               <div className="rounded-[8px] bg-[#007AFF]/25 h-5 w-3/4 mb-2" />
               <div className="rounded-[8px] bg-[#007AFF]/20 h-3 w-full mb-1" />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { getProduct, getBrands, getLines, getProducts } from '../api'
 import type { Product, Brand, Line } from '../api'
 import { useCartStore } from '../store/cart'
@@ -285,9 +285,24 @@ export default function ProductPage() {
     setShowAddedToast(true)
   }
 
+  const location = useLocation()
+  const fromCatalog = (location.state as { fromCatalog?: boolean; categoryKey?: string; step?: string; selectedBrand?: string | null; selectedLine?: string | null }) | undefined
+
   function closeSheet() {
     setSheetPresented(false)
-    window.setTimeout(() => navigate(-1), 180)
+    window.setTimeout(() => {
+      if (fromCatalog?.fromCatalog && fromCatalog?.categoryKey) {
+        navigate(`/catalog/${fromCatalog.categoryKey}`, {
+          state: {
+            step: fromCatalog.step ?? 'products',
+            selectedBrand: fromCatalog.selectedBrand ?? null,
+            selectedLine: fromCatalog.selectedLine ?? null
+          }
+        })
+      } else {
+        navigate(-1)
+      }
+    }, 180)
   }
 
   function navigateWithTransition(targetSlug: string) {

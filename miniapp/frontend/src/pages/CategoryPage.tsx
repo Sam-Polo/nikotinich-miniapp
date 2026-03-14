@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { getCategories, getBrands, getLines, getProducts } from '../api'
 import type { Brand, Line, Product } from '../api'
 import PageHeader from '../components/PageHeader'
@@ -7,14 +7,18 @@ import ProductCard from '../components/ProductCard'
 import BottomSheet from '../components/BottomSheet'
 import SelectionList from '../components/SelectionList'
 import Button from '../components/Button'
-import { ProductGridSkeleton } from '../components/Skeleton'
+import { ProductGridSkeleton, BrandListSkeleton, LineListSkeleton } from '../components/Skeleton'
 
 // шаги выбора фильтра
 type Step = 'brand' | 'line' | 'products'
 
+type CatalogState = { step?: Step; selectedBrand?: string | null; selectedLine?: string | null }
+
 export default function CategoryPage() {
   const { categoryKey = '' } = useParams<{ categoryKey: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const catalogState = location.state as CatalogState | undefined
 
   const [brands, setBrands] = useState<Brand[]>([])
   const [lines, setLines] = useState<Line[]>([])
@@ -29,6 +33,24 @@ export default function CategoryPage() {
   const [brandsSheet, setBrandsSheet] = useState(false)
   const [linesSheet, setLinesSheet] = useState(false)
   const [resolvedCategoryTitle, setResolvedCategoryTitle] = useState<string>(categoryKey.replace(/_/g, ' '))
+  const restoredCatalogRef = useRef(false)
+
+  // восстановление шага/фильтров при возврате из карточки товара (один раз за вход на страницу)
+  useEffect(() => {
+    if (!categoryKey) return
+    restoredCatalogRef.current = false
+  }, [categoryKey])
+
+  useEffect(() => {
+    if (!catalogState?.step || !categoryKey || restoredCatalogRef.current) return
+    restoredCatalogRef.current = true
+    setStep(catalogState.step)
+    if (catalogState.selectedBrand != null) setSelectedBrand(catalogState.selectedBrand)
+    if (catalogState.selectedLine != null) setSelectedLine(catalogState.selectedLine)
+    if (catalogState.step === 'products') {
+      loadProducts(catalogState.selectedBrand ?? undefined, catalogState.selectedLine ?? undefined)
+    }
+  }, [categoryKey, catalogState?.step, catalogState?.selectedBrand, catalogState?.selectedLine])
 
   // название категории по ключу (с API)
   useEffect(() => {
@@ -50,9 +72,10 @@ export default function CategoryPage() {
         if (b.length === 0) {
           loadProducts()
         }
-        setLoading(false)
+        // при возврате из карточки товара loading управляет loadProducts, не сбрасываем
+        if (!restoredCatalogRef.current) setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => { if (!restoredCatalogRef.current) setLoading(false) })
   }, [categoryKey])
 
   // загрузка линеек после подтверждения бренда
@@ -137,7 +160,14 @@ export default function CategoryPage() {
           </div>
         )}
 
-        {/* бренды — одна колонка, стиль как у категорий (карточка с картинкой и названием) */}
+        {/* бренды — скелетон при загрузке, иначе список */}
+        {step === 'brand' && loading && (
+          <div key="brand-skeleton" className="animate-step-in">
+            <p className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</p>
+            <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
+            <BrandListSkeleton />
+          </div>
+        )}
         {step === 'brand' && !loading && brands.length > 0 && (
           <div key="brand" className="animate-step-in">
             <p className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</p>
@@ -170,7 +200,13 @@ export default function CategoryPage() {
           </div>
         )}
 
-        {/* линейки — одна колонка, тот же стиль карточек */}
+        {/* линейки — скелетон при загрузке, иначе список */}
+        {step === 'line' && loading && (
+          <div key="line-skeleton" className="animate-step-in">
+            <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите линейку</h1>
+            <LineListSkeleton />
+          </div>
+        )}
         {step === 'line' && !loading && lines.length > 0 && (
           <div key="line" className="animate-step-in">
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите линейку</h1>
@@ -222,7 +258,20 @@ export default function CategoryPage() {
                     className="animate-stagger-in"
                     style={{ ['--stagger-i' as string]: `${i * 45}ms` }}
                   >
-                    <ProductCard product={p} />
+                    <ProductCard
+                      product={p}
+                      onProductClick={(slug) =>
+                        navigate(`/product/${slug}`, {
+                          state: {
+                            fromCatalog: true,
+                            categoryKey,
+                            step: 'products',
+                            selectedBrand,
+                            selectedLine
+                          }
+                        })
+                      }
+                    />
                   </div>
                 ))}
               </div>
@@ -230,11 +279,6 @@ export default function CategoryPage() {
           </div>
         )}
 
-        {loading && step !== 'products' && (
-          <div className="flex justify-center py-10">
-            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
 
         {/* кнопки фильтра (всегда видны при наличии данных) */}
         {step === 'products' && !loading && (
