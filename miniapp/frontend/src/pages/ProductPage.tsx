@@ -93,7 +93,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   const [lineTitle, setLineTitle] = useState<string | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [familyVariants, setFamilyVariants] = useState<Product[]>([])
-  const [sheetPresented, setSheetPresented] = useState(() => !!(embedded && slugProp))
+  const [sheetPresented, setSheetPresented] = useState(false)
   const [sheetDragY, setSheetDragY] = useState(0)
   const [sheetDragging, setSheetDragging] = useState(false)
   const [contentVisible, setContentVisible] = useState(false)
@@ -118,13 +118,31 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     setContentVisible(false)
 
     getProduct(slug)
-      .then((nextProduct) => {
+      .then(async (nextProduct) => {
         if (cancelled) return
         setProduct(nextProduct)
+
+        // загружаем варианты семейства вместе с основным товаром,
+        // чтобы затяжки/вкусы не «впрыгивали» после скелетона
+        if (nextProduct?.familyKey && nextProduct.category) {
+          try {
+            const list = await getProducts({ category: nextProduct.category })
+            if (!cancelled) {
+              setFamilyVariants(
+                list.filter(fp => fp.familyKey === nextProduct.familyKey && fp.slug !== nextProduct.slug)
+              )
+            }
+          } catch {
+            if (!cancelled) setFamilyVariants([])
+          }
+        } else {
+          if (!cancelled) setFamilyVariants([])
+        }
       })
       .catch(() => {
         if (cancelled) return
         setProduct(null)
+        setFamilyVariants([])
       })
       .finally(() => {
         if (cancelled) return
@@ -136,12 +154,14 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     }
   }, [slug])
 
-  // открываем sheet сразу при наличии slug (пока грузится — внутри скелетон)
+  // открываем sheet через кадр — чтобы браузер отрисовал начальное положение и запустил анимацию
   useEffect(() => {
-    if (slug && !sheetPresentedRef.current) {
+    if (!slug || sheetPresentedRef.current) return
+    sheetPresentedRef.current = true
+    const raf = window.requestAnimationFrame(() => {
       setSheetPresented(true)
-      sheetPresentedRef.current = true
-    }
+    })
+    return () => window.cancelAnimationFrame(raf)
   }, [slug])
 
   useEffect(() => {
@@ -193,22 +213,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
       .catch(() => setLineTitle(product.line ?? null))
   }, [product?.brand, product?.line])
 
-  // варианты внутри семейства (электронки с разными вкусами/затяжками)
-  useEffect(() => {
-    if (!product?.familyKey || !product.category) {
-      setFamilyVariants([])
-      return
-    }
 
-    getProducts({ category: product.category })
-      .then(list => {
-        const sameFamily = list.filter(
-          p => p.familyKey === product.familyKey && p.slug !== product.slug
-        )
-        setFamilyVariants(sameFamily)
-      })
-      .catch(() => setFamilyVariants([]))
-  }, [product?.familyKey, product?.category, product?.slug])
 
   if (!embedded && !loading && !product) {
     return (
@@ -320,7 +325,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
       } else {
         navigate(-1)
       }
-    }, 180)
+    }, 240)
   }
 
   function navigateWithTransition(targetSlug: string) {
@@ -367,7 +372,8 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     if (!closeDraggingRef.current || closeTouchStartYRef.current == null) return
     e.preventDefault()
     const delta = e.touches[0].clientY - closeTouchStartYRef.current
-    if (delta > 0) setSheetDragY(Math.min(delta * 0.35, 180))
+    // 1:1 с пальцем, значение в пикселях
+    if (delta > 0) setSheetDragY(delta)
   }
 
   function handleSheetTouchEnd() {
@@ -375,7 +381,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     closeDraggingRef.current = false
     closeTouchStartYRef.current = null
     setSheetDragging(false)
-    if (sheetDragY > 72) {
+    if (sheetDragY > 100) {
       closeSheet()
       return
     }
@@ -387,16 +393,22 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   const overlayAndSheet = (
     <>
       <div
-        className={`fixed inset-0 bg-black/40 z-[55] ${embedded ? 'transition-none' : 'transition-opacity duration-200'}`}
+        className="fixed inset-0 bg-black/40 z-[55] transition-opacity duration-200"
         style={{ opacity: sheetPresented ? 1 : 0 }}
         onClick={closeSheet}
         aria-hidden
       />
       <div
         className={`fixed inset-x-0 bottom-0 ${sheetTopClass} bg-white rounded-t-[26px] overflow-hidden z-[56] flex flex-col ${
-          sheetDragging ? 'transition-none' : embedded ? 'transition-none' : 'transition-transform duration-200 ease-out'
+          sheetDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
         }`}
-        style={{ transform: `translateY(${sheetPresented ? sheetDragY : 120}%)` }}
+        style={{
+          transform: !sheetPresented
+            ? 'translateY(120%)'
+            : sheetDragY > 0
+              ? `translateY(${sheetDragY}px)`
+              : 'translateY(0)'
+        }}
       >
         <div
           className="h-[17px] flex items-center justify-center touch-none"
@@ -647,7 +659,11 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
             </div>
           </div>
         ) : (
-          <Button fullWidth onClick={handleAdd} className="justify-between">
+          <Button
+            fullWidth
+            onClick={handleAdd}
+            className="justify-between bg-[#0099FF] hover:bg-[#0099FF]/90 active:opacity-90"
+          >
             <span>Добавить в корзину</span>
             <span className="inline-flex items-baseline text-white opacity-90">
               <span className="text-[14px] font-semibold leading-[100%]">
