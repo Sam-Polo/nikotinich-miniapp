@@ -72,7 +72,6 @@ function AddedToCartToast({ durationMs }: AddedToCartToastProps) {
 
 export default function FavoritesPage() {
   const { items, toggle } = useFavoritesStore()
-  const cartItems = useCartStore(s => s.items)
   const addItem = useCartStore(s => s.addItem)
   const getQty = useCartStore(s => s.getQty)
   const updateQty = useCartStore(s => s.updateQty)

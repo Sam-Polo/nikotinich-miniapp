@@ -5,7 +5,6 @@ import type { Product, Brand, Line } from '../api'
 import { useCartStore } from '../store/cart'
 import { useFavoritesStore } from '../store/favorites'
 import PageHeader from '../components/PageHeader'
-import Spinner from '../components/Spinner'
 import Button from '../components/Button'
 import Price from '../components/Price'
 import { ProductSheetSkeleton } from '../components/Skeleton'
@@ -206,6 +205,16 @@ export default function ProductPage() {
       <div className="flex flex-col min-h-full bg-bg-base">
         <PageHeader title="Никотиныч" subtitle="mini app" showBack />
         <p className="text-center text-text-secondary mt-20">Товар не найден</p>
+      </div>
+    )
+  }
+
+  // после скелетона/не найден: показываем контент только при наличии product
+  if (!product) {
+    return (
+      <div className="flex flex-col min-h-full bg-bg-base">
+        <PageHeader title="Никотиныч" subtitle="mini app" showBack />
+        <ProductSheetSkeleton />
       </div>
     )
   }
