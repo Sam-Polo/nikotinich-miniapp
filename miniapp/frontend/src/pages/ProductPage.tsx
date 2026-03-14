@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { getProduct, getBrands, getLines, getProducts } from '../api'
 import type { Product, Brand, Line } from '../api'
@@ -369,7 +370,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     if (!closeDraggingRef.current || closeTouchStartYRef.current == null) return
     e.preventDefault()
     const delta = e.touches[0].clientY - closeTouchStartYRef.current
-    if (delta > 0) setSheetDragY(Math.min(delta * 0.65, 180))
+    if (delta > 0) setSheetDragY(Math.min(delta * 0.35, 180))
   }
 
   function handleSheetTouchEnd() {
@@ -384,26 +385,24 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     setSheetDragY(0)
   }
 
-  return (
-    <div className="flex flex-col min-h-full bg-bg-base" data-product-layout="sheet">
-      {!embedded && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
-
-      {/* overlay и sheet через fixed; в embedded — без анимации, открытие моментальное */}
+  // в embedded рендерим шит в портал в body — открытие без задержки от дерева родителя
+  const sheetTopClass = 'top-[72px]'
+  const overlayAndSheet = (
+    <>
       <div
         className={`fixed inset-0 bg-black/40 z-[55] ${embedded ? 'transition-none' : 'transition-opacity duration-200'}`}
         style={{ opacity: sheetPresented ? 1 : 0 }}
         onClick={closeSheet}
         aria-hidden
       />
-
       <div
-        className={`fixed inset-x-0 bottom-0 top-14 bg-white rounded-t-[26px] overflow-hidden z-[56] flex flex-col ${
+        className={`fixed inset-x-0 bottom-0 ${sheetTopClass} bg-white rounded-t-[26px] overflow-hidden z-[56] flex flex-col ${
           sheetDragging ? 'transition-none' : embedded ? 'transition-none' : 'transition-transform duration-200 ease-out'
         }`}
         style={{ transform: `translateY(${sheetPresented ? sheetDragY : 120}%)` }}
       >
         <div
-          className="h-[13px] flex items-center justify-center touch-none"
+          className="h-[17px] flex items-center justify-center touch-none"
           onTouchStart={handleSheetTouchStart}
           onTouchMove={handleSheetTouchMove}
           onTouchEnd={handleSheetTouchEnd}
@@ -663,6 +662,17 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
         )}
       </div>
       )}
+    </>
+  )
+
+  if (embedded && typeof document !== 'undefined' && document.body) {
+    return createPortal(overlayAndSheet, document.body)
+  }
+
+  return (
+    <div className="flex flex-col min-h-full bg-bg-base" data-product-layout="sheet">
+      {!embedded && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
+      {overlayAndSheet}
     </div>
   )
 }

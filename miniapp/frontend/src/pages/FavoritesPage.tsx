@@ -6,6 +6,7 @@ import { useFavoritesStore } from '../store/favorites'
 import { useCartStore } from '../store/cart'
 import PageHeader from '../components/PageHeader'
 import { useCatalogStore } from '../store/catalog'
+import ProductPage from './ProductPage'
 
 function formatRub(value: number) {
   return `${value.toLocaleString('ru-RU')} ₽`
@@ -82,6 +83,7 @@ export default function FavoritesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
   const [showAddedToast, setShowAddedToast] = useState(false)
+  const [selectedProductSlug, setSelectedProductSlug] = useState<string | null>(null)
 
   const cartQty = totalItems()
   const cartSum = subtotal()
@@ -199,14 +201,14 @@ export default function FavoritesPage() {
                   className="min-w-0 bg-white"
                 >
                   <div
-                    className="w-full aspect-square bg-[#F8F8F8] rounded-[22px] relative overflow-hidden"
-                    onClick={() => navigate(`/product/${product.slug}`)}
+                    className="w-full aspect-square bg-[#F8F8F8] rounded-[22px] relative overflow-hidden cursor-pointer"
+                    onClick={() => setSelectedProductSlug(product.slug)}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
-                        navigate(`/product/${product.slug}`)
+                        setSelectedProductSlug(product.slug)
                       }
                     }}
                   >
@@ -319,6 +321,15 @@ export default function FavoritesPage() {
             <span className="text-[14px] font-semibold leading-[17px] text-white opacity-80">{formatRub(cartSum)}</span>
           </button>
         </div>
+      )}
+
+      {selectedProductSlug && (
+        <ProductPage
+          embedded
+          slugProp={selectedProductSlug}
+          onClose={() => setSelectedProductSlug(null)}
+          onVariantChange={(s) => setSelectedProductSlug(s)}
+        />
       )}
     </div>
   )
