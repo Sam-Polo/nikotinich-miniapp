@@ -250,8 +250,8 @@ export default function FavoritesPage() {
                         Нет в наличии
                       </p>
                     ) : qty > 0 ? (
-                      <div className="mt-[14px] flex items-center">
-                        <div className="w-full h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between">
+                      <div className="mt-[14px] flex items-center w-full">
+                        <div className="w-full h-[44px] rounded-[10px] bg-[#F8F8F8] px-2 flex items-center justify-between">
                           <button
                             type="button"
                             className="w-5 h-5 flex items-center justify-center text-[#595959] text-[24px] leading-none active:opacity-70 active:scale-90 transition-transform duration-100"

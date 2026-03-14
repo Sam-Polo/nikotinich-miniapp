@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCartStore, type CartItem } from '../store/cart'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
+import ProductPage from './ProductPage'
 
 type CartItemRowProps = {
   item: CartItem
@@ -10,6 +11,7 @@ type CartItemRowProps = {
   onRemove: (slug: string) => void
   selected: boolean
   onToggleSelect: (slug: string) => void
+  onProductClick?: (slug: string) => void
 }
 
 const UNDO_TOAST_MS = 4000
@@ -85,7 +87,7 @@ function UndoRemoveToast({ durationMs, onUndo }: UndoRemoveToastProps) {
   )
 }
 
-function CartItemRow({ item, onUpdateQty, onRemove, selected, onToggleSelect }: CartItemRowProps) {
+function CartItemRow({ item, onUpdateQty, onRemove, selected, onToggleSelect, onProductClick }: CartItemRowProps) {
   const { product, qty } = item
   const stock = product.stock
   const canInc = stock == null || qty < stock
@@ -141,9 +143,9 @@ function CartItemRow({ item, onUpdateQty, onRemove, selected, onToggleSelect }: 
         </button>
       </div>
 
-      {/* основная карточка, сдвигаем по X */}
+      {/* основная карточка, сдвигаем по X; клик по карточке открывает товар в шите */}
       <div
-        className="h-full flex items-start relative bg-white"
+        className="h-full flex items-start relative bg-white cursor-pointer"
         style={{
           transform: `translateX(${offsetX}px)`,
           transition: dragging ? 'none' : 'transform 0.18s ease-out'
@@ -152,6 +154,8 @@ function CartItemRow({ item, onUpdateQty, onRemove, selected, onToggleSelect }: 
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
+        onClick={() => onProductClick?.(product.slug)}
+        role={onProductClick ? 'button' : undefined}
       >
         <div className="relative w-[150px] h-[150px] rounded-[22px] overflow-hidden bg-[#F8F8F8] flex-shrink-0">
           {/* чекбокс выбора товара */}
@@ -163,6 +167,7 @@ function CartItemRow({ item, onUpdateQty, onRemove, selected, onToggleSelect }: 
             aria-label={selected ? 'Товар выбран' : 'Выбрать товар'}
             onClick={(e) => {
               e.stopPropagation()
+              e.preventDefault()
               onToggleSelect(product.slug)
             }}
           >
@@ -193,7 +198,10 @@ function CartItemRow({ item, onUpdateQty, onRemove, selected, onToggleSelect }: 
               {product.title}
             </p>
           </div>
-          <div className="w-full h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between">
+          <div
+            className="w-full h-[44px] rounded-[10px] bg-[#F8F8F8] px-[10px] flex items-center justify-between"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               className="w-5 h-5 flex items-center justify-center text-[#595959] text-[24px] leading-none active:opacity-70"
@@ -224,6 +232,7 @@ export default function CartPage() {
   const sub = subtotal()
   const itemsTotal = totalItems()
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set())
+  const [selectedProductSlug, setSelectedProductSlug] = useState<string | null>(null)
 
   const allSelected = items.length > 0 && selectedSlugs.size === items.length
   const hasSelection = selectedSlugs.size > 0
@@ -342,6 +351,7 @@ export default function CartPage() {
                 onRemove={handleRemoveWithUndo}
                 selected={selectedSlugs.has(item.product.slug)}
                 onToggleSelect={handleToggleItemSelect}
+                onProductClick={setSelectedProductSlug}
               />
             ))}
           </div>
@@ -362,6 +372,16 @@ export default function CartPage() {
             }}
           />
         </div>
+      )}
+
+      {/* карточка товара — боттом-шит поверх корзины без смены страницы */}
+      {selectedProductSlug && (
+        <ProductPage
+          embedded
+          slugProp={selectedProductSlug}
+          onClose={() => setSelectedProductSlug(null)}
+          onVariantChange={(s) => setSelectedProductSlug(s)}
+        />
       )}
 
       {/* кнопка оформления в стиле макета */}

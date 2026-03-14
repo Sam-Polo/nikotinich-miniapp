@@ -114,10 +114,10 @@ export default function ProductCard({ product, showAddButton = true, onProductCl
             </p>
           ) : qty > 0 ? (
             <div
-              className="mt-2 flex items-center flex-shrink-0"
+              className="-mx-3 mt-2 flex items-center flex-shrink-0"
               onClick={e => e.stopPropagation()}
             >
-              <div className="w-full h-9 rounded-lg bg-[#F8F8F8] px-2 flex items-center justify-between">
+              <div className="w-full h-9 rounded-[10px] bg-[#F8F8F8] px-2 flex items-center justify-between">
                 <button
                   className="w-6 h-6 flex items-center justify-center text-accent text-[18px] font-medium active:opacity-70"
                   onClick={handleDec}

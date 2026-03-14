@@ -388,9 +388,9 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     <div className="flex flex-col min-h-full bg-bg-base" data-product-layout="sheet">
       {!embedded && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
 
-      {/* overlay и sheet через fixed */}
+      {/* overlay и sheet через fixed; в embedded — без анимации, открытие моментальное */}
       <div
-        className="fixed inset-0 bg-black/40 transition-opacity duration-200 z-[55]"
+        className={`fixed inset-0 bg-black/40 z-[55] ${embedded ? 'transition-none' : 'transition-opacity duration-200'}`}
         style={{ opacity: sheetPresented ? 1 : 0 }}
         onClick={closeSheet}
         aria-hidden
@@ -398,7 +398,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
 
       <div
         className={`fixed inset-x-0 bottom-0 top-14 bg-white rounded-t-[26px] overflow-hidden z-[56] flex flex-col ${
-          sheetDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
+          sheetDragging ? 'transition-none' : embedded ? 'transition-none' : 'transition-transform duration-200 ease-out'
         }`}
         style={{ transform: `translateY(${sheetPresented ? sheetDragY : 120}%)` }}
       >

@@ -146,7 +146,7 @@ export default function CategoryPage() {
           <div className="flex items-center gap-1 mb-3">
             {brandTitle && (
               <button
-                onClick={() => { setSelectedBrand(null); setSelectedLine(null); setStep('brand'); setBrandsSheet(true); setBrandConfirmed(false) }}
+                onClick={() => { setStep('brand'); setBrandsSheet(false); setLinesSheet(false); setBrandConfirmed(false) }}
                 className="text-accent text-[13px]"
               >
                 {brandTitle}
@@ -155,7 +155,7 @@ export default function CategoryPage() {
             {brandTitle && lineTitle && <span className="text-text-secondary text-[13px]">/</span>}
             {lineTitle && (
               <button
-                onClick={() => { setSelectedLine(null); setLinesSheet(true) }}
+                onClick={() => { setStep('line'); setLinesSheet(false) }}
                 className="text-accent text-[13px]"
               >
                 {lineTitle}
