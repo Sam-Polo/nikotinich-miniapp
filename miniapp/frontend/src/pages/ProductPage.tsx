@@ -219,21 +219,12 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     )
   }
 
-  // в полноэкранном режиме до загрузки показываем скелетон страницы
+  // в полноэкранном режиме до загрузки показываем скелетон страницы;
+  // для embedded — пропускаем, шит отрисуется сам, внутри покажется скелетон
   if (!embedded && !product) {
     return (
       <div className="flex flex-col min-h-full bg-bg-base">
         <PageHeader title="Никотиныч" subtitle="mini app" showBack />
-        <ProductSheetSkeleton />
-      </div>
-    )
-  }
-
-  // без product не рендерим контент (embedded или загрузка) — сужаем тип для TS
-  if (!product) {
-    return (
-      <div className="flex flex-col min-h-full bg-bg-base">
-        {!embedded && <PageHeader title="Никотиныч" subtitle="mini app" showBack />}
         <ProductSheetSkeleton />
       </div>
     )
