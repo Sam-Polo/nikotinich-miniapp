@@ -23,6 +23,15 @@ function generateOrderId(): string {
   return randomBytes(4).toString('hex')
 }
 
+// только цифры для записи в таблицу (79021234567), чтобы не ломать формулы/формат ячеек
+function normalizePhoneToDigits(phone: string | undefined): string {
+  if (!phone) return ''
+  const digits = String(phone).replace(/\D/g, '')
+  if (!digits) return ''
+  const d = digits.length === 11 && digits.startsWith('8') ? '7' + digits.slice(1) : digits.length === 10 ? '7' + digits : digits
+  return d.slice(0, 11)
+}
+
 // списание остатка по товарам заказа в листах каталога
 async function decrementStockForOrder(items: { slug: string; qty: number }[]): Promise<void> {
   const all = await getSheetTitles(SHEET_ID)
@@ -169,7 +178,7 @@ router.post('/', async (req, res) => {
     id,
     userId: userId ? String(userId) : undefined,
     customerName: String(customerName),
-    phone: phone ? String(phone) : undefined,
+    phone: phone ? normalizePhoneToDigits(phone) || undefined : undefined,
     address: address ? String(address) : undefined,
     items: items.map((i: any) => ({
       slug: String(i.slug || ''),

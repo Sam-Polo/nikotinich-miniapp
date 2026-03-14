@@ -18,6 +18,16 @@ function escapeMarkdown(text: string | undefined | null): string {
   return String(text).replace(/[_*[`]/g, '\\$&')
 }
 
+// формат телефона для отображения в сообщении: 79021234567 → +7 902 123-45-67
+function formatPhoneForDisplay(phone: string | undefined): string {
+  if (!phone) return ''
+  const d = String(phone).replace(/\D/g, '')
+  if (d.length < 10) return phone
+  const rest = d.length === 11 && d.startsWith('7') ? d.slice(1) : d.length === 11 && d.startsWith('8') ? d.slice(1) : d
+  if (rest.length < 10) return phone
+  return `+7 ${rest.slice(0, 3)} ${rest.slice(3, 6)}-${rest.slice(6, 8)}-${rest.slice(8, 10)}`
+}
+
 // формат артикула в единый вид 0000
 function formatArticleCode(article: string | undefined): string {
   if (!article) return ''
@@ -63,7 +73,7 @@ export function formatOrderMessage(order: {
     `Статус: ${statusLabel[status] ?? status}`,
     '',                                                                                          // абзац
     `Имя: ${escapeMarkdown(order.customerName)}`,
-    order.phone ? `Телефон: ${escapeMarkdown(order.phone)}` : null,
+    order.phone ? `Телефон: ${escapeMarkdown(formatPhoneForDisplay(order.phone))}` : null,
     order.address ? `Адрес: ${escapeMarkdown(order.address)}` : null,
     '',                                                                                          // абзац
     '*Состав:*',

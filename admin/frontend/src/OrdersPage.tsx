@@ -3,6 +3,16 @@ import { api, removeToken } from './api'
 import AdminNav from './components/AdminNav'
 import './App.css'
 
+// формат телефона для отображения: 79021234567 → +7 902 123-45-67
+function formatPhoneDisplay(phone: string | undefined): string {
+  if (!phone) return '—'
+  const d = String(phone).replace(/\D/g, '')
+  if (d.length < 10) return phone
+  const rest = d.length === 11 && d.startsWith('7') ? d.slice(1) : d.length === 11 && d.startsWith('8') ? d.slice(1) : d
+  if (rest.length < 10) return phone
+  return `+7 ${rest.slice(0, 3)} ${rest.slice(3, 6)}-${rest.slice(6, 8)}-${rest.slice(8, 10)}`
+}
+
 const TrashIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="3 6 5 6 21 6" />
@@ -520,7 +530,7 @@ export default function OrdersPage({
                       </td>
                       <td data-label="ID">{order.id.slice(0, 8)}</td>
                       <td data-label="Клиент">{order.customerName}</td>
-                      <td data-label="Телефон">{order.phone || '—'}</td>
+                      <td data-label="Телефон">{formatPhoneDisplay(order.phone)}</td>
                       <td data-label="Сумма">{order.totalRub} ₽</td>
                       <td className="orders-address-cell" data-label="Адрес" title={order.address || undefined}>
                         {truncateAddress(order.address || '')}
