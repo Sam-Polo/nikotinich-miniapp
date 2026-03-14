@@ -136,6 +136,9 @@ export async function editOrderMessage(
   order: Parameters<typeof formatOrderMessage>[0],
   newStatus: string
 ): Promise<boolean> {
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/0e713d09-2a35-4848-bab2-d4d5873d326e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'notify.ts:editOrderMessage',message:'editOrderMessage entry',data:{orderId:order.id,messageId,hasBotToken:!!BOT_TOKEN,hasChannelId:!!ORDERS_CHANNEL_ID},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+  // #endregion
   if (!BOT_TOKEN || !ORDERS_CHANNEL_ID) return false
   const normalizedMsgId = String(messageId || '').replace(/\D/g, '')
   if (!normalizedMsgId) {
@@ -158,6 +161,9 @@ export async function editOrderMessage(
       })
     })
     const data = await res.json() as any
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/0e713d09-2a35-4848-bab2-d4d5873d326e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'notify.ts:editOrderMessage',message:'editOrderMessage API result',data:{orderId:order.id,ok:data?.ok,description:data?.description||null},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
+    // #endregion
     if (!data.ok) {
       const desc = String(data.description || '')
       // telegram может вернуть "message is not modified" — это не ошибка бизнес-логики

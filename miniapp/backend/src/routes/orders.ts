@@ -289,6 +289,9 @@ router.put('/:id/cancel', async (req, res) => {
       }
 
       const msgId = msgIdIdx !== -1 ? String(fullRow[msgIdIdx] ?? '').trim() : ''
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/0e713d09-2a35-4848-bab2-d4d5873d326e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'orders.ts:cancel',message:'cancel msgId read',data:{orderId,msgIdIdx,msgId,fullRowLen:fullRow.length,hasTgMessageIdHeader:header.includes('tg_message_id'),rawMsgIdVal:msgIdIdx>=0?fullRow[msgIdIdx]:null},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+      // #endregion
       if (msgId) {
         const orderForNotify = {
           id: get('id'),
