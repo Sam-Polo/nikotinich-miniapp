@@ -8,7 +8,7 @@ import PageHeader from '../components/PageHeader'
 import BottomSheet from '../components/BottomSheet'
 
 function formatRub(value: number) {
-  return `${value.toLocaleString('ru-RU')} ₽`
+  return `${value.toLocaleString('ru-RU')}₽`
 }
 
 function normalizePhone(value: string) {

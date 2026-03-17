@@ -266,7 +266,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex-1 text-left">
             <p className="text-[16px] font-semibold text-text-primary">
-              {editName || user.username || 'Пользователь'}
+              {user.username ? `@${user.username.replace(/^@/, '')}` : 'Пользователь'}
             </p>
             {formattedPhone ? (
               <p className="text-[13px] text-text-secondary mt-0.5">{formattedPhone}</p>

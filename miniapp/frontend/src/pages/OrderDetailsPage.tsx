@@ -233,7 +233,7 @@ export default function OrderDetailsPage() {
               type="button"
               onClick={handleRepeatOrder}
               disabled={repeating}
-              className="h-[30px] px-[10px] rounded-[20px] bg-accent text-white text-[12px] font-medium whitespace-nowrap flex items-center justify-center disabled:opacity-60"
+              className="h-[30px] px-[10px] rounded-[20px] bg-[#0099FF] text-white text-[12px] font-medium whitespace-nowrap flex items-center justify-center disabled:opacity-60"
             >
               {repeating ? '...' : 'Повторить'}
             </button>
@@ -280,7 +280,7 @@ export default function OrderDetailsPage() {
             ))}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-border-light flex items-center justify-between">
+          <div className="mt-4 flex items-center justify-between">
             <span className="text-[15px] font-semibold text-text-primary">Итого</span>
             <Price value={order.totalRub} size="md" />
           </div>
