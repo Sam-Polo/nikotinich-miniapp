@@ -227,12 +227,7 @@ export default function OrderDetailsPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-[24px] leading-tight font-bold text-text-primary">{title}</h1>
-            {order.createdAt && (
-              <p className="mt-2 text-[14px] text-text-secondary">{formatDateTime(order.createdAt)}</p>
-            )}
-          </div>
+          <h1 className="text-[24px] leading-tight font-bold text-text-primary">{title}</h1>
           {canRepeat && (
             <button
               type="button"
@@ -244,6 +239,10 @@ export default function OrderDetailsPage() {
             </button>
           )}
         </div>
+
+        {order.createdAt && (
+          <p className="mt-2 text-[14px] text-text-secondary">{formatDateTime(order.createdAt)}</p>
+        )}
 
         <section className="mt-6 bg-[#F8F8F8] rounded-[18px] divide-y divide-border-light">
           <div className="px-4 py-3 flex items-center justify-between gap-4">
