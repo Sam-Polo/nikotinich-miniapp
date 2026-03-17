@@ -27,6 +27,8 @@ export type SheetProduct = {
   image_keys?: string[]
   /** порядок товара в каждом листе (ключ — имя категории, значение — индекс строки) */
   orderInCategory?: Record<string, number>
+  /** ключ модели (дополнительный уровень после линейки) */
+  modelKey?: string
   // вариативные товары (семейства, вкусы, количество затяжек)
   familyKey?: string
   flavor?: string
@@ -104,6 +106,7 @@ async function fetchSheetRange(
         ? String(articleNum).padStart(4, '0')
         : (articleStr || undefined)
 
+    const modelKeyRaw = String(get('model_key') || '').trim()
     const familyKeyRaw = String(get('family_key') || '').trim()
     const flavorRaw = String(get('flavor') || '').trim()
     const puffsRaw = String(get('puffs') || '').replace(/\s/g, '')
@@ -126,6 +129,7 @@ async function fetchSheetRange(
       line: String(get('line') || '').trim() || undefined,
       strength: String(get('strength') || '').trim() || undefined,
       image_keys: imageKeys.length > 0 ? imageKeys : undefined,
+      modelKey: modelKeyRaw || undefined,
       familyKey: familyKeyRaw || undefined,
       flavor: flavorRaw || undefined,
       puffs: Number.isFinite(puffsVal) ? puffsVal : undefined
@@ -193,6 +197,7 @@ export async function fetchProductsFromSheet(sheetId: string): Promise<SheetProd
             existing.stock = p.stock
             existing.article = p.article
             existing.id = p.id
+            existing.modelKey = p.modelKey ?? existing.modelKey
             existing.familyKey = p.familyKey ?? existing.familyKey
             existing.flavor = p.flavor ?? existing.flavor
             existing.puffs = p.puffs ?? existing.puffs

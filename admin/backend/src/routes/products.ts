@@ -245,6 +245,7 @@ router.post('/', async (req, res) => {
       image_keys: productData.image_keys && Array.isArray(productData.image_keys)
         ? productData.image_keys.filter((key: string) => key.trim())
         : [],
+      modelKey: sanitizeOptionalString(productData.modelKey ?? productData.model_key, 80),
       familyKey: sanitizeOptionalString(productData.familyKey ?? productData.family_key, 80),
       flavor: sanitizeOptionalString(productData.flavor, 80),
       puffs: productData.puffs !== undefined && productData.puffs !== null && String(productData.puffs).trim() !== ''
@@ -420,7 +421,8 @@ router.put('/:slug', async (req, res) => {
       image_keys: productData.image_keys && Array.isArray(productData.image_keys)
         ? productData.image_keys.filter((key: string) => key.trim())
         : (oldProduct.image_keys || []),
-      // семейство и вариативные поля: если не переданы — очищаем, а не подставляем старые
+      // модель, семейство и вариативные поля: если не переданы — очищаем, а не подставляем старые
+      modelKey: sanitizeOptionalString(productData.modelKey ?? productData.model_key, 80),
       familyKey: sanitizeOptionalString(productData.familyKey ?? productData.family_key, 80),
       flavor: sanitizeOptionalString(productData.flavor, 80),
       puffs: productData.puffs !== undefined && productData.puffs !== null && String(productData.puffs).trim() !== ''

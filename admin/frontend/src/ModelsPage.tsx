@@ -677,21 +677,6 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
                       })}
                     </div>
                   )}
-                  <button
-                    type="button"
-                    className="btn btn-confirm"
-                    disabled={savingProducts}
-                    onClick={() =>
-                      saveProductsForModel(
-                        editingModel.key,
-                        editingModel.category_key,
-                        editingModel.brand_key,
-                        editingModel.line_key
-                      )
-                    }
-                  >
-                    {savingProducts ? 'Сохранение...' : 'Сохранить товары модели'}
-                  </button>
                 </>
               )}
             </div>
