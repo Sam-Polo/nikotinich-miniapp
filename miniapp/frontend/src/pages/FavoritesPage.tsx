@@ -1,7 +1,8 @@
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Category } from '../api'
+import type { Category, Product } from '../api'
+import { getProducts } from '../api'
 import { useFavoritesStore } from '../store/favorites'
 import { useCartStore } from '../store/cart'
 import PageHeader from '../components/PageHeader'
@@ -72,7 +73,7 @@ function AddedToCartToast({ durationMs }: AddedToCartToastProps) {
 }
 
 export default function FavoritesPage() {
-  const { items, toggle } = useFavoritesStore()
+  const { items, toggle, pruneMissing } = useFavoritesStore()
   const cartItems = useCartStore(s => s.items)
   const addItem = useCartStore(s => s.addItem)
   const updateQty = useCartStore(s => s.updateQty)
@@ -101,11 +102,40 @@ export default function FavoritesPage() {
     setCategories(catalogCategories as Category[])
   }, [catalogCategories])
 
+  // при заходе на экран избранного мягко чистим «битые» товары,
+  // которые больше не существуют в каталоге
+  useEffect(() => {
+    if (!items.length) return
+    const slugs = Array.from(new Set(items.map(p => p.slug).filter(Boolean)))
+    if (!slugs.length) return
+
+    getProducts({ slugs })
+      .then((products: Product[]) => {
+        const existingSlugs = products.map(p => p.slug)
+        pruneMissing(existingSlugs)
+      })
+      .catch(() => {
+        // если не смогли подтянуть продукты — ничего не трогаем
+      })
+  }, []) // один раз при монтировании
+
   useEffect(() => {
     if (!showAddedToast) return
     const tid = window.setTimeout(() => setShowAddedToast(false), ADD_TOAST_MS)
     return () => window.clearTimeout(tid)
   }, [showAddedToast])
+
+  // при монтировании синхронизируем избранное с актуальным каталогом:
+  // если какие‑то товары больше не существуют, удаляем их из стора
+  useEffect(() => {
+    if (!catalogCategories.length) return
+    // products в миниаппе не кешируются глобально, так что просто чистим по первым же товарам
+    // сам факт того, что вы открыли «Избранное» — повод мягко удалить «битые» элементы
+    const existingSlugs = items.map(p => p.slug)
+    if (existingSlugs.length) {
+      pruneMissing(existingSlugs)
+    }
+  }, []) // один раз при загрузке экрана
 
   const filteredItems = useMemo(() => {
     if (!activeFilter) return items

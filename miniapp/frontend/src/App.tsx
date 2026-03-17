@@ -115,14 +115,18 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 // обёртка для экранов с нижней навигацией
 function WithNav({ children }: { children: React.ReactNode }) {
   const location = useLocation()
-  const hideNavOnPaths = ['/checkout']
+  const hideNavOnPaths = ['/_internal'] // зарезервировано, пока не нужно
   const hideNavOnOrderDetails = location.pathname.startsWith('/order/')
+  const hideNavOnCatalogFilters =
+    location.pathname.startsWith('/catalog/') ||
+    location.pathname.startsWith('/product/') ||
+    location.pathname.startsWith('/checkout')
   const hideNav = hideNavOnPaths.includes(location.pathname) || hideNavOnOrderDetails
 
   return (
     <>
       <PageTransition>{children}</PageTransition>
-      {!hideNav && <BottomNav />}
+      {!hideNav && !hideNavOnCatalogFilters && <BottomNav />}
     </>
   )
 }

@@ -7,6 +7,7 @@ type FavoritesStore = {
   toggle: (product: Product) => void
   isFavorite: (slug: string) => boolean
   clearAll: () => void
+  pruneMissing: (existingSlugs: string[]) => void
 }
 
 export const useFavoritesStore = create<FavoritesStore>()(
@@ -27,7 +28,14 @@ export const useFavoritesStore = create<FavoritesStore>()(
 
       isFavorite: (slug) => get().items.some(i => i.slug === slug),
 
-      clearAll: () => set({ items: [] })
+      clearAll: () => set({ items: [] }),
+
+      pruneMissing: (existingSlugs: string[]) => {
+        const setSlugs = new Set(existingSlugs)
+        set(state => ({
+          items: state.items.filter(i => setSlugs.has(i.slug))
+        }))
+      }
     }),
     { name: 'favorites' }
   )
