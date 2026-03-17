@@ -24,6 +24,7 @@ type Product = {
   category: string
   brand?: string
   line?: string
+  images?: string[]
   modelKey?: string
 }
 
@@ -651,6 +652,20 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
                               onChange={() => toggleProductSelection(p.slug)}
                             />
                             <span className="product-checkbox-main">
+                              {p.images && p.images.length > 0 && (
+                                <span className="product-checkbox-thumb">
+                                  <img
+                                    src={p.images[0]}
+                                    alt={p.title}
+                                    style={{
+                                      width: 40,
+                                      height: 40,
+                                      objectFit: 'cover',
+                                      borderRadius: 6
+                                    }}
+                                  />
+                                </span>
+                              )}
                               <span className="product-checkbox-title">{p.title}</span>
                               <span className="product-checkbox-meta">
                                 <span>slug: {p.slug}</span>

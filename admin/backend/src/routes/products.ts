@@ -291,9 +291,6 @@ router.put('/:slug', async (req, res) => {
     if (productData.title.length > 500) {
       return res.status(400).json({ error: 'title_too_long' })
     }
-    if (productData.slug.length > 50) {
-      return res.status(400).json({ error: 'slug_too_long' })
-    }
     if (productData.description && productData.description.length > 1000) {
       return res.status(400).json({ error: 'description_too_long' })
     }
@@ -369,6 +366,11 @@ router.put('/:slug', async (req, res) => {
     const oldProduct = allProducts.find(p => p.slug === oldSlug)
     if (!oldProduct) {
       return res.status(404).json({ error: 'product_not_found' })
+    }
+
+    // допускаем legacy-slug > 50 символов, если slug не меняется
+    if (productData.slug.length > 50 && productData.slug !== oldSlug) {
+      return res.status(400).json({ error: 'slug_too_long' })
     }
 
     // проверка уникальности slug (если изменился)
