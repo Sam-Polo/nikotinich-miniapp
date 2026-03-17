@@ -246,6 +246,24 @@ export const api = {
     })
   },
 
+  // модели (дополнительный уровень после линейки)
+  async getModels(filters?: { category_key?: string; brand_key?: string; line_key?: string }) {
+    const sp = new URLSearchParams()
+    if (filters?.category_key) sp.set('category_key', filters.category_key)
+    if (filters?.brand_key) sp.set('brand_key', filters.brand_key)
+    if (filters?.line_key) sp.set('line_key', filters.line_key)
+    const q = sp.toString()
+    const url = q ? `/api/models?${q}` : '/api/models'
+    return fetchWithAuth(url)
+  },
+  async saveModels(models: Array<{ category_key: string; brand_key: string; line_key: string; key: string; title: string; image: string }>) {
+    return fetchWithAuth('/api/models', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ models })
+    })
+  },
+
   // пользователи миниаппа
   async getUsers() {
     return fetchWithAuth('/api/users')

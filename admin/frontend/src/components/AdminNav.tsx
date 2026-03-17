@@ -1,11 +1,12 @@
 // общая навигация админки: на мобильных — только иконки, на ПК — текст
-type AdminPageKey = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
+type AdminPageKey = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'models' | 'content' | 'orders' | 'users' | 'referral'
 
 const NAV_ITEMS: { page: AdminPageKey; label: string; icon: React.ReactNode }[] = [
   { page: 'products', label: 'Товары', icon: <ProductsIcon /> },
   { page: 'categories', label: 'Категории', icon: <CategoriesIcon /> },
   { page: 'brands', label: 'Бренды', icon: <BrandsIcon /> },
   { page: 'lines', label: 'Линейки', icon: <LinesIcon /> },
+  { page: 'models', label: 'Модели', icon: <LinesIcon /> },
   { page: 'content', label: 'Контент', icon: <ContentIcon /> },
   { page: 'promocodes', label: 'Промокоды', icon: <PromocodesIcon /> },
   { page: 'orders', label: 'Заказы', icon: <OrdersIcon /> },

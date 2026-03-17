@@ -7,6 +7,7 @@ import ContentPage from './ContentPage'
 import OrdersPage from './OrdersPage'
 import BrandsPage from './BrandsPage'
 import LinesPage from './LinesPage'
+import ModelsPage from './ModelsPage'
 import UsersPage from './UsersPage'
 import ReferralPage from './ReferralPage'
 import {
@@ -29,7 +30,7 @@ import { CSS } from '@dnd-kit/utilities'
 import AdminNav from './components/AdminNav'
 import './App.css'
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'models' | 'content' | 'orders' | 'users' | 'referral'
 
 export type ProductFiltersParams = { category_key?: string; brand_key?: string; line_key?: string }
 export type OrderFiltersParams = { user_id?: string }
@@ -2674,6 +2675,8 @@ export default function App() {
           <BrandsPage onNavigate={handlePageChange} />
         ) : currentPage === 'lines' ? (
           <LinesPage onNavigate={handlePageChange} />
+        ) : currentPage === 'models' ? (
+          <ModelsPage onNavigate={handlePageChange} />
         ) : currentPage === 'content' ? (
           <ContentPage onNavigate={handlePageChange} />
         ) : currentPage === 'orders' ? (

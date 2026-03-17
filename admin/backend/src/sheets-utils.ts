@@ -25,6 +25,8 @@ export type SheetProduct = {
   line?: string
   strength?: string // легкая | средняя | крепкая
   image_keys?: string[]
+  /** ключ модели (дополнительный уровень после линейки) */
+  modelKey?: string
   // вариативные товары (семейства, вкусы, количество затяжек)
   familyKey?: string
   flavor?: string
@@ -75,6 +77,7 @@ const PRODUCT_SHEET_HEADERS = [
   'brand',
   'line',
   'strength',
+  'model_key',
   'family_key',
   'flavor',
   'puffs'
@@ -257,6 +260,7 @@ export async function appendProductToSheet(
   if (headerIndex.brand !== undefined) row[headerIndex.brand] = product.brand || ''
   if (headerIndex.line !== undefined) row[headerIndex.line] = product.line || ''
   if (headerIndex.strength !== undefined) row[headerIndex.strength] = product.strength || ''
+  if (headerIndex.model_key !== undefined) row[headerIndex.model_key] = product.modelKey || ''
   if (headerIndex.family_key !== undefined) row[headerIndex.family_key] = product.familyKey || ''
   if (headerIndex.flavor !== undefined) row[headerIndex.flavor] = product.flavor || ''
   if (headerIndex.puffs !== undefined) row[headerIndex.puffs] = product.puffs !== undefined && product.puffs !== null ? product.puffs : ''
@@ -317,6 +321,7 @@ export async function updateProductInSheet(
   if (headerIndex.brand !== undefined) row[headerIndex.brand] = product.brand || ''
   if (headerIndex.line !== undefined) row[headerIndex.line] = product.line || ''
   if (headerIndex.strength !== undefined) row[headerIndex.strength] = product.strength || ''
+  if (headerIndex.model_key !== undefined) row[headerIndex.model_key] = product.modelKey || ''
   if (headerIndex.family_key !== undefined) row[headerIndex.family_key] = product.familyKey || ''
   if (headerIndex.flavor !== undefined) row[headerIndex.flavor] = product.flavor || ''
   if (headerIndex.puffs !== undefined) row[headerIndex.puffs] = product.puffs !== undefined && product.puffs !== null ? product.puffs : ''
