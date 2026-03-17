@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { getCategories, getBrands, getLines, getModels, getProducts } from '../api'
 import type { Brand, Line, Product, Model } from '../api'
+import { useUiStore } from '../store/ui'
 import PageHeader from '../components/PageHeader'
 import ProductCard from '../components/ProductCard'
 import BottomSheet from '../components/BottomSheet'
@@ -43,6 +44,7 @@ export default function CategoryPage() {
   const [selectedProductSlug, setSelectedProductSlug] = useState<string | null>(null)
   const [resolvedCategoryTitle, setResolvedCategoryTitle] = useState<string>('')
   const restoredCatalogRef = useRef(false)
+  const setHideBottomNav = useUiStore(s => s.setHideBottomNav)
 
   // восстановление шага/фильтров при возврате из карточки товара (один раз за вход на страницу)
   useEffect(() => {
@@ -193,6 +195,19 @@ export default function CategoryPage() {
       navigate('/')
     }
   }
+
+  // управляем видимостью нижнего навигационного тулбара:
+  // на шагах выбора бренда/линейки/модели скрываем, на товарах — показываем
+  useEffect(() => {
+    if (step === 'products') {
+      setHideBottomNav(false)
+    } else {
+      setHideBottomNav(true)
+    }
+    return () => {
+      setHideBottomNav(false)
+    }
+  }, [step, setHideBottomNav])
 
   return (
     <div className="flex flex-col min-h-full bg-bg-base">

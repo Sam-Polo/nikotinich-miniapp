@@ -5,6 +5,7 @@ import WebApp from '@twa-dev/sdk'
 import { trackVisit, upsertUser, getSettings } from './api'
 import { useUserStore } from './store/user'
 import BottomNav from './components/BottomNav'
+import { useUiStore } from './store/ui'
 import CatalogPage from './pages/CatalogPage'
 import CategoryPage from './pages/CategoryPage'
 import ProductPage from './pages/ProductPage'
@@ -117,16 +118,13 @@ function WithNav({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const hideNavOnPaths = ['/_internal'] // зарезервировано, пока не нужно
   const hideNavOnOrderDetails = location.pathname.startsWith('/order/')
-  const hideNavOnCatalogFilters =
-    location.pathname.startsWith('/catalog/') ||
-    location.pathname.startsWith('/product/') ||
-    location.pathname.startsWith('/checkout')
+  const hideNavByUi = useUiStore(s => s.hideBottomNav)
   const hideNav = hideNavOnPaths.includes(location.pathname) || hideNavOnOrderDetails
 
   return (
     <>
       <PageTransition>{children}</PageTransition>
-      {!hideNav && !hideNavOnCatalogFilters && <BottomNav />}
+      {!hideNav && !hideNavByUi && <BottomNav />}
     </>
   )
 }

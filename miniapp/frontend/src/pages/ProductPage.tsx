@@ -199,9 +199,9 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     getBrands(product.category)
       .then((brands: Brand[]) => {
         const b = brands.find(x => x.key === product.brand)
-        setBrandTitle(b?.title ?? product.brand ?? null)
+        setBrandTitle(b?.title ?? null)
       })
-      .catch(() => setBrandTitle(product.brand ?? null))
+      .catch(() => setBrandTitle(null))
   }, [product?.category, product?.brand])
 
   useEffect(() => {
@@ -209,9 +209,9 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     getLines(product.brand)
       .then((lines: Line[]) => {
         const l = lines.find(x => x.key === product.line)
-        setLineTitle(l?.title ?? product.line ?? null)
+        setLineTitle(l?.title ?? null)
       })
-      .catch(() => setLineTitle(product.line ?? null))
+      .catch(() => setLineTitle(null))
   }, [product?.brand, product?.line])
 
   useEffect(() => {
@@ -222,9 +222,9 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
     getModels(product.category, product.brand, product.line)
       .then((models: Model[]) => {
         const m = models.find(x => x.key === product.modelKey)
-        setModelTitle(m?.title ?? product.modelKey ?? null)
+        setModelTitle(m?.title ?? null)
       })
-      .catch(() => setModelTitle(product.modelKey ?? null))
+      .catch(() => setModelTitle(null))
   }, [product?.category, product?.brand, product?.line, product?.modelKey])
 
 
@@ -611,14 +611,14 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
 
             {/* блок мета-данных без заливки и рамки */}
             <div className="space-y-2 mt-2">
-              {(brandTitle ?? p.brand) && (
-                <Row label="Бренд" value={brandTitle ?? p.brand ?? ''} />
+              {brandTitle && (
+                <Row label="Бренд" value={brandTitle} />
               )}
-              {(lineTitle ?? p.line) && (
-                <Row label="Линейка" value={lineTitle ?? p.line ?? ''} />
+              {lineTitle && (
+                <Row label="Линейка" value={lineTitle} />
               )}
-              {(modelTitle ?? p.modelKey) && (
-                <Row label="Модель" value={modelTitle ?? p.modelKey ?? ''} />
+              {modelTitle && (
+                <Row label="Модель" value={modelTitle} />
               )}
               {p.strength && <Row label="Крепость" value={formatStrength(p.strength)} />}
               {p.article && <Row label="Артикул" value={formatArticleCode(p.article)} />}
