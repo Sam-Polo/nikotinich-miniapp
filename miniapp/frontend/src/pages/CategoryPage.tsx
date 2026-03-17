@@ -463,11 +463,11 @@ export default function CategoryPage() {
       {/* фиксированные кнопки выбора снизу */}
         {step === 'brand' && !loading && brands.length > 0 && (
         <div
-          className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
+          className="fixed left-0 right-0 bg-white px-4 py-4 z-[60]"
             style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           {!selectedBrand ? (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-stretch gap-2">
             <button
                 type="button"
                 className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[15px] font-semibold text-[#B0B5C0]"
@@ -477,20 +477,20 @@ export default function CategoryPage() {
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[15px] font-semibold text-accent"
+                className="text-[15px] font-semibold text-accent text-center"
               >
                 Вернуться в каталог
               </button>
             </div>
           ) : (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-stretch gap-2">
               <Button fullWidth className="text-[15px]" onClick={handleBrandProceed}>
                 Продолжить
               </Button>
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[15px] font-semibold text-accent"
+                className="text-[15px] font-semibold text-accent text-center"
               >
                 Вернуться в каталог
               </button>
@@ -501,11 +501,11 @@ export default function CategoryPage() {
 
         {step === 'line' && !loading && lines.length > 0 && (
         <div
-          className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
+          className="fixed left-0 right-0 bg-white px-4 py-4 z-[60]"
             style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           {!selectedLine ? (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-stretch gap-2">
             <button
                 type="button"
                 className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[15px] font-semibold text-[#B0B5C0]"
@@ -515,20 +515,20 @@ export default function CategoryPage() {
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[15px] font-semibold text-accent"
+                className="text-[15px] font-semibold text-accent text-center"
               >
                 Вернуться в каталог
               </button>
             </div>
           ) : (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-stretch gap-2">
               <Button fullWidth className="text-[15px]" onClick={handleLineProceed}>
                 Продолжить
               </Button>
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[15px] font-semibold text-accent"
+                className="text-[15px] font-semibold text-accent text-center"
               >
                 Вернуться в каталог
               </button>
@@ -539,11 +539,11 @@ export default function CategoryPage() {
 
       {step === 'model' && !loading && models.length > 0 && (
         <div
-          className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
+          className="fixed left-0 right-0 bg-white px-4 py-4 z-[60]"
           style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           {!selectedModel ? (
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-stretch gap-2">
               <button
                 type="button"
                 className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[15px] font-semibold text-[#B0B5C0]"
@@ -553,13 +553,13 @@ export default function CategoryPage() {
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[15px] font-semibold text-accent"
+                className="text-[15px] font-semibold text-accent text-center"
               >
                 Вернуться в каталог
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-stretch gap-2">
               <Button
                 fullWidth
                 className="text-[15px]"
@@ -573,7 +573,7 @@ export default function CategoryPage() {
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="mt-2 text-[15px] font-semibold text-accent"
+                className="text-[15px] font-semibold text-accent text-center"
               >
                 Вернуться в каталог
               </button>

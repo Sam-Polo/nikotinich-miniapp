@@ -43,7 +43,6 @@ export default function OrderDetailsPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const user = useUserStore(s => s.user)
   const addItem = useCartStore(s => s.addItem)
-  const clearCart = useCartStore(s => s.clearCart)
 
   const [loading, setLoading] = useState(true)
   const [order, setOrder] = useState<Order | null>(null)
@@ -154,16 +153,22 @@ export default function OrderDetailsPage() {
         .filter((x): x is { item: OrderItem; product: Product } => !!x.product)
 
       if (!matched.length) {
-        toast.error('Товары из заказа недоступны')
+        toast.error('Товары недоступны')
         return
       }
 
-      clearCart()
+      const totalItems = order.items.length
+      const addedCount = matched.length
+
       matched.forEach(({ product, item }) => {
         addItem(product, item.qty || 1)
       })
 
-      toast.success('Заказ добавлен в корзину')
+      if (addedCount === totalItems) {
+        toast.success('Товары добавлены')
+      } else {
+        toast.success('Часть товаров добавлена')
+      }
       navigate('/cart')
     } catch {
       toast.error('Не удалось повторить заказ')
