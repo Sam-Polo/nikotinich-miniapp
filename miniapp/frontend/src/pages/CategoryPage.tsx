@@ -464,7 +464,7 @@ export default function CategoryPage() {
         {step === 'brand' && !loading && brands.length > 0 && (
         <div
           className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
-            style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 8px)' }}
+            style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           {!selectedBrand ? (
           <div className="flex flex-col items-center">
@@ -502,7 +502,7 @@ export default function CategoryPage() {
         {step === 'line' && !loading && lines.length > 0 && (
         <div
           className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
-            style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 8px)' }}
+            style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           {!selectedLine ? (
           <div className="flex flex-col items-center">
@@ -540,7 +540,7 @@ export default function CategoryPage() {
       {step === 'model' && !loading && models.length > 0 && (
         <div
           className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
-          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 8px)' }}
+          style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           {!selectedModel ? (
             <div className="flex flex-col items-center">

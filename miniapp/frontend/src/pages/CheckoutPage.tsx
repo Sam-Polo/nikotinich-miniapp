@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cart'
 import { useUserStore } from '../store/user'
+import { useUiStore } from '../store/ui'
 import { createOrder, validatePromo } from '../api'
 import PageHeader from '../components/PageHeader'
 import BottomSheet from '../components/BottomSheet'
@@ -106,6 +107,7 @@ export default function CheckoutPage() {
   const [promoError, setPromoError] = useState('')
   const [promoLoading, setPromoLoading] = useState(false)
   const [comment, setComment] = useState('')
+  const setHideBottomNav = useUiStore(s => s.setHideBottomNav)
 
   const deliveryFee = settings?.deliveryFee ?? 300
   const freeFrom = settings?.freeDeliveryFrom ?? 3500
@@ -132,6 +134,15 @@ export default function CheckoutPage() {
     setEmail(prev => prev || user.email || '')
     setPhone(prev => prev || user.phone || '')
   }, [user])
+
+  // на экране оформления заказа скрываем нижний тулбар и
+  // опускаем кнопку «Сформировать заказ» к самому низу
+  useEffect(() => {
+    setHideBottomNav(true)
+    return () => {
+      setHideBottomNav(false)
+    }
+  }, [setHideBottomNav])
 
   function openDataSheet() {
     setDraftName(name)
@@ -235,7 +246,7 @@ export default function CheckoutPage() {
     <div className="flex flex-col min-h-full bg-bg-base">
       <PageHeader title="Никотиныч" subtitle="mini app" showBack />
 
-      <div className="flex-1 px-4 pt-4 pb-[190px] overflow-y-auto">
+      <div className="flex-1 px-4 pt-4 pb-24 overflow-y-auto">
         <section className="space-y-6">
           <div>
             <h2 className="text-[20px] font-bold leading-[120%] text-[#343434] mb-3">Получатель</h2>
@@ -401,7 +412,7 @@ export default function CheckoutPage() {
         </section>
       </div>
 
-      <div className="fixed left-0 right-0 px-4 z-[60]" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 6px)' }}>
+      <div className="fixed left-0 right-0 px-4 z-[60]" style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <button
           type="button"
           disabled={loading}
