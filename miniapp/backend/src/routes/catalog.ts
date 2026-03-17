@@ -128,7 +128,8 @@ function parseProductRows(rows: string[][], categoryName: string) {
     const stock = typeof stockNum === 'number' && !Number.isNaN(stockNum) ? stockNum : undefined
     if (stock !== undefined && stock <= 0) continue
 
-    // дополнительные опциональные поля для вариативных товаров
+    // дополнительные опциональные поля для вариативных товаров и моделей
+    const modelKey = get('model_key') || undefined
     const familyKey = get('family_key') || undefined
     const flavor = get('flavor') || undefined
     const puffsRaw = get('puffs')
@@ -148,6 +149,7 @@ function parseProductRows(rows: string[][], categoryName: string) {
       strength: get('strength') || undefined,
       article: articleIdx !== -1 ? String(r[articleIdx] ?? '').trim() || undefined : undefined,
       stock,
+      modelKey,
       familyKey,
       flavor,
       puffs
@@ -210,6 +212,48 @@ router.get('/products', async (req, res) => {
     res.json(products)
   } catch (e: any) {
     logger.error({ error: e?.message }, 'ошибка чтения товаров')
+    res.status(500).json({ error: 'server_error' })
+  }
+})
+
+// GET /api/catalog/models?category_key=&brand_key=&line_key= — модели по линейке
+router.get('/models', async (req, res) => {
+  const categoryKey = String(req.query.category_key || '').trim()
+  const brandKey = String(req.query.brand_key || '').trim()
+  const lineKey = String(req.query.line_key || '').trim()
+
+  try {
+    const rows = await readSheet(SHEET_ID, 'models!A1:G500')
+    if (rows.length < 2) return res.json([])
+
+    const header = rows[0].map((h: string) => h.trim().toLowerCase())
+    const idx = (n: string) => header.indexOf(n)
+
+    let models = rows.slice(1)
+      .filter(r => r && r.length > 0)
+      .map(r => ({
+        category_key: String(r[idx('category_key')] || '').trim(),
+        brand_key: String(r[idx('brand_key')] || '').trim(),
+        line_key: String(r[idx('line_key')] || '').trim(),
+        key: String(r[idx('key')] || '').trim(),
+        title: String(r[idx('title')] || '').trim(),
+        image: String(r[idx('image')] || '').trim()
+      }))
+      .filter(m => m.category_key && m.brand_key && m.line_key && m.key)
+
+    if (categoryKey) {
+      models = models.filter(m => m.category_key === categoryKey)
+    }
+    if (brandKey) {
+      models = models.filter(m => m.brand_key === brandKey)
+    }
+    if (lineKey) {
+      models = models.filter(m => m.line_key === lineKey)
+    }
+
+    res.json(models)
+  } catch (e: any) {
+    logger.error({ error: e?.message, categoryKey, brandKey, lineKey }, 'ошибка чтения моделей')
     res.status(500).json({ error: 'server_error' })
   }
 })

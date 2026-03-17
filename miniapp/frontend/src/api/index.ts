@@ -19,6 +19,15 @@ export type Category = { key: string; title: string; image: string }
 export type Brand = { category_key: string; key: string; title: string; image: string }
 export type Line = { brand_key: string; key: string; title: string; image: string }
 
+export type Model = {
+  category_key: string
+  brand_key: string
+  line_key: string
+  key: string
+  title: string
+  image: string
+}
+
 export type Product = {
   slug: string
   title: string
@@ -39,6 +48,8 @@ export type Product = {
   flavor?: string
   /** количество затяжек для варианта (если применимо) */
   puffs?: number
+  /** ключ модели, если товар привязан к модели */
+  modelKey?: string
 }
 
 export type ContentItem = {
@@ -114,6 +125,12 @@ export const getBrands = (category_key: string) =>
   request<Brand[]>(`/catalog/brands?category_key=${encodeURIComponent(category_key)}`)
 export const getLines = (brand_key: string) =>
   request<Line[]>(`/catalog/lines?brand_key=${encodeURIComponent(brand_key)}`)
+export const getModels = (category_key: string, brand_key: string, line_key: string) =>
+  request<Model[]>(
+    `/catalog/models?category_key=${encodeURIComponent(category_key)}&brand_key=${encodeURIComponent(
+      brand_key
+    )}&line_key=${encodeURIComponent(line_key)}`
+  )
 export const getProducts = (params: { category?: string; brand?: string; line?: string; search?: string; slugs?: string[] } = {}) => {
   const qs = new URLSearchParams()
   if (params.category) qs.set('category', params.category)

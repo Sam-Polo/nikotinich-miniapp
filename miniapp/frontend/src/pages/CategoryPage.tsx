@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { getCategories, getBrands, getLines, getProducts } from '../api'
-import type { Brand, Line, Product } from '../api'
+import { getCategories, getBrands, getLines, getModels, getProducts } from '../api'
+import type { Brand, Line, Product, Model } from '../api'
 import PageHeader from '../components/PageHeader'
 import ProductCard from '../components/ProductCard'
 import BottomSheet from '../components/BottomSheet'
@@ -11,9 +11,14 @@ import { ProductGridSkeleton, BrandListSkeleton, LineListSkeleton, Skeleton } fr
 import ProductPage from './ProductPage'
 
 // шаги выбора фильтра
-type Step = 'brand' | 'line' | 'products'
+type Step = 'brand' | 'line' | 'model' | 'products'
 
-type CatalogState = { step?: Step; selectedBrand?: string | null; selectedLine?: string | null }
+type CatalogState = {
+  step?: Step
+  selectedBrand?: string | null
+  selectedLine?: string | null
+  selectedModel?: string | null
+}
 
 export default function CategoryPage() {
   const { categoryKey = '' } = useParams<{ categoryKey: string }>()
@@ -24,11 +29,13 @@ export default function CategoryPage() {
   const [brands, setBrands] = useState<Brand[]>([])
   const [lines, setLines] = useState<Line[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [models, setModels] = useState<Model[]>([])
 
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [selectedLine, setSelectedLine] = useState<string | null>(null)
   const [step, setStep] = useState<Step>('brand')
   const [brandConfirmed, setBrandConfirmed] = useState(false)
+  const [selectedModel, setSelectedModel] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [brandsSheet, setBrandsSheet] = useState(false)
@@ -51,9 +58,13 @@ export default function CategoryPage() {
     if (catalogState.selectedBrand != null) setSelectedBrand(catalogState.selectedBrand)
     if (catalogState.selectedLine != null) setSelectedLine(catalogState.selectedLine)
     if (catalogState.step === 'products') {
-      loadProducts(catalogState.selectedBrand ?? undefined, catalogState.selectedLine ?? undefined)
+      loadProducts(
+        catalogState.selectedBrand ?? undefined,
+        catalogState.selectedLine ?? undefined,
+        catalogState.selectedModel ?? undefined
+      )
     }
-  }, [categoryKey, catalogState?.step, catalogState?.selectedBrand, catalogState?.selectedLine])
+  }, [categoryKey, catalogState?.step, catalogState?.selectedBrand, catalogState?.selectedLine, catalogState?.selectedModel])
 
   // название категории по ключу (с API)
   useEffect(() => {
@@ -96,12 +107,21 @@ export default function CategoryPage() {
       .catch(() => {})
   }, [selectedBrand, brandConfirmed])
 
-  function loadProducts(brand?: string, line?: string) {
+  function loadProducts(brand?: string, line?: string, modelKey?: string) {
     setLoading(true)
     getProducts({ category: categoryKey, brand, line })
-      .then(setProducts)
+      .then((list) => {
+        if (modelKey) {
+          setProducts(list.filter(p => p.modelKey === modelKey))
+        } else {
+          setProducts(list)
+        }
+      })
       .catch(() => {})
-      .finally(() => { setLoading(false); setStep('products') })
+      .finally(() => {
+        setLoading(false)
+        setStep('products')
+      })
   }
 
   function handleBrandSelect(key: string) {
@@ -113,6 +133,7 @@ export default function CategoryPage() {
 
   function handleLineSelect(key: string) {
     setSelectedLine(key)
+    setSelectedModel(null)
   }
 
   function handleBrandProceed() {
@@ -128,19 +149,43 @@ export default function CategoryPage() {
 
   function handleLineProceed() {
     if (!selectedBrand || !selectedLine) return
-    loadProducts(selectedBrand, selectedLine)
+
+    setLoading(true)
+    getModels(categoryKey, selectedBrand, selectedLine)
+      .then((ms) => {
+        setModels(ms)
+        if (ms.length > 0) {
+          setStep('model')
+          setLoading(false)
+        } else {
+          loadProducts(selectedBrand, selectedLine)
+        }
+      })
+      .catch(() => {
+        // если не смогли получить модели — просто покажем товары линейки
+        loadProducts(selectedBrand, selectedLine)
+      })
   }
 
   const brandTitle = brands.find(b => b.key === selectedBrand)?.title
   const lineTitle = lines.find(l => l.key === selectedLine)?.title
+  const modelTitle = models.find(m => m.key === selectedModel)?.title
 
   const showHeader = !brandsSheet && !linesSheet
 
-  // «Назад» — на шаг назад по цепочке: товары → линейка/бренд → бренд → главная
+  // «Назад» — на шаг назад по цепочке: товары → модель → линейка/бренд → бренд → главная
   function handleBack() {
     if (step === 'products') {
+      if (models.length > 0 && selectedModel) {
+        setStep('model')
+        setProducts([])
+        return
+      }
       setStep(lines.length > 0 ? 'line' : 'brand')
       setProducts([])
+    } else if (step === 'model') {
+      setStep('line')
+      setSelectedModel(null)
     } else if (step === 'line') {
       setStep('brand')
       setSelectedLine(null)
@@ -159,7 +204,7 @@ export default function CategoryPage() {
 
       <div className="flex-1 flex flex-col min-h-0 px-4 pt-4 pb-36">
         {/* хлебные крошки — только на экране товаров */}
-        {step === 'products' && (brandTitle || lineTitle) && (
+        {step === 'products' && (brandTitle || lineTitle || modelTitle) && (
           <div className="flex items-center gap-1 mb-3">
             {brandTitle && (
               <button
@@ -169,7 +214,7 @@ export default function CategoryPage() {
                 {brandTitle}
               </button>
             )}
-            {brandTitle && lineTitle && <span className="text-text-secondary text-[13px]">/</span>}
+            {(brandTitle && lineTitle) && <span className="text-text-secondary text-[13px]">/</span>}
             {lineTitle && (
               <button
                 onClick={() => { setStep('line'); setLinesSheet(false) }}
@@ -177,6 +222,10 @@ export default function CategoryPage() {
               >
                 {lineTitle}
               </button>
+            )}
+            {modelTitle && <span className="text-text-secondary text-[13px]">/</span>}
+            {modelTitle && (
+              <span className="text-accent text-[13px] font-medium">{modelTitle}</span>
             )}
           </div>
         )}
@@ -287,10 +336,57 @@ export default function CategoryPage() {
           </div>
         )}
 
+        {/* модели */}
+        {step === 'model' && !loading && models.length === 0 && (
+          <div key="model-empty" className="animate-step-in">
+            <h1 className="text-[24px] font-bold text-text-primary mb-4">Модели не найдены</h1>
+          </div>
+        )}
+        {step === 'model' && loading && (
+          <div key="model-loading-products" className="animate-step-in">
+            <h1 className="text-[24px] font-bold text-text-primary mb-4">
+              {modelTitle || lineTitle || brandTitle || resolvedCategoryTitle}
+            </h1>
+            <ProductGridSkeleton />
+          </div>
+        )}
+        {step === 'model' && !loading && models.length > 0 && (
+          <div key="model" className="animate-step-in">
+            <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите модель</h1>
+            <div className="grid grid-cols-1 gap-0">
+              {models.map((m, i) => (
+                <button
+                  key={m.key}
+                  onClick={() => setSelectedModel(m.key)}
+                  className="animate-stagger-in bg-card-bg rounded-card overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
+                  style={{ ['--stagger-i' as string]: `${i * 40}ms` }}
+                >
+                  <div className="flex items-center gap-4 px-4 py-3">
+                    <div
+                      className={`w-16 h-16 rounded-[10px] bg-[#F8F8F8] flex-shrink-0 overflow-hidden ${
+                        selectedModel === m.key ? 'ring-2 ring-accent' : ''
+                      }`}
+                    >
+                      {m.image ? (
+                        <img src={m.image} alt={m.title} className="w-full h-full object-contain p-1 mix-blend-multiply" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-text-secondary text-[11px]">
+                          Нет фото
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[16px] font-medium text-text-primary flex-1">{m.title}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {step === 'products' && (
           <div key="products" className="animate-step-in">
             <h1 className="text-[24px] font-bold text-text-primary mb-4">
-              {lineTitle || brandTitle || resolvedCategoryTitle}
+              {modelTitle || lineTitle || brandTitle || resolvedCategoryTitle}
             </h1>
 
             {loading && <ProductGridSkeleton />}
@@ -462,6 +558,51 @@ export default function CategoryPage() {
           ) : (
           <div className="flex flex-col items-center">
               <Button fullWidth className="text-[15px]" onClick={handleLineProceed}>
+                Продолжить
+              </Button>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="mt-2 text-[15px] font-semibold text-accent"
+              >
+                Вернуться в каталог
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {step === 'model' && !loading && models.length > 0 && (
+        <div
+          className="fixed left-0 right-0 bg-white px-4 py-3 z-[60]"
+          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 8px)' }}
+        >
+          {!selectedModel ? (
+            <div className="flex flex-col items-center">
+              <button
+                type="button"
+                className="w-full rounded-[999px] bg-[#F1F2F5] py-[14px] text-[15px] font-semibold text-[#B0B5C0]"
+              >
+                Выберите модель
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="mt-2 text-[15px] font-semibold text-accent"
+              >
+                Вернуться в каталог
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <Button
+                fullWidth
+                className="text-[15px]"
+                onClick={() => {
+                  if (!selectedBrand || !selectedLine || !selectedModel) return
+                  loadProducts(selectedBrand, selectedLine, selectedModel)
+                }}
+              >
                 Продолжить
               </Button>
               <button
