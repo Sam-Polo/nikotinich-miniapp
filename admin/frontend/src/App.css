@@ -2896,6 +2896,8 @@
   gap: 0;
   margin: 0;
   justify-self: start;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .nav-btn {
@@ -3891,14 +3893,32 @@
    МОБИЛЬНАЯ АДАПТАЦИЯ — ДОПОЛНЕНИЯ
    ============================================================ */
 
-/* навигация: горизонтальный скролл без переноса */
+/* навигация: горизонтальный скролл без переноса
+   на мобильных скроллбар скрываем, на десктопе — показываем */
 .header-nav {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
   flex-wrap: nowrap !important;
 }
-.header-nav::-webkit-scrollbar { display: none; }
+
+.header-nav::-webkit-scrollbar {
+  height: 6px;
+}
+
+.header-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.header-nav::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+@media (max-width: 900px) {
+  .header-nav::-webkit-scrollbar {
+    display: none;
+  }
+}
 
 @media (max-width: 768px) {
   /* таблица заказов — кнопка удаления в карточном виде */
