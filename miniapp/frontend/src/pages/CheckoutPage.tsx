@@ -412,7 +412,10 @@ export default function CheckoutPage() {
         </section>
       </div>
 
-      <div className="fixed left-0 right-0 px-4 z-[60]" style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div
+        className="fixed left-0 right-0 px-4 z-[60]"
+        style={{ bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}
+      >
         <button
           type="button"
           disabled={loading}
