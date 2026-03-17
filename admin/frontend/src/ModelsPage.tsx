@@ -75,6 +75,7 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
   const [products, setProducts] = useState<Product[]>([])
   const [productSearch, setProductSearch] = useState('')
   const [selectedProductSlugs, setSelectedProductSlugs] = useState<Set<string>>(new Set())
+  const [modalProductsLoading, setModalProductsLoading] = useState(false)
 
   const brandsInCategory = selectedCategoryKey
     ? brands.filter((b) => b.category_key.toLowerCase() === selectedCategoryKey.toLowerCase())
@@ -136,6 +137,12 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
 
   const showToast = (message: string, type: 'success' | 'error') => setToast({ message, type })
 
+  useEffect(() => {
+    if (!toast) return
+    const timer = window.setTimeout(() => setToast(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [toast])
+
   const handleLogout = () => {
     removeToken()
     window.location.reload()
@@ -190,8 +197,13 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
       title: m.title,
       image: m.image || ''
     })
-    await loadProductsForModel(m)
+    setSelectedProductSlugs(new Set())
+    setProducts([])
+    setProductSearch('')
     setIsModalOpen(true)
+    setModalProductsLoading(true)
+    await loadProductsForModel(m)
+    setModalProductsLoading(false)
   }
 
   const handleDeleteClick = (m: Model) => setDeleteConfirm(m)
@@ -276,12 +288,13 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
       ]
     }
 
-    await saveModels(next)
-
-    // после сохранения меты — сохраним привязку товаров (если уже загружены)
-    await saveProductsForModel(normalizedKey, category_key, brand_key, line_key)
-
-    setIsModalOpen(false)
+    try {
+      await saveModels(next)
+      // после сохранения меты — сохраним привязку товаров (если уже загружены)
+      await saveProductsForModel(normalizedKey, category_key, brand_key, line_key)
+    } finally {
+      setIsModalOpen(false)
+    }
   }
 
   const loadProductsForModel = async (m: Model) => {
@@ -632,7 +645,9 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
                       />
                     </label>
                   </div>
-                  {products.length === 0 ? (
+                  {modalProductsLoading ? (
+                    <div className="loading">Загрузка товаров...</div>
+                  ) : products.length === 0 ? (
                     <div className="empty-state">
                       <p>Товары для этой линейки не найдены.</p>
                     </div>

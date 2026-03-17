@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { getProduct, getBrands, getLines, getProducts } from '../api'
-import type { Product, Brand, Line } from '../api'
+import { getProduct, getBrands, getLines, getProducts, getModels } from '../api'
+import type { Product, Brand, Line, Model } from '../api'
 import { useCartStore } from '../store/cart'
 import { useFavoritesStore } from '../store/favorites'
 import PageHeader from '../components/PageHeader'
@@ -91,6 +91,7 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
   const [expanded, setExpanded] = useState(false)
   const [brandTitle, setBrandTitle] = useState<string | null>(null)
   const [lineTitle, setLineTitle] = useState<string | null>(null)
+  const [modelTitle, setModelTitle] = useState<string | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [familyVariants, setFamilyVariants] = useState<Product[]>([])
   const [sheetPresented, setSheetPresented] = useState(false)
@@ -212,6 +213,19 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
       })
       .catch(() => setLineTitle(product.line ?? null))
   }, [product?.brand, product?.line])
+
+  useEffect(() => {
+    if (!product?.category || !product?.brand || !product?.line || !product?.modelKey) {
+      setModelTitle(null)
+      return
+    }
+    getModels(product.category, product.brand, product.line)
+      .then((models: Model[]) => {
+        const m = models.find(x => x.key === product.modelKey)
+        setModelTitle(m?.title ?? product.modelKey ?? null)
+      })
+      .catch(() => setModelTitle(product.modelKey ?? null))
+  }, [product?.category, product?.brand, product?.line, product?.modelKey])
 
 
 
@@ -602,6 +616,9 @@ export default function ProductPage({ embedded, slugProp, onClose, onVariantChan
               )}
               {(lineTitle ?? p.line) && (
                 <Row label="Линейка" value={lineTitle ?? p.line ?? ''} />
+              )}
+              {(modelTitle ?? p.modelKey) && (
+                <Row label="Модель" value={modelTitle ?? p.modelKey ?? ''} />
               )}
               {p.strength && <Row label="Крепость" value={formatStrength(p.strength)} />}
               {p.article && <Row label="Артикул" value={formatArticleCode(p.article)} />}

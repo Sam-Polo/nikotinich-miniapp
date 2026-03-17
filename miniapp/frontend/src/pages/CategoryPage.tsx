@@ -7,7 +7,7 @@ import ProductCard from '../components/ProductCard'
 import BottomSheet from '../components/BottomSheet'
 import SelectionList from '../components/SelectionList'
 import Button from '../components/Button'
-import { ProductGridSkeleton, BrandListSkeleton, LineListSkeleton, Skeleton } from '../components/Skeleton'
+import { ProductGridSkeleton, BrandListSkeleton, LineListSkeleton } from '../components/Skeleton'
 import ProductPage from './ProductPage'
 
 // шаги выбора фильтра
@@ -42,7 +42,6 @@ export default function CategoryPage() {
   const [linesSheet, setLinesSheet] = useState(false)
   const [selectedProductSlug, setSelectedProductSlug] = useState<string | null>(null)
   const [resolvedCategoryTitle, setResolvedCategoryTitle] = useState<string>('')
-  const [categoriesLoaded, setCategoriesLoaded] = useState(false)
   const restoredCatalogRef = useRef(false)
 
   // восстановление шага/фильтров при возврате из карточки товара (один раз за вход на страницу)
@@ -73,9 +72,8 @@ export default function CategoryPage() {
       .then(cats => {
         const cat = cats.find(c => c.key === categoryKey)
         setResolvedCategoryTitle(cat?.title ?? categoryKey.replace(/_/g, ' '))
-        setCategoriesLoaded(true)
       })
-      .catch(() => setCategoriesLoaded(true))
+      .catch(() => {})
   }, [categoryKey])
 
   // загрузка брендов при открытии категории
@@ -203,48 +201,17 @@ export default function CategoryPage() {
       )}
 
       <div className="flex-1 flex flex-col min-h-0 px-4 pt-4 pb-36">
-        {/* хлебные крошки — только на экране товаров */}
-        {step === 'products' && (brandTitle || lineTitle || modelTitle) && (
-          <div className="flex items-center gap-1 mb-3">
-            {brandTitle && (
-              <button
-                onClick={() => { setStep('brand'); setBrandsSheet(false); setLinesSheet(false); setBrandConfirmed(false) }}
-                className="text-accent text-[13px]"
-              >
-                {brandTitle}
-              </button>
-            )}
-            {(brandTitle && lineTitle) && <span className="text-text-secondary text-[13px]">/</span>}
-            {lineTitle && (
-              <button
-                onClick={() => { setStep('line'); setLinesSheet(false) }}
-                className="text-accent text-[13px]"
-              >
-                {lineTitle}
-              </button>
-            )}
-            {modelTitle && <span className="text-text-secondary text-[13px]">/</span>}
-            {modelTitle && (
-              <span className="text-accent text-[13px] font-medium">{modelTitle}</span>
-            )}
-          </div>
-        )}
+        {/* на шагах выбора/товаров отдельные цепочки не показываем — только заголовки ниже */}
 
         {/* бренды — скелетон при загрузке, иначе список */}
         {step === 'brand' && loading && (
           <div key="brand-skeleton" className="animate-step-in">
-            <p className="text-accent text-[13px] font-medium">
-              {categoriesLoaded ? resolvedCategoryTitle : <Skeleton className="h-4 w-24 rounded inline-block align-middle" />}
-            </p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
             <BrandListSkeleton />
           </div>
         )}
         {step === 'brand' && !loading && brands.length > 0 && (
           <div key="brand" className="animate-step-in">
-            <p className="text-accent text-[13px] font-medium">
-              {categoriesLoaded ? resolvedCategoryTitle : <Skeleton className="h-4 w-24 rounded inline-block align-middle" />}
-            </p>
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите бренд</h1>
             <div className="grid grid-cols-1 gap-0">
               {brands.map((b, i) => (
@@ -274,22 +241,7 @@ export default function CategoryPage() {
           </div>
         )}
 
-        {/* хлебные крошки на шаге линейки: Категория / Бренд (названия, не ключи) */}
-        {step === 'line' && (brandTitle || (categoriesLoaded && resolvedCategoryTitle)) && (
-          <div className="flex items-center gap-1 mb-3">
-            {categoriesLoaded && resolvedCategoryTitle ? (
-              <span className="text-accent text-[13px] font-medium">{resolvedCategoryTitle}</span>
-            ) : !categoriesLoaded ? (
-              <Skeleton className="h-4 w-24 rounded inline-block align-middle" />
-            ) : null}
-            {brandTitle && (categoriesLoaded && resolvedCategoryTitle || !categoriesLoaded) && (
-              <span className="text-text-secondary text-[13px]">/</span>
-            )}
-            {brandTitle && (
-              <span className="text-accent text-[13px] font-medium">{brandTitle}</span>
-            )}
-          </div>
-        )}
+        {/* шаг линейки — без дополнительной цепочки сверху, только заголовок */}
 
         {/* линейки — скелетон только пока ждём загрузку линеек (не при загрузке товаров) */}
         {step === 'line' && !loading && lines.length === 0 && selectedBrand && (
@@ -337,17 +289,15 @@ export default function CategoryPage() {
         )}
 
         {/* модели */}
+        {step === 'model' && loading && (
+          <div key="model-loading" className="animate-step-in">
+            <h1 className="text-[24px] font-bold text-text-primary mb-4">Выберите модель</h1>
+            <LineListSkeleton />
+          </div>
+        )}
         {step === 'model' && !loading && models.length === 0 && (
           <div key="model-empty" className="animate-step-in">
             <h1 className="text-[24px] font-bold text-text-primary mb-4">Модели не найдены</h1>
-          </div>
-        )}
-        {step === 'model' && loading && (
-          <div key="model-loading-products" className="animate-step-in">
-            <h1 className="text-[24px] font-bold text-text-primary mb-4">
-              {modelTitle || lineTitle || brandTitle || resolvedCategoryTitle}
-            </h1>
-            <ProductGridSkeleton />
           </div>
         )}
         {step === 'model' && !loading && models.length > 0 && (
