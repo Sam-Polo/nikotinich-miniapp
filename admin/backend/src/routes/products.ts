@@ -10,10 +10,9 @@ import {
   reorderProductsInSheet
 } from '../sheets-utils.js'
 import { fetchCategoriesFromSheet } from '../categories-utils.js'
-import pino from 'pino'
+import { logger } from '../logger.js'
 import axios from 'axios'
 
-const logger = pino()
 const router = express.Router()
 
 // артикул в таблице хранится как число (100, 1) — нормализуем к "0100", "0001" для сравнения и записи

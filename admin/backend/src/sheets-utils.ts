@@ -2,9 +2,7 @@ import { google } from 'googleapis'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import pino from 'pino'
-
-const logger = pino()
+import { logger } from './logger.js'
 
 // корень backend (admin/backend) — для разрешения относительных путей из .env независимо от cwd
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -82,6 +80,48 @@ const PRODUCT_SHEET_HEADERS = [
   'puffs'
 ]
 
+function normalizeHeader(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+async function ensureProductSheetHeaders(
+  sheets: any,
+  sheetId: string,
+  sheetName: string
+): Promise<void> {
+  // читаем первую строку как заголовки (не больше Z)
+  const range = `${sheetName}!A1:Z1`
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range })
+  const rows = res.data.values ?? []
+  const currentRaw: string[] = (rows[0] ?? []).map((v: any) => String(v ?? '').trim())
+
+  // если заголовков нет — создаём стандартные
+  if (currentRaw.length === 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [PRODUCT_SHEET_HEADERS] }
+    })
+    logger.info({ sheetName }, 'заголовки листа категории созданы')
+    return
+  }
+
+  const existing = new Set(currentRaw.map(normalizeHeader).filter(Boolean))
+  const missing = PRODUCT_SHEET_HEADERS.filter((h) => !existing.has(h))
+  if (missing.length === 0) return
+
+  // не ломаем уже существующие колонки/порядок — просто дописываем недостающие
+  const nextHeaders = [...currentRaw, ...missing]
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [nextHeaders] }
+  })
+  logger.info({ sheetName, missing }, 'добавлены недостающие колонки в лист категории')
+}
+
 // проверка/создание листа товаров для категории (с заголовками)
 export async function ensureProductSheet(
   auth: any,
@@ -113,7 +153,11 @@ export async function ensureProductSheet(
       }
     })
     logger.info({ sheetName }, 'лист категории создан')
+    return
   }
+
+  // лист уже существует — убедимся, что в заголовках есть все нужные колонки
+  await ensureProductSheetHeaders(sheets, sheetId, sheetName)
 }
 
 // получение структуры заголовков листа
@@ -128,16 +172,19 @@ export async function getSheetHeaders(
   const range = `${normalizedSheetName}!A1:Z1`
   const res = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range })
   const rows = res.data.values ?? []
-  
-  if (rows.length === 0) {
-    // если заголовков нет, создаем стандартные
-    const defaultHeaders = ['id', ...PRODUCT_SHEET_HEADERS]
-    const headerIndex: Record<string, number> = {}
-    defaultHeaders.forEach((h, i) => { headerIndex[h] = i })
-    return { headers: defaultHeaders, headerIndex }
+
+  // если заголовков нет/пустые — создаём/мигрируем и перечитываем
+  if (rows.length === 0 || (rows[0] ?? []).length === 0) {
+    await ensureProductSheetHeaders(sheets, sheetId, normalizedSheetName)
+    const res2 = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range })
+    const rows2 = res2.data.values ?? []
+    const headers2 = (rows2[0] ?? []).map((h: string) => h.trim().toLowerCase())
+    const headerIndex2: Record<string, number> = {}
+    headers2.forEach((h, i) => { headerIndex2[h] = i })
+    return { headers: headers2, headerIndex: headerIndex2 }
   }
-  
-  const headers = rows[0].map((h: string) => h.trim().toLowerCase())
+
+  const headers = (rows[0] ?? []).map((h: string) => h.trim().toLowerCase())
   const headerIndex: Record<string, number> = {}
   headers.forEach((h, i) => { headerIndex[h] = i })
   
@@ -185,6 +232,9 @@ export async function appendProductToSheet(
   
   // нормализуем имя листа
   const normalizedSheetName = normalizeSheetName(sheetName)
+
+  // лист мог существовать со старым набором колонок — мигрируем заголовки
+  await ensureProductSheet(auth, sheetId, normalizedSheetName)
   
   // получаем заголовки
   const { headers, headerIndex } = await getSheetHeaders(auth, sheetId, normalizedSheetName)
@@ -236,6 +286,9 @@ export async function updateProductInSheet(
   
   // нормализуем имя листа
   const normalizedSheetName = normalizeSheetName(sheetName)
+
+  // лист мог существовать со старым набором колонок — мигрируем заголовки
+  await ensureProductSheet(auth, sheetId, normalizedSheetName)
   
   // находим строку товара
   const rowNumber = await findProductRow(auth, sheetId, normalizedSheetName, oldSlug)

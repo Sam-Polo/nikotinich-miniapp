@@ -1,8 +1,6 @@
 import { google } from 'googleapis'
 import { getAuthFromEnv, ensureProductSheet } from './sheets-utils.js'
-import pino from 'pino'
-
-const logger = pino()
+import { logger } from './logger.js'
 
 export type Category = {
   key: string

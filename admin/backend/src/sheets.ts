@@ -2,9 +2,7 @@ import { google } from 'googleapis'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import pino from 'pino'
-
-const logger = pino()
+import { logger } from './logger.js'
 
 // корень backend (admin/backend) — для разрешения относительных путей из .env независимо от cwd
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
