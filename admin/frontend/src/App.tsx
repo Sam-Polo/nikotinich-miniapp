@@ -1772,6 +1772,14 @@ function ProductFormModal({
       newErrors.categories = 'Выберите категорию'
     }
 
+    // обязательный бренд и линейка для товаров
+    if (!formData.brand?.trim()) {
+      newErrors.brand = 'Выберите бренд'
+    }
+    if (!formData.line?.trim()) {
+      newErrors.line = 'Выберите линейку'
+    }
+
     if (!formData.price_rub || formData.price_rub <= 0) {
       newErrors.price_rub = 'Цена должна быть больше 0'
     }
@@ -2136,31 +2144,51 @@ function ProductFormModal({
 
           <div className="form-row">
             <div className="form-group">
-              <label>Бренд</label>
+              <label>Бренд *</label>
               <select
                 value={formData.brand || ''}
                 onChange={(e) => {
                   const v = e.target.value
                   setFormData((prev) => ({ ...prev, brand: v, line: '' }))
+                  if (errors.brand) {
+                    setErrors(prev => {
+                      const next = { ...prev }
+                      delete next.brand
+                      return next
+                    })
+                  }
                 }}
+                className={errors.brand ? 'has-error' : ''}
               >
                 <option value="">— Не выбран —</option>
                 {brandsForForm.map((b) => (
                   <option key={b.key} value={b.key}>{b.title}</option>
                 ))}
               </select>
+              {errors.brand && <span className="form-error">{errors.brand}</span>}
             </div>
             <div className="form-group">
-              <label>Линейка</label>
+              <label>Линейка *</label>
               <select
                 value={formData.line || ''}
-                onChange={(e) => handleChange('line', e.target.value)}
+                onChange={(e) => {
+                  handleChange('line', e.target.value)
+                  if (errors.line) {
+                    setErrors(prev => {
+                      const next = { ...prev }
+                      delete next.line
+                      return next
+                    })
+                  }
+                }}
+                className={errors.line ? 'has-error' : ''}
               >
                 <option value="">— Не выбрана —</option>
                 {linesForForm.map((l) => (
                   <option key={l.key} value={l.key}>{l.title}</option>
                 ))}
               </select>
+              {errors.line && <span className="form-error">{errors.line}</span>}
             </div>
           </div>
 
