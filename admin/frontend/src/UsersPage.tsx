@@ -88,18 +88,7 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
     loadUsers()
   }, [])
 
-  const handleAdd = () => {
-    setEditingUser(null)
-    setFormData({
-      telegram_id: '',
-      username: '',
-      email: '',
-      phone: '',
-      role: 'user',
-      active: true
-    })
-    setIsModalOpen(true)
-  }
+  // добавление новых пользователей через UI сейчас отключено
 
   const handleEdit = (u: User) => {
     setEditingUser(u)
@@ -217,9 +206,7 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
 
       <div className="admin-content">
         <div className="toolbar toolbar--transparent" style={{ marginBottom: '1rem', alignItems: 'flex-end' }}>
-          <div className="toolbar-actions">
-            <button type="button" className="btn btn-add" onClick={handleAdd}>Добавить пользователя</button>
-          </div>
+          <div className="toolbar-actions" />
         </div>
 
         {loading ? (
@@ -227,7 +214,6 @@ function UsersPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { u
         ) : users.length === 0 ? (
           <div className="empty-state">
             <p>Нет пользователей.</p>
-            <button type="button" className="btn btn-add" onClick={handleAdd}>Добавить пользователя</button>
           </div>
         ) : (
           <div className="categories-table-wrapper">

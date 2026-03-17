@@ -26,7 +26,7 @@ function getOrderStatusTitle(status?: string) {
   const s = String(status || '').toLowerCase()
   if (s === 'confirmed') return 'Заказ подтверждён'
   if (s === 'packed') return 'Заказ в пути'
-  if (s === 'completed') return 'Заказ получен'
+  if (s === 'completed') return 'Заказ завершён'
   if (s === 'cancelled') return 'Заказ отменён'
   return 'Новый заказ'
 }
@@ -137,8 +137,10 @@ export default function OrderDetailsPage() {
     window.open(tgLink, '_blank')
   }
 
+  const [repeating, setRepeating] = useState(false)
+
   async function handleRepeatOrder() {
-    if (!order || order.status !== 'completed') return
+    if (!order || order.status !== 'completed' || repeating) return
     const slugs = Array.from(new Set(order.items.map(i => i.slug).filter(Boolean)))
     if (!slugs.length) {
       toast.error('В заказе нет товаров')
@@ -146,6 +148,7 @@ export default function OrderDetailsPage() {
     }
 
     try {
+      setRepeating(true)
       const products = await getProducts({ slugs })
       const bySlug = new Map(products.map(p => [p.slug, p]))
       const matched = order.items
@@ -172,6 +175,8 @@ export default function OrderDetailsPage() {
       navigate('/cart')
     } catch {
       toast.error('Не удалось повторить заказ')
+    } finally {
+      setRepeating(false)
     }
   }
 
@@ -232,9 +237,10 @@ export default function OrderDetailsPage() {
             <button
               type="button"
               onClick={handleRepeatOrder}
-              className="h-9 px-4 rounded-full bg-accent text-white text-[14px] font-medium whitespace-nowrap"
+              disabled={repeating}
+              className="h-[30px] px-[10px] rounded-[20px] bg-accent text-white text-[12px] font-medium whitespace-nowrap flex items-center justify-center disabled:opacity-60"
             >
-              Повторить
+              {repeating ? '...' : 'Повторить'}
             </button>
           )}
         </div>

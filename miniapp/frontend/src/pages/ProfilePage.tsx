@@ -13,7 +13,7 @@ function getOrderTitleByStatus(status: string) {
   const s = String(status || '').toLowerCase()
   if (s === 'confirmed') return 'Подтверждён'
   if (s === 'packed') return 'Заказ в пути'
-  if (s === 'completed') return 'Получен'
+  if (s === 'completed') return 'Завершён'
   if (s === 'cancelled') return 'Отменён'
   return 'Новый'
 }
