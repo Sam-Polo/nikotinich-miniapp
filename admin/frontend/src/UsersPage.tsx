@@ -14,7 +14,7 @@ type User = {
   referral_balance_rub?: number
 }
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'models' | 'content' | 'orders' | 'users' | 'referral'
 type UserSortKey = 'telegram_id' | 'username' | 'email' | 'phone' | 'role' | 'active'
 
 const EditIcon = () => (

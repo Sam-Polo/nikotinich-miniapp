@@ -333,7 +333,6 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
     if (!products.length) return
     setSavingProducts(true)
     try {
-      const current = products
       const all = await api.getProducts()
       const allProducts: Product[] = all.products || []
 

@@ -35,7 +35,7 @@ type Product = {
   article?: string
 }
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'models' | 'content' | 'orders' | 'users' | 'referral'
 
 function PromocodesPage({ onNavigate }: { onNavigate?: (page: AdminPage) => void }) {
   const handleLogout = () => {

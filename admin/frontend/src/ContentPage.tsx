@@ -26,6 +26,7 @@ type AdminPage =
   | 'categories'
   | 'brands'
   | 'lines'
+  | 'models'
   | 'content'
   | 'orders'
   | 'users'

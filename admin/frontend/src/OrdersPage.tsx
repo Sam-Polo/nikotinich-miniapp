@@ -131,7 +131,7 @@ function UserSearchSelect({
   )
 }
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'models' | 'content' | 'orders' | 'users' | 'referral'
 type OrderStatus = 'new' | 'confirmed' | 'packed' | 'completed' | 'cancelled'
 type Order = {
   id: string

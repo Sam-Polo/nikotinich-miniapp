@@ -3,7 +3,7 @@ import { api, removeToken } from './api'
 import AdminNav from './components/AdminNav'
 import './App.css'
 
-type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'content' | 'orders' | 'users' | 'referral'
+type AdminPage = 'products' | 'promocodes' | 'categories' | 'brands' | 'lines' | 'models' | 'content' | 'orders' | 'users' | 'referral'
 
 type OrdersSettings = {
   deliveryFee: number
