@@ -75,7 +75,6 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
   const [products, setProducts] = useState<Product[]>([])
   const [productSearch, setProductSearch] = useState('')
   const [selectedProductSlugs, setSelectedProductSlugs] = useState<Set<string>>(new Set())
-  const [savingProducts, setSavingProducts] = useState(false)
 
   const brandsInCategory = selectedCategoryKey
     ? brands.filter((b) => b.category_key.toLowerCase() === selectedCategoryKey.toLowerCase())
@@ -332,7 +331,6 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
     line_key?: string
   ) => {
     if (!products.length) return
-    setSavingProducts(true)
     try {
       const all = await api.getProducts()
       const allProducts: Product[] = all.products || []
@@ -360,8 +358,6 @@ function ModelsPage({ onNavigate }: { onNavigate?: (page: AdminPage, params?: { 
       showToast('Товары модели обновлены', 'success')
     } catch (e: any) {
       showToast(e?.message || 'Ошибка сохранения товаров модели', 'error')
-    } finally {
-      setSavingProducts(false)
     }
   }
 
