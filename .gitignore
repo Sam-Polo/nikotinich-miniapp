@@ -25,3 +25,6 @@ admin/backend/uploads/
 # misc
 *.tmp
 *.bak
+
+# project local references (not for repo)
+tesp/
